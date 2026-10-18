@@ -1,0 +1,292 @@
+@layer pik.products {
+  .product-grid {
+    display: grid;
+    gap: var(--pik-sp-5);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  }
+
+  .product-card {
+    position: relative;
+    display: grid;
+    gap: var(--pik-sp-3);
+    padding: clamp(1.2rem, 2.6vw, 1.7rem);
+    border-radius: var(--pik-r-lg);
+    overflow: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .product-card__glyph {
+    inline-size: 58px;
+    block-size: 58px;
+    border-radius: var(--pik-r-sm);
+    display: grid;
+    place-items: center;
+    background: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pc, var(--pik-accent)) 30%, transparent),
+      color-mix(in srgb, var(--pc, var(--pik-accent)) 6%, transparent)
+    );
+    border: 1px solid color-mix(in srgb, var(--pc, var(--pik-accent)) 40%, transparent);
+    color: color-mix(in srgb, var(--pc, var(--pik-accent)) 90%, white);
+    transform: translateZ(30px);
+  }
+
+  .product-card__glyph svg {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+
+  .product-card__name {
+    font-family: var(--pik-font-display);
+    font-size: var(--pik-step-2);
+    letter-spacing: -0.02em;
+    transform: translateZ(20px);
+  }
+
+  .product-card__desc {
+    color: var(--pik-muted);
+    font-size: var(--pik-step--1);
+    transform: translateZ(12px);
+  }
+
+  .product-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pik-sp-3);
+    margin-block-start: auto;
+    padding-block-start: var(--pik-sp-3);
+    border-block-start: 1px solid var(--pik-glass-line-soft);
+    transform: translateZ(16px);
+  }
+
+  .product-card__watermark {
+    position: absolute;
+    inset-inline-end: -0.06em;
+    inset-block-end: -0.28em;
+    font-family: var(--pik-font-display);
+    font-weight: 700;
+    font-size: 6.5rem;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1px color-mix(in srgb, var(--pc, var(--pik-accent)) 18%, transparent);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .product-card.is-live::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 2px;
+    background: linear-gradient(90deg, transparent, var(--pc, var(--pik-accent)), transparent);
+  }
+
+  .product-card.is-soon {
+    opacity: 0.94;
+  }
+
+  .product-card.is-soon .product-card__glyph {
+    filter: saturate(0.6);
+  }
+
+  .product-card:hover {
+    border-color: color-mix(in srgb, var(--pc, var(--pik-accent)) 40%, var(--pik-glass-line));
+  }
+
+  .product-spotlight {
+    display: grid;
+    gap: clamp(var(--pik-sp-5), 5vw, var(--pik-sp-7));
+    align-items: center;
+    padding: clamp(1.4rem, 4vw, 2.6rem);
+    border-radius: var(--pik-r-xl);
+  }
+
+  @media (min-width: 980px) {
+    .product-spotlight {
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+  }
+
+  .screen {
+    position: relative;
+    border-radius: var(--pik-r-md);
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(160deg, #0a1020, #060a16 60%, #0b1224);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-deep);
+  }
+
+  [data-theme="daylight"] .screen {
+    background: linear-gradient(160deg, #dfe6f2, #cdd7e8);
+  }
+
+  .screen__chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-block-end: 1px solid var(--pik-glass-line-soft);
+  }
+
+  .screen__dot {
+    inline-size: 9px;
+    block-size: 9px;
+    border-radius: 50%;
+    background: var(--pik-faint);
+  }
+
+  .screen__url {
+    margin-inline-start: 0.6rem;
+    font-family: var(--pik-font-mono);
+    font-size: 0.68rem;
+    color: var(--pik-faint);
+    padding: 0.15rem 0.7rem;
+    border-radius: var(--pik-r-pill);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .screen__body {
+    padding: 1rem;
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .poster {
+    aspect-ratio: 2 / 3;
+    border-radius: 8px;
+    background-image: linear-gradient(
+        150deg,
+        color-mix(in srgb, var(--pc, var(--pik-aqua)) 55%, transparent),
+        color-mix(in srgb, var(--pik-violet) 30%, transparent)
+      ),
+      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 6px, transparent 6px 12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: poster-lift 6s var(--pik-ease-in-out) infinite;
+  }
+
+  .poster:nth-child(2n) {
+    --pc: var(--pik-rose);
+    animation-delay: -1.5s;
+  }
+  .poster:nth-child(3n) {
+    --pc: var(--pik-cyan);
+    animation-delay: -3s;
+  }
+  .poster:nth-child(4n) {
+    --pc: var(--pik-amber);
+    animation-delay: -4.5s;
+  }
+
+  @keyframes poster-lift {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-6px) scale(1.02);
+    }
+  }
+
+  .roadmap {
+    display: grid;
+    gap: 0;
+    position: relative;
+  }
+
+  .roadmap__item {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: var(--pik-sp-4);
+    padding-block: var(--pik-sp-4);
+    position: relative;
+  }
+
+  .roadmap__marker {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  .roadmap__marker::before {
+    content: "";
+    position: absolute;
+    inset-block: -10px;
+    inset-inline-start: 50%;
+    inline-size: 1px;
+    background: linear-gradient(180deg, transparent, var(--pik-glass-line) 18%, var(--pik-glass-line) 82%, transparent);
+    transform: translateX(-50%);
+  }
+
+  .roadmap__item:first-child .roadmap__marker::before {
+    inset-block-start: 50%;
+  }
+
+  .roadmap__item:last-child .roadmap__marker::before {
+    inset-block-end: 50%;
+  }
+
+  .roadmap__dot {
+    inline-size: 13px;
+    block-size: 13px;
+    border-radius: 50%;
+    background: var(--pik-space-700);
+    border: 2px solid var(--pik-faint);
+    position: relative;
+    z-index: 1;
+  }
+
+  .roadmap__item.is-done .roadmap__dot {
+    border-color: var(--pik-lime);
+    background: var(--pik-lime);
+  }
+
+  .roadmap__item.is-now .roadmap__dot {
+    border-color: var(--pik-accent);
+    background: var(--pik-accent);
+  }
+
+  .roadmap__title {
+    font-family: var(--pik-font-display);
+    font-size: var(--pik-step-1);
+  }
+
+  .roadmap__meta {
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    color: var(--pik-faint);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .progress {
+    inline-size: 100%;
+    block-size: 6px;
+    border-radius: var(--pik-r-pill);
+    background: var(--pik-glass-bg-strong);
+    overflow: hidden;
+  }
+
+  .progress__bar {
+    block-size: 100%;
+    inline-size: var(--value, 40%);
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--pik-accent), var(--pik-accent-alt));
+    transition: inline-size var(--pik-slow) var(--pik-ease-out);
+  }
+
+  .waitlist-form {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .waitlist-form .input {
+    flex: 1 1 220px;
+  }
+}

@@ -1,0 +1,171 @@
+:root {
+  --pik-space-900: #05060c;
+  --pik-space-800: #070a14;
+  --pik-space-700: #0b1020;
+  --pik-space-600: #111830;
+  --pik-space-500: #182142;
+
+  --pik-ink: #eef2ff;
+  --pik-ink-soft: #c4ccdf;
+  --pik-muted: #8d97b3;
+  --pik-faint: #5d6784;
+
+  --pik-aqua: #4fe3c1;
+  --pik-cyan: #56c8f5;
+  --pik-violet: #9d8cff;
+  --pik-rose: #ff8fb8;
+  --pik-amber: #ffc46b;
+  --pik-lime: #a8e06b;
+  --pik-red: #ff6b7a;
+
+  --pik-accent: var(--pik-aqua);
+  --pik-accent-alt: var(--pik-violet);
+  --pik-accent-warm: var(--pik-amber);
+
+  --pik-glass-bg: rgba(255, 255, 255, 0.055);
+  --pik-glass-bg-strong: rgba(255, 255, 255, 0.09);
+  --pik-glass-bg-solid: rgba(12, 17, 33, 0.86);
+  --pik-glass-line: rgba(255, 255, 255, 0.14);
+  --pik-glass-line-soft: rgba(255, 255, 255, 0.07);
+  --pik-glass-shine: linear-gradient(140deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 46%);
+
+  --pik-blur-sm: 10px;
+  --pik-blur-md: 18px;
+  --pik-blur-lg: 30px;
+  --pik-blur-xl: 46px;
+
+  --pik-r-xs: 8px;
+  --pik-r-sm: 12px;
+  --pik-r-md: 18px;
+  --pik-r-lg: 26px;
+  --pik-r-xl: 34px;
+  --pik-r-pill: 999px;
+
+  --pik-shadow-flat: 0 18px 40px -24px rgba(0, 0, 0, 0.85);
+  --pik-shadow-deep: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
+  --pik-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  --pik-font-display: "Space Grotesk", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
+  --pik-font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --pik-font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+
+  --pik-step--2: 0.68rem;
+  --pik-step--1: 0.82rem;
+  --pik-step-0: 1rem;
+  --pik-step-1: 1.18rem;
+  --pik-step-2: 1.45rem;
+  --pik-step-3: 1.85rem;
+  --pik-step-4: 2.4rem;
+  --pik-step-5: 3.2rem;
+  --pik-step-6: 4.4rem;
+
+  --pik-sp-1: 0.25rem;
+  --pik-sp-2: 0.5rem;
+  --pik-sp-3: 0.75rem;
+  --pik-sp-4: 1rem;
+  --pik-sp-5: 1.5rem;
+  --pik-sp-6: 2rem;
+  --pik-sp-7: 3rem;
+  --pik-sp-8: 4rem;
+  --pik-sp-9: 6rem;
+
+  --pik-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pik-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --pik-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pik-fast: 140ms;
+  --pik-med: 320ms;
+  --pik-slow: 620ms;
+
+  --pik-header-h: 72px;
+  --pik-maxw: 1280px;
+  --pik-maxw-text: 760px;
+  --pik-z-base: 1;
+  --pik-z-sticky: 40;
+  --pik-z-drawer: 60;
+  --pik-z-modal: 80;
+  --pik-z-toast: 90;
+}
+
+[data-density="compact"] {
+  --pik-header-h: 60px;
+  --pik-step-0: 0.94rem;
+  --pik-step-1: 1.08rem;
+  --pik-step-2: 1.3rem;
+  --pik-step-3: 1.6rem;
+  --pik-step-4: 2rem;
+  --pik-step-5: 2.6rem;
+  --pik-sp-7: 2.2rem;
+  --pik-sp-8: 2.8rem;
+  --pik-sp-9: 4rem;
+}
+
+[data-density="roomy"] {
+  --pik-header-h: 84px;
+  --pik-sp-7: 3.6rem;
+  --pik-sp-8: 4.8rem;
+  --pik-sp-9: 7.4rem;
+}
+
+[data-theme="aurora"] {
+  --pik-accent: #5ee7c8;
+  --pik-accent-alt: #6aa8ff;
+  --pik-accent-warm: #b6f06b;
+}
+
+[data-theme="nebula"] {
+  --pik-accent: #a98cff;
+  --pik-accent-alt: #ff8fd0;
+  --pik-accent-warm: #6ad0ff;
+  --pik-space-900: #080512;
+  --pik-space-800: #0d0819;
+  --pik-space-700: #140d24;
+}
+
+[data-theme="ember"] {
+  --pik-accent: #ffb45c;
+  --pik-accent-alt: #ff7a8a;
+  --pik-accent-warm: #ffd98a;
+  --pik-space-900: #0b0705;
+  --pik-space-800: #120c07;
+  --pik-space-700: #191009;
+}
+
+[data-theme="tide"] {
+  --pik-accent: #58d6ff;
+  --pik-accent-alt: #7c8cff;
+  --pik-accent-warm: #58ffc2;
+  --pik-space-900: #04080f;
+  --pik-space-800: #06101c;
+  --pik-space-700: #0a1727;
+}
+
+[data-theme="daylight"] {
+  --pik-space-900: #eaedf6;
+  --pik-space-800: #f4f6fb;
+  --pik-space-700: #ffffff;
+  --pik-space-600: #e2e8f3;
+  --pik-ink: #101828;
+  --pik-ink-soft: #27334b;
+  --pik-muted: #56637c;
+  --pik-faint: #7d8ba3;
+  --pik-accent: #0f8f76;
+  --pik-accent-alt: #4a3ed6;
+  --pik-accent-warm: #a86c12;
+  --pik-glass-bg: rgba(255, 255, 255, 0.6);
+  --pik-glass-bg-strong: rgba(255, 255, 255, 0.78);
+  --pik-glass-bg-solid: rgba(255, 255, 255, 0.9);
+  --pik-glass-line: rgba(16, 24, 40, 0.13);
+  --pik-glass-line-soft: rgba(16, 24, 40, 0.07);
+  --pik-glass-shine: linear-gradient(140deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 46%);
+  --pik-shadow-flat: 0 16px 34px -22px rgba(16, 24, 40, 0.32);
+  --pik-shadow-deep: 0 40px 80px -46px rgba(16, 24, 40, 0.36);
+  --pik-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pik-fast: 1ms;
+    --pik-med: 1ms;
+    --pik-slow: 1ms;
+  }
+}
