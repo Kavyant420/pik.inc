@@ -1,0 +1,111 @@
+@layer pik.glass.variants {
+  .glass--frost {
+    background-color: rgba(255, 255, 255, 0.13);
+    backdrop-filter: blur(var(--pik-blur-xl)) brightness(1.06) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-xl)) brightness(1.06) saturate(180%);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
+
+  .glass--smoke {
+    background-color: rgba(8, 11, 22, 0.72);
+    backdrop-filter: blur(var(--pik-blur-lg)) saturate(120%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-lg)) saturate(120%);
+    border-color: var(--pik-glass-line-soft);
+  }
+
+  .glass--tinted {
+    background-color: color-mix(in srgb, var(--pik-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--pik-accent) 30%, transparent);
+  }
+
+  .glass--chrome {
+    background-image: linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.16),
+      rgba(255, 255, 255, 0.03) 38%,
+      rgba(255, 255, 255, 0.11) 70%,
+      rgba(255, 255, 255, 0.02)
+    );
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .glass--etched {
+    border-style: solid;
+    border-color: var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset), inset 0 -14px 30px -22px rgba(0, 0, 0, 0.9);
+  }
+
+  .glass--rim::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--pik-accent) 70%, transparent),
+      transparent 40%,
+      color-mix(in srgb, var(--pik-accent-alt) 60%, transparent) 78%,
+      transparent
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glass--deep {
+    box-shadow: var(--pik-shadow-deep), var(--pik-shadow-inset);
+  }
+
+  .glass--bar {
+    border-radius: var(--pik-r-pill);
+    padding-block: 0.5rem;
+    padding-inline: 1rem;
+  }
+
+  .glass-table {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border-radius: var(--pik-r-md);
+  }
+
+  .glass-table th {
+    text-align: start;
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--pik-muted);
+    padding: 0.9rem 1.1rem;
+    background: var(--pik-glass-bg-strong);
+  }
+
+  .glass-table td {
+    padding: 0.9rem 1.1rem;
+    border-block-start: 1px solid var(--pik-glass-line-soft);
+    color: var(--pik-ink-soft);
+    font-size: var(--pik-step--1);
+  }
+
+  .glass-table tr:hover td {
+    background: color-mix(in srgb, var(--pik-accent) 6%, transparent);
+  }
+
+  .glass-stack > * + * {
+    margin-block-start: calc(var(--pik-sp-4) * -1);
+  }
+
+  .glass-stack > * {
+    transform: translateZ(0);
+  }
+
+  .glass-divider {
+    block-size: 1px;
+    border: 0;
+    background: linear-gradient(90deg, transparent, var(--pik-glass-line), transparent);
+    margin-block: var(--pik-sp-4);
+  }
+}

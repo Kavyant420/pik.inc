@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta name="referrer" content="no-referrer">
+<title>Account · PIK · PIK Inc.</title>
+<meta name="description" content="Create a PIK account whose credentials are hashed with PBKDF2-SHA256 and stored only on your device.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/00-tokens.css">
+<link rel="stylesheet" href="./css/00b-aliases.css">
+<link rel="stylesheet" href="./css/01-reset.css">
+<link rel="stylesheet" href="./css/02-typography.css">
+<link rel="stylesheet" href="./css/03-layout.css">
+<link rel="stylesheet" href="./css/04-glass-core.css">
+<link rel="stylesheet" href="./css/05-glass-variants.css">
+<link rel="stylesheet" href="./css/06-buttons.css">
+<link rel="stylesheet" href="./css/07-forms.css">
+<link rel="stylesheet" href="./css/08-navigation.css">
+<link rel="stylesheet" href="./css/09-footer.css">
+<link rel="stylesheet" href="./css/10-motion.css">
+<link rel="stylesheet" href="./css/11-depth-3d.css">
+<link rel="stylesheet" href="./css/12-background-canvas.css">
+<link rel="stylesheet" href="./css/13-products.css">
+<link rel="stylesheet" href="./css/14-audio.css">
+<link rel="stylesheet" href="./css/15-modals.css">
+<link rel="stylesheet" href="./css/16-settings.css">
+<link rel="stylesheet" href="./css/17-auth.css">
+<link rel="stylesheet" href="./css/18-security.css">
+<link rel="stylesheet" href="./css/19-docs.css">
+<link rel="stylesheet" href="./css/20-responsive.css">
+<link rel="stylesheet" href="./css/21-accessibility.css">
+<link rel="stylesheet" href="./css/22-widgets.css">
+<link rel="stylesheet" href="./css/99-misc.css">
+</head>
+
+<body data-root="./" data-page="account">
+<a class="skip-link" href="#main">Skip to content</a>
+<main class="page" id="main">
+
+<section class="section section--flush page-hero">
+  <div class="shell stack stack--tight">
+    <p class="u-eyebrow reveal">ACCOUNT</p>
+    <h1 class="u-display">An identity you actually own</h1>
+    <p class="u-lede reveal">Sign in or sign up — both run entirely in your browser. Passwords are hashed with PBKDF2-SHA256, emails become opaque digests, and nothing is ever transmitted to PIK.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell auth-shell">
+    <aside class="auth-visual card glass--deep tilt-scene" aria-hidden="true">
+      <div class="scene">
+        <div class="ring ring--1"></div>
+        <div class="cube cube--sm">
+          <span class="cube__face cube__face--front">KEY</span>
+          <span class="cube__face cube__face--back">SALT</span>
+          <span class="cube__face cube__face--right">PBKDF2</span>
+          <span class="cube__face cube__face--left">SHA·256</span>
+          <span class="cube__face cube__face--top">HMAC</span>
+          <span class="cube__face cube__face--bottom">LOCAL</span>
+        </div>
+        <div class="plinth"></div>
+      </div>
+      <ul class="doc-list" style="margin-top:2rem">
+        <li>Password → random salt → PBKDF2 → hex digest. Verification re-runs the same math.</li>
+        <li>Email → SHA-256 with domain masking for display only.</li>
+        <li>Session token → per-visit alias that rotates when you change route.</li>
+      </ul>
+    </aside>
+
+    <div class="auth-card panel">
+      <div class="row row--between" style="margin-bottom:1rem">
+        <div class="avatar-hash" title="Hash-derived avatar">∅</div>
+        <span class="chip session-chip" data-session-chip>Anonymous</span>
+      </div>
+      <div class="auth-tabs" role="tablist" aria-label="Sign in or sign up">
+        <button class="auth-tab" type="button" role="tab" data-tab="login" aria-selected="true">Sign in</button>
+        <button class="auth-tab" type="button" role="tab" data-tab="signup" aria-selected="false">Sign up</button>
+      </div>
+
+<form class="auth-form" data-form-login novalidate hidden>
+  <div class="stack stack--tight">
+<label class="field"><span class="field__label">Handle</span><input class="input" type="text" name="handle" placeholder="e.g. nova-fox" autocomplete="username"  required></label>
+  </div>
+<label class="field"><span class="field__label">Email (optional)</span><input class="input" type="email" name="email" placeholder="you@example.com" autocomplete="off"  required></label>
+<label class="field"><span class="field__label">Password</span><input class="input" type="password" name="password" placeholder="••••••••" autocomplete="current-password"  required></label>
+  <p class="field__error" aria-live="polite"></p>
+  <button class="btn btn--primary btn--lg" type="submit">Sign in locally</button>
+  <p class="u-small u-faint">Your password is stretched with PBKDF2-SHA256 (120,000 iterations) in this browser. Only the salt and digest touch storage — and both stay on your device.</p>
+</form>
+
+<form class="auth-form" data-form-signup novalidate hidden>
+  <div class="stack stack--tight">
+<label class="field"><span class="field__label">Pick a handle</span><input class="input" type="text" name="handle" placeholder="e.g. nova-fox" autocomplete="username"  required></label>
+  </div>
+<label class="field"><span class="field__label">Email (hashed, never sent)</span><input class="input" type="email" name="email" placeholder="you@example.com" autocomplete="off"  required></label>
+<label class="field"><span class="field__label">Password</span><input class="input" type="password" name="password" placeholder="min. 8 characters" autocomplete="new-password"  required></label>
+  <div class="strength">
+    <span class="strength__bars"><i class="strength__bar"></i><i class="strength__bar"></i><i class="strength__bar"></i><i class="strength__bar"></i></span>
+    <span class="strength__label u-mono u-tiny">Empty</span>
+  </div>
+<label class="field"><span class="field__label">Confirm password</span><input class="input" type="password" name="confirm" placeholder="repeat it" autocomplete="new-password"  required></label>
+  <p class="field__error" aria-live="polite"></p>
+  <button class="btn btn--primary btn--lg" type="submit">Create local account</button>
+  <p class="u-small u-faint">No email verification, no server round-trip: PIK cannot mail you because PIK never sees your address — only its one-way hash.</p>
+</form>
+
+      <hr class="divider">
+      <div class="row row--between">
+        <a class="link-arrow" href="./settings.html#privacy">Manage stored data</a>
+        <button class="btn btn--ghost btn--sm" type="button" data-logout>End session</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="grid grid--3">
+      <div class="card glass setting-group reveal">
+        <h3 class="setting-group__title">Why no real login?</h3>
+        <p class="setting-group__desc">A centralised password database is a breach waiting to happen. By keeping accounts device-local, the worst-case leak is one machine — and even then only digests exist.</p>
+      </div>
+      <div class="card glass setting-group reveal">
+        <h3 class="setting-group__title">What if I lose this device?</h3>
+        <p class="setting-group__desc">Local-only means there is no recovery service we could safely offer; that trade-off is deliberate. Settings → Privacy lets you purge everything before parting with hardware.</p>
+      </div>
+      <div class="card glass setting-group reveal">
+        <h3 class="setting-group__title">Is any telemetry collected?</h3>
+        <p class="setting-group__desc">None leaves your browser. The activity log on the Security page is assembled from hashes of your own clicks, traced to rotating public relay IPs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<div data-footer></div>
+<script src="./js/crypto-hash.js"></script>
+<script src="./js/anonymity.js"></script>
+<script src="./js/audio-engine.js"></script>
+<script src="./js/toasts.js"></script>
+<script src="./js/motion.js"></script>
+<script src="./js/fx3d.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/settings.js"></script>
+<script src="./js/dock.js"></script>
+<script src="./js/chrome.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>

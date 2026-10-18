@@ -1,0 +1,44 @@
+:root {
+  --accent: var(--pik-accent);
+  --info: var(--pik-cyan);
+  --success: var(--pik-lime);
+  --ok: var(--pik-aqua);
+  --warn: var(--pik-amber);
+  --danger: var(--pik-red);
+  --primary: var(--pik-accent);
+
+  --text-hi: var(--pik-ink);
+  --text-mid: var(--pik-ink-soft);
+  --text-dim: var(--pik-muted);
+  --text-faint: var(--pik-faint);
+
+  --surface-1: var(--pik-space-700);
+  --surface-2: var(--pik-space-600);
+
+  --line-soft: var(--pik-glass-line-soft);
+  --line-strong: var(--pik-glass-line);
+
+  --font-mono: var(--pik-font-mono);
+
+  --fs-xs: var(--pik-step--2);
+  --fs-sm: var(--pik-step--1);
+  --fs-lg: var(--pik-step-1);
+  --fs-xl: var(--pik-step-2);
+  --fs-3xl: var(--pik-step-4);
+  --fs-display: var(--pik-step-6);
+  --fs-h1: var(--pik-step-5);
+
+  --sp-2: var(--pik-sp-2);
+  --sp-3: var(--pik-sp-3);
+  --sp-4: var(--pik-sp-4);
+  --sp-5: var(--pik-sp-5);
+  --sp-6: var(--pik-sp-6);
+  --sp-8: var(--pik-sp-7);
+  --sp-10: var(--pik-sp-8);
+
+  --radius-sm: var(--pik-r-sm);
+  --header-h: var(--pik-header-h);
+
+  --dur-2: var(--pik-med);
+  --ease-out: var(--pik-ease-out);
+}

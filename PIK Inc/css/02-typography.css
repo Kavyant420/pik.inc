@@ -1,0 +1,150 @@
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: local("Space Grotesk"), local("SpaceGrotesk-Regular");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local("Inter"), local("Inter Regular"), local("Segoe UI");
+}
+
+@layer pik.type {
+  .u-display {
+    font-family: var(--pik-font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+  }
+
+  .u-mono {
+    font-family: var(--pik-font-mono);
+    letter-spacing: 0.01em;
+  }
+
+  .u-eyebrow {
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--pik-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .u-eyebrow::before {
+    content: "";
+    inline-size: 22px;
+    block-size: 1px;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  .u-lede {
+    font-size: var(--pik-step-1);
+    color: var(--pik-muted);
+    max-width: 62ch;
+  }
+
+  .u-small {
+    font-size: var(--pik-step--1);
+    color: var(--pik-muted);
+  }
+
+  .u-faint {
+    color: var(--pik-faint);
+  }
+
+  .u-strong {
+    color: var(--pik-ink);
+    font-weight: 600;
+  }
+
+  .u-accent {
+    color: var(--pik-accent);
+  }
+
+  .u-warm {
+    color: var(--pik-accent-warm);
+  }
+
+  .u-gradient {
+    background-image: linear-gradient(
+      94deg,
+      var(--pik-ink) 8%,
+      color-mix(in srgb, var(--pik-accent) 88%, white) 48%,
+      color-mix(in srgb, var(--pik-accent-alt) 80%, white) 92%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .u-center {
+    text-align: center;
+    margin-inline: auto;
+  }
+
+  .prose {
+    max-width: var(--pik-maxw-text);
+    display: grid;
+    gap: var(--pik-sp-4);
+  }
+
+  .prose h2 {
+    margin-block-start: var(--pik-sp-6);
+    scroll-margin-top: calc(var(--pik-header-h) + var(--pik-sp-4));
+  }
+
+  .prose h3 {
+    margin-block-start: var(--pik-sp-5);
+  }
+
+  .prose p,
+  .prose ul,
+  .prose ol {
+    font-size: var(--pik-step-0);
+  }
+
+  .prose a:not(.btn) {
+    color: var(--pik-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .prose :is(strong, b) {
+    color: var(--pik-ink);
+  }
+
+  .prose table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--pik-step--1);
+  }
+
+  .prose th,
+  .prose td {
+    text-align: start;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--pik-glass-line-soft);
+  }
+
+  .prose th {
+    color: var(--pik-ink);
+    font-weight: 600;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}

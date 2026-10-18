@@ -1,0 +1,138 @@
+@layer pik.layout {
+  .shell {
+    inline-size: 100%;
+    max-inline-size: var(--pik-maxw);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2.5rem);
+  }
+
+  .shell--narrow {
+    max-inline-size: 900px;
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pik-sp-4);
+  }
+
+  .stack--tight {
+    gap: var(--pik-sp-2);
+  }
+
+  .stack--loose {
+    gap: var(--pik-sp-6);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--pik-sp-3);
+    flex-wrap: wrap;
+  }
+
+  .row--between {
+    justify-content: space-between;
+  }
+
+  .row--end {
+    justify-content: flex-end;
+  }
+
+  .grid {
+    display: grid;
+    gap: var(--pik-sp-5);
+  }
+
+  .grid--2 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  }
+
+  .grid--3 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  }
+
+  .grid--4 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  }
+
+  .section {
+    padding-block: clamp(var(--pik-sp-7), 9vw, var(--pik-sp-9));
+    position: relative;
+  }
+
+  .section--flush {
+    padding-block: 0;
+  }
+
+  .section + .section {
+    border-block-start: 1px solid var(--pik-glass-line-soft);
+  }
+
+  .section__head {
+    display: grid;
+    gap: var(--pik-sp-3);
+    margin-block-end: var(--pik-sp-6);
+    max-inline-size: 720px;
+  }
+
+  .split {
+    display: grid;
+    gap: clamp(var(--pik-sp-5), 5vw, var(--pik-sp-8));
+    align-items: center;
+  }
+
+  @media (min-width: 900px) {
+    .split {
+      grid-template-columns: 1.05fr 0.95fr;
+    }
+
+    .split--reverse > :first-child {
+      order: 2;
+    }
+  }
+
+  .page {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+  }
+
+  .page__main {
+    padding-block-start: var(--pik-header-h);
+  }
+
+  .page-hero {
+    position: relative;
+    padding-block: clamp(var(--pik-sp-7), 12vh, var(--pik-sp-9)) var(--pik-sp-7);
+    display: grid;
+    gap: var(--pik-sp-5);
+  }
+
+  .divider-label {
+    display: flex;
+    align-items: center;
+    gap: var(--pik-sp-4);
+    color: var(--pik-faint);
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .divider-label::before,
+  .divider-label::after {
+    content: "";
+    block-size: 1px;
+    flex: 1;
+    background: linear-gradient(90deg, transparent, var(--pik-glass-line), transparent);
+  }
+
+  .no-scroll-x {
+    overflow-x: clip;
+  }
+
+  .anchor-offset {
+    scroll-margin-top: calc(var(--pik-header-h) + var(--pik-sp-4));
+  }
+}

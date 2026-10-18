@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta name="referrer" content="no-referrer">
+<title>Pikuflix · PIK · PIK Inc.</title>
+<meta name="description" content="Movies, series and watchlists streamed through the PIK anonymity layer. The external app at pikuflix.vercel.app inherits PIK session hashes, so entitl">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/00-tokens.css">
+<link rel="stylesheet" href="../css/00b-aliases.css">
+<link rel="stylesheet" href="../css/01-reset.css">
+<link rel="stylesheet" href="../css/02-typography.css">
+<link rel="stylesheet" href="../css/03-layout.css">
+<link rel="stylesheet" href="../css/04-glass-core.css">
+<link rel="stylesheet" href="../css/05-glass-variants.css">
+<link rel="stylesheet" href="../css/06-buttons.css">
+<link rel="stylesheet" href="../css/07-forms.css">
+<link rel="stylesheet" href="../css/08-navigation.css">
+<link rel="stylesheet" href="../css/09-footer.css">
+<link rel="stylesheet" href="../css/10-motion.css">
+<link rel="stylesheet" href="../css/11-depth-3d.css">
+<link rel="stylesheet" href="../css/12-background-canvas.css">
+<link rel="stylesheet" href="../css/13-products.css">
+<link rel="stylesheet" href="../css/14-audio.css">
+<link rel="stylesheet" href="../css/15-modals.css">
+<link rel="stylesheet" href="../css/16-settings.css">
+<link rel="stylesheet" href="../css/17-auth.css">
+<link rel="stylesheet" href="../css/18-security.css">
+<link rel="stylesheet" href="../css/19-docs.css">
+<link rel="stylesheet" href="../css/20-responsive.css">
+<link rel="stylesheet" href="../css/21-accessibility.css">
+<link rel="stylesheet" href="../css/22-widgets.css">
+<link rel="stylesheet" href="../css/99-misc.css">
+</head>
+
+<body data-root="../" data-page="product">
+<a class="skip-link" href="#main">Skip to content</a>
+<main class="page" id="main">
+
+<section class="section section--flush page-hero" style="--pik-accent:#4fe3c1">
+  <div class="shell split">
+    <div class="stack stack--tight">
+      <p class="u-eyebrow reveal">Pikuflix · LIVE</p>
+      <h1 class="u-display">Cinema that never asks who you are.</h1>
+      <p class="u-lede reveal">Movies, series and watchlists streamed through the PIK anonymity layer. The external app at pikuflix.vercel.app inherits PIK session hashes, so entitlement checks happen without an email on file.</p>
+      <div class="row reveal" style="gap:.75rem;flex-wrap:wrap"><span class="chip chip--live"><span class="chip__dot"></span>Live now</span></div>
+      <div class="btn-row reveal"><a class="btn btn--primary btn--lg" href="https://pikuflix.vercel.app" target="_blank" rel="noopener noreferrer">Launch Pikuflix</a></div>
+    </div>
+    <div class="stage3d reveal reveal--scale tilt-scene" aria-hidden="true">
+      <div class="scene">
+        <div class="ring ring--1"></div>
+        <div class="ring ring--2"></div>
+        <div class="cube">
+          <span class="cube__face cube__face--front">PIKU</span>
+          <span class="cube__face cube__face--back">HASH</span>
+          <span class="cube__face cube__face--right">LOCAL</span>
+          <span class="cube__face cube__face--left">ANON</span>
+          <span class="cube__face cube__face--top">PIK</span>
+          <span class="cube__face cube__face--bottom">INC</span>
+        </div>
+        <div class="plinth"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="grid grid--3"><div class="card glass reveal"><h3 class="u-h3">No profile economy</h3><p class="u-mid">Recommendations computed on-device; nothing is sold at quarter-end.</p></div><div class="card glass reveal"><h3 class="u-h3">Local watchlists</h3><p class="u-mid">Your queue lives in browser storage — export or wipe it any time.</p></div><div class="card glass reveal"><h3 class="u-h3">Relay-backed sessions</h3><p class="u-mid">Playback tokens trace to rotating public relay exits, not to you.</p></div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell split">
+    <div class="panel reveal--left">
+      <h2 class="u-h2">Privacy posture</h2>
+      <ul class="doc-list">
+        <li>Identity derived from a SHA-256 alias that rotates with your relay route.</li>
+        <li>Usage records hashed locally and attributed to public relays — Freedom-1, FallExit-A, TorNode-3 and peers.</li>
+        <li>All storage purgeable in one action from Settings → Danger zone.</li>
+      </ul>
+      <a class="link-arrow" href="../security.html">Read the full threat model →</a>
+    </div>
+    <div class="stack reveal--right">
+      <h2 class="u-h2">Questions</h2>
+      <details class="faq card glass"><summary>Do I need an account?</summary><p class="u-mid">A local handle is enough; sign-in runs entirely in your browser.</p></details><details class="faq card glass"><summary>Which regions?</summary><p class="u-mid">Licensed catalogue varies by exit relay region; PIK VPN pairs nicely here.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell row row--between">
+    <a class="link-arrow" href="../products.html">← All products</a>
+    <a class="link-arrow" href="../wireless-communication.html">New: Wireless Communication →</a>
+  </div>
+</section>
+
+</main>
+<div data-footer></div>
+<script src="../js/crypto-hash.js"></script>
+<script src="../js/anonymity.js"></script>
+<script src="../js/audio-engine.js"></script>
+<script src="../js/toasts.js"></script>
+<script src="../js/motion.js"></script>
+<script src="../js/fx3d.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/settings.js"></script>
+<script src="../js/dock.js"></script>
+<script src="../js/chrome.js"></script>
+<script src="../js/main.js"></script>
+</body>
+</html>

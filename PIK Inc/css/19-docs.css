@@ -1,0 +1,134 @@
+.doc-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--sp-8);
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .doc-shell { grid-template-columns: 1fr; }
+}
+
+.doc-toc {
+  position: sticky;
+  top: calc(var(--header-h) + var(--sp-6));
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-5);
+  max-height: calc(100vh - var(--header-h) - var(--sp-8));
+  overflow: auto;
+}
+
+.doc-toc-title {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-2);
+}
+
+.doc-toc a {
+  display: block;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-mid);
+  border-left: 2px solid transparent;
+  transition: background var(--dur-2), color var(--dur-2), border-color var(--dur-2);
+}
+
+.doc-toc a:hover {
+  background: rgb(255 255 255 / 5%);
+  color: var(--text-hi);
+}
+
+.doc-toc a.active {
+  border-left-color: var(--accent);
+  color: var(--text-hi);
+  background: rgb(255 255 255 / 5%);
+}
+
+.doc-body {
+  min-width: 0;
+  padding: clamp(var(--sp-6), 4vw, var(--sp-10));
+}
+
+.doc-head {
+  display: grid;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-6);
+  margin-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.doc-head h1 {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  letter-spacing: -.02em;
+}
+
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+.doc-section {
+  scroll-margin-top: calc(var(--header-h) + var(--sp-6));
+  margin-bottom: var(--sp-8);
+}
+
+.doc-section h2 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.doc-section h2::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  flex: none;
+}
+
+.doc-section h3 {
+  font-size: var(--fs-lg);
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+
+.doc-callout {
+  margin: var(--sp-5) 0;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  background: rgb(255 255 255 / 4%);
+  font-size: var(--fs-sm);
+  color: var(--text-mid);
+}
+
+.doc-list {
+  margin: var(--sp-3) 0 var(--sp-3) 1.2em;
+  display: grid;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--text-mid);
+}
+
+.doc-footer-note {
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}

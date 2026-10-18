@@ -1,0 +1,262 @@
+@layer pik.forms {
+  .field {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .field__label {
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--pik-muted);
+  }
+
+  .field__hint {
+    font-size: var(--pik-step--2);
+    color: var(--pik-faint);
+  }
+
+  .field__error {
+    font-size: var(--pik-step--2);
+    color: var(--pik-red);
+    min-block-size: 1.1em;
+  }
+
+  .input,
+  .select,
+  .textarea {
+    inline-size: 100%;
+    padding: 0.78rem 1rem;
+    border-radius: var(--pik-r-sm);
+    border: 1px solid var(--pik-glass-line);
+    background: var(--pik-glass-bg);
+    color: var(--pik-ink);
+    transition: border-color var(--pik-fast), background var(--pik-fast), box-shadow var(--pik-fast);
+  }
+
+  .input::placeholder,
+  .textarea::placeholder {
+    color: var(--pik-faint);
+  }
+
+  .input:focus-visible,
+  .select:focus-visible,
+  .textarea:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--pik-accent) 65%, transparent);
+    background: var(--pik-glass-bg-strong);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pik-accent) 18%, transparent);
+  }
+
+  .textarea {
+    min-block-size: 120px;
+    resize: vertical;
+    line-height: 1.55;
+  }
+
+  .select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--pik-muted) 50%),
+      linear-gradient(135deg, var(--pik-muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-inline-end: 2.2rem;
+  }
+
+  .input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .input-group > .input {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .input-group > .btn {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    inline-size: auto;
+  }
+
+  .checkbox,
+  .radio {
+    appearance: none;
+    inline-size: 20px;
+    block-size: 20px;
+    flex: none;
+    border: 1px solid var(--pik-glass-line);
+    background: var(--pik-glass-bg);
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    transition: background var(--pik-fast), border-color var(--pik-fast);
+  }
+
+  .checkbox {
+    border-radius: 6px;
+  }
+
+  .radio {
+    border-radius: 50%;
+  }
+
+  .checkbox:checked,
+  .radio:checked {
+    background: var(--pik-accent);
+    border-color: var(--pik-accent);
+  }
+
+  .checkbox:checked::after {
+    content: "";
+    inline-size: 11px;
+    block-size: 6px;
+    border: 2px solid #04070f;
+    border-block-end: 0;
+    border-inline-start: 0;
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+
+  .radio:checked::after {
+    content: "";
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: #04070f;
+  }
+
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: var(--pik-step--1);
+    color: var(--pik-muted);
+    cursor: pointer;
+  }
+
+  .switch {
+    position: relative;
+    inline-size: 52px;
+    block-size: 28px;
+    flex: none;
+    border-radius: var(--pik-r-pill);
+    background: var(--pik-glass-bg-strong);
+    border: 1px solid var(--pik-glass-line);
+    cursor: pointer;
+    transition: background var(--pik-med) var(--pik-ease-out), border-color var(--pik-med);
+  }
+
+  .switch::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 3px;
+    inset-inline-start: 3px;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    background: var(--pik-ink-soft);
+    transition: transform var(--pik-med) var(--pik-ease-spring), background var(--pik-med);
+  }
+
+  .switch[aria-checked="true"] {
+    background: color-mix(in srgb, var(--pik-accent) 40%, transparent);
+    border-color: var(--pik-accent);
+  }
+
+  .switch[aria-checked="true"]::after {
+    transform: translateX(24px);
+    background: var(--pik-accent);
+  }
+
+  .range {
+    appearance: none;
+    inline-size: 100%;
+    block-size: 30px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .range::-webkit-slider-runnable-track {
+    block-size: 6px;
+    border-radius: var(--pik-r-pill);
+    background: linear-gradient(
+      90deg,
+      var(--pik-accent) 0 var(--range-fill, 50%),
+      var(--pik-glass-bg-strong) var(--range-fill, 50%) 100%
+    );
+  }
+
+  .range::-moz-range-track {
+    block-size: 6px;
+    border-radius: var(--pik-r-pill);
+    background: var(--pik-glass-bg-strong);
+  }
+
+  .range::-moz-range-progress {
+    block-size: 6px;
+    border-radius: var(--pik-r-pill);
+    background: var(--pik-accent);
+  }
+
+  .range::-webkit-slider-thumb {
+    appearance: none;
+    margin-block-start: -8px;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: 50%;
+    background: var(--pik-space-700);
+    border: 2px solid var(--pik-accent);
+    box-shadow: var(--pik-shadow-flat);
+    transition: transform var(--pik-fast) var(--pik-ease-spring);
+  }
+
+  .range::-moz-range-thumb {
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    background: var(--pik-space-700);
+    border: 2px solid var(--pik-accent);
+  }
+
+  .range:hover::-webkit-slider-thumb {
+    transform: scale(1.12);
+  }
+
+  .segmented {
+    display: inline-flex;
+    padding: 4px;
+    gap: 4px;
+    border-radius: var(--pik-r-pill);
+    background: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line-soft);
+  }
+
+  .segmented__item {
+    padding: 0.4rem 1rem;
+    border-radius: var(--pik-r-pill);
+    font-size: var(--pik-step--1);
+    color: var(--pik-muted);
+    transition: color var(--pik-fast), background var(--pik-med) var(--pik-ease-out);
+  }
+
+  .segmented__item[aria-selected="true"] {
+    background: var(--pik-glass-bg-strong);
+    color: var(--pik-ink);
+    box-shadow: var(--pik-shadow-inset);
+  }
+
+  .form-note {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    font-size: var(--pik-step--1);
+    color: var(--pik-muted);
+    padding: 0.85rem 1rem;
+    border-radius: var(--pik-r-sm);
+    background: color-mix(in srgb, var(--pik-accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pik-accent) 22%, transparent);
+  }
+}

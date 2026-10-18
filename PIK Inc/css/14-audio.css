@@ -1,0 +1,192 @@
+@layer pik.audio {
+  .audio-dock {
+    position: fixed;
+    inset-inline-end: clamp(0.8rem, 2.5vw, 1.6rem);
+    inset-block-end: clamp(0.8rem, 2.5vw, 1.6rem);
+    z-index: var(--pik-z-drawer);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.7rem 0.55rem 0.9rem;
+    border-radius: var(--pik-r-pill);
+    max-inline-size: calc(100vw - 2rem);
+  }
+
+  .audio-dock__label {
+    display: grid;
+    gap: 0.1rem;
+    min-inline-size: 0;
+  }
+
+  .audio-dock__title {
+    font-family: var(--pik-font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pik-faint);
+  }
+
+  .audio-dock__track {
+    font-size: var(--pik-step--1);
+    color: var(--pik-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-inline-size: 22ch;
+  }
+
+  .visualizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    block-size: 26px;
+    inline-size: 54px;
+    flex: none;
+  }
+
+  .visualizer__bar {
+    flex: 1;
+    block-size: 20%;
+    min-block-size: 2px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--pik-accent), color-mix(in srgb, var(--pik-accent-alt) 80%, transparent));
+    transform-origin: bottom;
+    transition: transform 90ms linear;
+  }
+
+  .audio-dock.is-idle .visualizer__bar {
+    background: var(--pik-glass-bg-strong);
+  }
+
+  .eq-toggle {
+    inline-size: 38px;
+    block-size: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--pik-glass-line);
+    background: var(--pik-glass-bg-strong);
+    color: var(--pik-ink);
+    transition: transform var(--pik-fast) var(--pik-ease-spring), color var(--pik-fast);
+    flex: none;
+  }
+
+  .eq-toggle:hover {
+    transform: scale(1.06);
+    color: var(--pik-accent);
+  }
+
+  .eq-toggle svg {
+    inline-size: 17px;
+    block-size: 17px;
+  }
+
+  .volume-pop {
+    position: absolute;
+    inset-block-end: calc(100% + 10px);
+    inset-inline-end: 0;
+    inline-size: 220px;
+    padding: 0.9rem 1rem;
+    border-radius: var(--pik-r-md);
+    display: grid;
+    gap: 0.5rem;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity var(--pik-med), transform var(--pik-med) var(--pik-ease-out);
+  }
+
+  .audio-dock:hover .volume-pop,
+  .volume-pop.is-open {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .audio-panel {
+    display: grid;
+    gap: var(--pik-sp-4);
+  }
+
+  .track-list {
+    display: grid;
+    gap: 0.4rem;
+    max-block-size: 320px;
+    overflow-y: auto;
+    padding-inline-end: 0.35rem;
+  }
+
+  .track-row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--pik-r-sm);
+    border: 1px solid transparent;
+    background: var(--pik-glass-bg);
+    cursor: pointer;
+    transition: border-color var(--pik-fast), background var(--pik-fast), transform var(--pik-fast);
+    text-align: start;
+    inline-size: 100%;
+  }
+
+  .track-row:hover {
+    background: var(--pik-glass-bg-strong);
+    transform: translateX(2px);
+  }
+
+  .track-row.is-playing {
+    border-color: color-mix(in srgb, var(--pik-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--pik-accent) 10%, transparent);
+  }
+
+  .track-row__index {
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    color: var(--pik-faint);
+    text-align: center;
+  }
+
+  .track-row.is-playing .track-row__index {
+    color: var(--pik-accent);
+  }
+
+  .track-row__name {
+    font-size: var(--pik-step--1);
+    color: var(--pik-ink);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-row__artist {
+    font-size: var(--pik-step--2);
+    color: var(--pik-muted);
+  }
+
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .transport__time {
+    font-family: var(--pik-font-mono);
+    font-size: var(--pik-step--2);
+    color: var(--pik-faint);
+    margin-inline-start: auto;
+  }
+
+  .seek {
+    inline-size: 100%;
+  }
+
+  @media (max-width: 620px) {
+    .audio-dock__label {
+      display: none;
+    }
+  }
+}
