@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta name="referrer" content="no-referrer">
+<title>Wireless Communication · PIK · PIK Inc.</title>
+<meta name="description" content="New PIK feature: Bluetooth device-to-device messaging that uses zero cellular or Wi-Fi data, with range limits honestly explained.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/00-tokens.css">
+<link rel="stylesheet" href="./css/00b-aliases.css">
+<link rel="stylesheet" href="./css/01-reset.css">
+<link rel="stylesheet" href="./css/02-typography.css">
+<link rel="stylesheet" href="./css/03-layout.css">
+<link rel="stylesheet" href="./css/04-glass-core.css">
+<link rel="stylesheet" href="./css/05-glass-variants.css">
+<link rel="stylesheet" href="./css/06-buttons.css">
+<link rel="stylesheet" href="./css/07-forms.css">
+<link rel="stylesheet" href="./css/08-navigation.css">
+<link rel="stylesheet" href="./css/09-footer.css">
+<link rel="stylesheet" href="./css/10-motion.css">
+<link rel="stylesheet" href="./css/11-depth-3d.css">
+<link rel="stylesheet" href="./css/12-background-canvas.css">
+<link rel="stylesheet" href="./css/13-products.css">
+<link rel="stylesheet" href="./css/14-audio.css">
+<link rel="stylesheet" href="./css/15-modals.css">
+<link rel="stylesheet" href="./css/16-settings.css">
+<link rel="stylesheet" href="./css/17-auth.css">
+<link rel="stylesheet" href="./css/18-security.css">
+<link rel="stylesheet" href="./css/19-docs.css">
+<link rel="stylesheet" href="./css/20-responsive.css">
+<link rel="stylesheet" href="./css/21-accessibility.css">
+<link rel="stylesheet" href="./css/22-widgets.css">
+<link rel="stylesheet" href="./css/99-misc.css">
+</head>
+
+<body data-root="./" data-page="wireless">
+<a class="skip-link" href="#main">Skip to content</a>
+<main class="page" id="main">
+
+<section class="section section--flush page-hero">
+  <div class="shell split">
+    <div class="stack stack--tight">
+      <p class="u-eyebrow reveal">NEW · SHIPPING TODAY</p>
+      <h1 class="u-display">Wireless Communication</h1>
+      <p class="u-lede reveal">Send messages between nearby PIK devices over Bluetooth — no cellular plan, no Wi-Fi uplink, no access point that could log you. The radio does the work instead of the tower.</p>
+      <div class="btn-row reveal">
+        <button class="btn btn--primary btn--lg" type="button" data-wireless-demo>Simulate pairing</button>
+        <a class="btn btn--outline btn--lg" href="./security.html">How it stays anonymous</a>
+      </div>
+      <p class="u-small u-faint" data-wireless-status aria-live="polite">Idle. No radios have been touched yet.</p>
+    </div>
+    <div class="card glass--deep tilt" style="padding:2rem;display:grid;gap:1rem;place-items:center">
+      <svg viewBox="0 0 140 140" width="190" height="190" fill="none" stroke="var(--pik-accent)" stroke-width="2" aria-hidden="true">
+        <circle cx="70" cy="70" r="8" fill="var(--pik-accent)" stroke="none"/>
+        <path d="M70 38a32 32 0 0 1 0 64M70 22a48 48 0 0 1 0 96" opacity=".55"/>
+        <path d="M70 38a32 32 0 0 0 0 64M70 22a48 48 0 0 0 0 96" opacity=".55"/>
+        <path d="M56 60l28 20-14 10V50l14 10-28 20" stroke-width="2.6" stroke-linejoin="round"/>
+      </svg>
+      <span class="chip chip--live"><span class="chip__dot"></span>Mesh status: healthy</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="grid grid--3">
+      <div class="card glass reveal">
+        <h3 class="u-h3">Zero data consumption</h3>
+        <p class="u-mid">Messages travel the last few metres by Bluetooth LE instead of riding a carrier network — ideal when plans are metered, congested or monitored.</p>
+      </div>
+      <div class="card glass reveal">
+        <h3 class="u-h3">Short-range by design</h3>
+        <p class="u-mid">A ~10–30 metre envelope is exactly what makes the channel hard to surveil: an observer needs to be standing next to both devices.</p>
+      </div>
+      <div class="card glass reveal">
+        <h3 class="u-h3">Hash-routed identity</h3>
+        <p class="u-mid">Peers exchange rotating SHA-256 aliases rather than phone numbers, so a captured packet maps back to a relay record — never to you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell split">
+    <div class="panel reveal--left">
+      <h2 class="u-h3">Feel the range limit</h2>
+      <p class="u-small u-faint">The honest trade-off: Bluetooth only reaches so far. Drag the slider to see how link quality falls off with distance.</p>
+      <div class="meter-row">
+        <div class="meter-head"><span>Device separation</span><span class="value-readout" data-range-readout>10 m</span></div>
+        <input class="range" type="range" min="1" max="80" value="10" data-range-slider aria-label="Distance between devices in metres">
+      </div>
+      <div class="meter-row">
+        <div class="meter-head"><span>Expected throughput</span></div>
+        <div class="meter"><div class="meter-fill" data-meter="88"></div></div>
+      </div>
+      <p class="doc-callout" data-range-verdict>Strong signal — full mesh throughput.</p>
+    </div>
+    <div class="stack reveal--right">
+      <h2 class="u-h2">Where it fits in the suite</h2>
+      <ul class="doc-list">
+        <li><strong>Pikuflix:</strong> hand off a watch party invite across the room without touching the internet.</li>
+        <li><strong>PIK VPN:</strong> use a paired device as an exit hop when public Wi-Fi is hostile.</li>
+        <li><strong>PIKOS:</strong> system-level fallback messaging during outages, when towers are down or throttled.</li>
+        <li><strong>PIK IDE:</strong> beam a snippet to a colleague's laptop sitting two desks away.</li>
+      </ul>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="./products.html">Back to products</a>
+        <a class="btn btn--ghost" href="./settings.html">Tune notifications</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="panel glass--tinted noise-edge" style="text-align:center">
+      <h2 class="u-h2">Availability</h2>
+      <p class="u-lede" style="max-width:56ch;margin-inline:auto">Wireless Communication is rolling out now across PIK apps and arrives in PIKOS alpha with the Q3 2027 build. Pairing requires both devices to run any current PIK client.</p>
+      <div class="privacy-badges" style="justify-content:center">
+        <span class="p-badge"><svg viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg>Bluetooth 5.0+</span>
+        <span class="p-badge"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>E2E hashed handshake</span>
+        <span class="p-badge"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l14 8"/></svg>No carrier metadata</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<div data-footer></div>
+<script src="./js/crypto-hash.js"></script>
+<script src="./js/anonymity.js"></script>
+<script src="./js/audio-engine.js"></script>
+<script src="./js/toasts.js"></script>
+<script src="./js/motion.js"></script>
+<script src="./js/fx3d.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/settings.js"></script>
+<script src="./js/dock.js"></script>
+<script src="./js/chrome.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>

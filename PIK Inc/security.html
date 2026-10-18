@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta name="referrer" content="no-referrer">
+<title>Security · PIK · PIK Inc.</title>
+<meta name="description" content="How PIK hashes every credential and traces activity to public relays like Freedom-1, FallExit-A and TorNode-3.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/00-tokens.css">
+<link rel="stylesheet" href="./css/00b-aliases.css">
+<link rel="stylesheet" href="./css/01-reset.css">
+<link rel="stylesheet" href="./css/02-typography.css">
+<link rel="stylesheet" href="./css/03-layout.css">
+<link rel="stylesheet" href="./css/04-glass-core.css">
+<link rel="stylesheet" href="./css/05-glass-variants.css">
+<link rel="stylesheet" href="./css/06-buttons.css">
+<link rel="stylesheet" href="./css/07-forms.css">
+<link rel="stylesheet" href="./css/08-navigation.css">
+<link rel="stylesheet" href="./css/09-footer.css">
+<link rel="stylesheet" href="./css/10-motion.css">
+<link rel="stylesheet" href="./css/11-depth-3d.css">
+<link rel="stylesheet" href="./css/12-background-canvas.css">
+<link rel="stylesheet" href="./css/13-products.css">
+<link rel="stylesheet" href="./css/14-audio.css">
+<link rel="stylesheet" href="./css/15-modals.css">
+<link rel="stylesheet" href="./css/16-settings.css">
+<link rel="stylesheet" href="./css/17-auth.css">
+<link rel="stylesheet" href="./css/18-security.css">
+<link rel="stylesheet" href="./css/19-docs.css">
+<link rel="stylesheet" href="./css/20-responsive.css">
+<link rel="stylesheet" href="./css/21-accessibility.css">
+<link rel="stylesheet" href="./css/22-widgets.css">
+<link rel="stylesheet" href="./css/99-misc.css">
+</head>
+
+<body data-root="./" data-page="security">
+<a class="skip-link" href="#main">Skip to content</a>
+<main class="page" id="main">
+
+<section class="section section--flush page-hero">
+  <div class="shell sec-hero">
+    <div class="stack stack--tight">
+      <p class="u-eyebrow reveal">SECURITY MODEL</p>
+      <h1 class="u-display">Hashed, not hoarded</h1>
+      <p class="u-lede reveal">PIK is built so that a full compromise of our infrastructure would still leak nothing. Credentials never exist in plain text, activity is recorded as digests, and every behavioural trace points at a public relay instead of you.</p>
+      <div class="privacy-badges reveal">
+        <span class="p-badge"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>No server-side accounts</span>
+        <span class="p-badge"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>PBKDF2 · 120k rounds</span>
+        <span class="p-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg>Relay-attributed traces</span>
+      </div>
+    </div>
+    <div class="shield-stage reveal reveal--scale" aria-hidden="true">
+      <span class="shield-ring r1"></span>
+      <span class="shield-ring r2"></span>
+      <div class="shield-core">
+        <span class="shield-face"></span>
+        <span class="shield-face"></span>
+        <span class="shield-face"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="stat-trio">
+      <div class="stat-cell card glass reveal"><span class="stat-num" data-count="256">0</span><span class="stat-cap">Bits per identity digest</span></div>
+      <div class="stat-cell card glass reveal"><span class="stat-num" data-count="120000">0</span><span class="stat-cap">PBKDF2 iterations</span></div>
+      <div class="stat-cell card glass reveal"><span class="stat-num" data-count="3">0</span><span class="stat-cap">Relay hops per session</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell split">
+    <div class="hash-panel card glass--deep tilt">
+      <h2 class="u-h3">Live hashing sandbox</h2>
+      <p class="u-small u-faint">Type anything — the digest updates locally, byte by byte. Nothing you enter is transmitted or logged.</p>
+      <label class="field"><span class="field__label">Input</span>
+        <input class="input" type="text" data-hash-input placeholder="try your email…" autocomplete="off"></label>
+      <div class="hash-row"><span class="hash-label"><span>SHA-256</span><span class="u-mono u-tiny">one-way</span></span>
+        <output class="hash-value" data-hash-output>awaiting input…</output></div>
+    </div>
+    <div class="stack reveal">
+      <h2 class="u-h2">What we store about you</h2>
+      <ul class="doc-list">
+        <li><strong>Passwords:</strong> random 16-byte salt + PBKDF2-SHA256 digest, kept in this browser's localStorage only.</li>
+        <li><strong>Emails:</strong> converted to a SHA-256 digest with domain masking; the raw address never leaves your keyboard.</li>
+        <li><strong>Activity:</strong> each interaction becomes a hash record attributed to the current relay exit IP.</li>
+        <li><strong>Preferences:</strong> theme, audio and density settings live beside the hashes — equally local, equally purgeable.</li>
+      </ul>
+      <a class="btn btn--outline" href="./settings.html#danger">Review &amp; purge data</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell split">
+    <div class="stack reveal--left">
+      <p class="u-eyebrow">ANONYMITY LAYER</p>
+      <h2 class="u-h2">Traced to relays, not to you</h2>
+      <p class="u-lede">Every PIK action is stamped with the exit point of a three-hop chain through well-known public relays — Freedom-1, FallExit-A, TorNode-3 and friends that already serve millions of users around the clock. Anyone inspecting the ledger sees relay addresses, never yours.</p>
+      <div class="btn-row">
+        <button class="btn btn--primary" type="button" data-rotate-route>Rotate my route</button>
+        <button class="btn btn--ghost" type="button" data-clear-identity>Purge identity</button>
+      </div>
+    </div>
+    <div class="route-map panel reveal--right" data-route-hops aria-label="Current relay chain"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="panel">
+      <div class="row row--between" style="margin-bottom:1rem">
+        <h2 class="u-h3">Your activity ledger</h2>
+        <span class="chip chip--live"><span class="chip__dot"></span>local only</span>
+      </div>
+      <div class="audit-log" data-activity-log aria-live="off"></div>
+      <p class="u-tiny u-faint" style="margin-top:.75rem">Newest first. Each line is hash → relay attribution; refresh the page and watch records accumulate without any network call leaving this tab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="grid grid--2">
+      <div class="card glass reveal">
+        <h3 class="u-h3">Threat model, honestly</h3>
+        <ul class="doc-list">
+          <li>Who we defend against: network observers, breached databases, subpoena-style requests to PIK.</li>
+          <li>What we cannot promise: protection from a compromised device or a malicious browser extension.</li>
+          <li>Mitigation: strict CSP, no third-party scripts, referrer disabled, all crypto runs client-side.</li>
+        </ul>
+      </div>
+      <div class="card glass reveal">
+        <h3 class="u-h3">Engineering commitments</h3>
+        <ul class="doc-list">
+          <li>No analytics SDK may ever ship in a PIK product.</li>
+          <li>Any new feature must function with cookies and storage blocked.</li>
+          <li>Public relays are named openly so audits can reproduce routing claims.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<div data-footer></div>
+<script src="./js/crypto-hash.js"></script>
+<script src="./js/anonymity.js"></script>
+<script src="./js/audio-engine.js"></script>
+<script src="./js/toasts.js"></script>
+<script src="./js/motion.js"></script>
+<script src="./js/fx3d.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/settings.js"></script>
+<script src="./js/dock.js"></script>
+<script src="./js/chrome.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>

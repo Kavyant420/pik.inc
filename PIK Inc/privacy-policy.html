@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta name="referrer" content="no-referrer">
+<title>Privacy Policy · PIK · PIK Inc.</title>
+<meta name="description" content="How PIK stores only hashes, routes traces through public relays and lets you purge everything locally.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/00-tokens.css">
+<link rel="stylesheet" href="./css/00b-aliases.css">
+<link rel="stylesheet" href="./css/01-reset.css">
+<link rel="stylesheet" href="./css/02-typography.css">
+<link rel="stylesheet" href="./css/03-layout.css">
+<link rel="stylesheet" href="./css/04-glass-core.css">
+<link rel="stylesheet" href="./css/05-glass-variants.css">
+<link rel="stylesheet" href="./css/06-buttons.css">
+<link rel="stylesheet" href="./css/07-forms.css">
+<link rel="stylesheet" href="./css/08-navigation.css">
+<link rel="stylesheet" href="./css/09-footer.css">
+<link rel="stylesheet" href="./css/10-motion.css">
+<link rel="stylesheet" href="./css/11-depth-3d.css">
+<link rel="stylesheet" href="./css/12-background-canvas.css">
+<link rel="stylesheet" href="./css/13-products.css">
+<link rel="stylesheet" href="./css/14-audio.css">
+<link rel="stylesheet" href="./css/15-modals.css">
+<link rel="stylesheet" href="./css/16-settings.css">
+<link rel="stylesheet" href="./css/17-auth.css">
+<link rel="stylesheet" href="./css/18-security.css">
+<link rel="stylesheet" href="./css/19-docs.css">
+<link rel="stylesheet" href="./css/20-responsive.css">
+<link rel="stylesheet" href="./css/21-accessibility.css">
+<link rel="stylesheet" href="./css/22-widgets.css">
+<link rel="stylesheet" href="./css/99-misc.css">
+</head>
+
+<body data-root="./" data-page="docs">
+<a class="skip-link" href="#main">Skip to content</a>
+<main class="page" id="main">
+
+<section class="section">
+  <div class="shell doc-shell">
+    <nav class="doc-toc panel" aria-label="On this page">
+      <span class="doc-toc-title">On this page</span>
+<a href="#data-we-collect">What we collect</a><a href="#data-we-dont">What we explicitly do not collect</a><a href="#anonymity">Anonymity &amp; relay routing</a><a href="#cookies">Cookies &amp; local storage</a><a href="#data-deletion">Data deletion</a><a href="#security-measures">Security measures</a><a href="#changes">Changes to this policy</a>
+    </nav>
+    <article class="doc-body card glass--deep">
+      <header class="doc-head">
+        <p class="u-eyebrow">LEGAL · EFFECTIVE 1 OCT 2026</p>
+        <h1>Privacy Policy</h1>
+        <div class="doc-meta"><span>Effective 1 Oct 2026</span><span>Version 3.2</span></div>
+      </header>
+<section class="doc-section" id="data-we-collect"><h2>What we collect</h2><p class="u-mid">Very little, and never in plain text. PIK products are engineered so that a complete breach of our servers would yield no usable identity data.</p>
+<ul class="doc-list">
+<li><strong>Hashed credentials.</strong> Passwords become PBKDF2-SHA256 digests with a random per-account salt; email addresses become one-way SHA-256 digests used only to recognise your own account locally.</li>
+<li><strong>Local activity records.</strong> Interactions inside PIK apps are hashed into an activity ledger stored in your browser's local storage. The ledger attributes each record to the exit IP of a public relay chain — Freedom-1, FallExit-A, TorNode-3, Privoxy-NY, Anonize-SV, NordPass-7, Cloaknet-X, GuardUML-X or OpenHop-R — rather than to you.</li>
+<li><strong>Preferences.</strong> Theme, density, motion and audio settings persist on your device.</li>
+</ul></section>
+<section class="doc-section" id="data-we-dont"><h2>What we explicitly do not collect</h2><ul class="doc-list">
+<li>No raw email addresses, phone numbers or mailing addresses.</li>
+<li>No third-party analytics, advertising SDKs, session replay or fingerprinting scripts.</li>
+<li>No location history: PIKMAPS routes expire from memory the moment you arrive.</li>
+<li>No content metadata from Wireless Communication messages, which travel device-to-device over Bluetooth without touching carrier networks.</li>
+</ul>
+<div class="doc-callout">Because these data never exist, they cannot be subpoenaed, leaked or sold. That is the entire privacy strategy in one sentence.</div></section>
+<section class="doc-section" id="anonymity"><h2>Anonymity &amp; relay routing</h2><p class="u-mid">Every recorded action carries the address of the relay exit that served it at the time. Chains rotate through three hops drawn from well-known public relay networks, refreshed on demand from Settings → Privacy. Anyone examining a record sees a shared relay endpoint used by many unrelated users, not a personal identifier.</p>
+<p class="u-mid">Relay attribution is a transparency mechanism, not a guarantee of untraceability against a determined local adversary; pair it with PIK VPN for hostile networks.</p></section>
+<section class="doc-section" id="cookies"><h2>Cookies &amp; local storage</h2><p class="u-mid">PIK sets no cookies. State lives in localStorage scoped to this browser: identity hashes, route chains, preference blobs and waitlist digests. Blocking storage degrades convenience features but never breaks core functionality — every product must ship able to run with storage disabled.</p></section>
+<section class="doc-section" id="data-deletion"><h2>Data deletion</h2><p class="u-mid">You control erasure completely:</p>
+<ul class="doc-list">
+<li>Settings → Danger zone → <em>Purge</em> deletes alias hashes, the activity ledger, route chains, accounts and sessions instantly.</li>
+<li>Clearing browser storage achieves the same result; there is no server-side copy to request removal of.</li>
+<li>Pikuflix watchlists and PIK IDE workspaces live only on the device that created them.</li>
+</ul>
+<p class="u-mid">Deletion requests sent to our mailbox can only be acknowledged, because there is nothing on our side to delete — a design choice we consider the more honest answer.</p></section>
+<section class="doc-section" id="security-measures"><h2>Security measures</h2><ul class="doc-list">
+<li>Content-Security-Policy headers forbid inline remote scripts; referrer is disabled site-wide.</li>
+<li>All cryptographic operations run client-side via WebCrypto with a pure-JS fallback for older engines.</li>
+<li>Wireless Communication handshakes exchange rotating aliases instead of persistent identifiers.</li>
+<li>PIKOS enforces hashing at the syscall layer for products shipped on it.</li>
+</ul></section>
+<section class="doc-section" id="changes"><h2>Changes to this policy</h2><p class="u-mid">Material changes are announced in-app at least 30 days before taking effect, with a diff view in Settings. Continued use after the notice period constitutes acceptance.</p></section>
+      <footer class="doc-footer-note">
+        <a class="link-arrow" href="./terms-of-service.html">← Privacy Policy</a>
+        <span>PIK Inc. · questions: privacy@pik.example (PGP on request)</span>
+        <a class="link-arrow" href="./terms-of-service.html">Terms of Service →</a>
+      </footer>
+    </article>
+  </div>
+</section>
+
+</main>
+<div data-footer></div>
+<script src="./js/crypto-hash.js"></script>
+<script src="./js/anonymity.js"></script>
+<script src="./js/audio-engine.js"></script>
+<script src="./js/toasts.js"></script>
+<script src="./js/motion.js"></script>
+<script src="./js/fx3d.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/settings.js"></script>
+<script src="./js/dock.js"></script>
+<script src="./js/chrome.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta name="referrer" content="no-referrer">
+<title>Settings · PIK · PIK Inc.</title>
+<meta name="description" content="Customize PIK: themes, density, the NCS-style ambient soundtrack, anonymity routes and local data purging.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/00-tokens.css">
+<link rel="stylesheet" href="./css/00b-aliases.css">
+<link rel="stylesheet" href="./css/01-reset.css">
+<link rel="stylesheet" href="./css/02-typography.css">
+<link rel="stylesheet" href="./css/03-layout.css">
+<link rel="stylesheet" href="./css/04-glass-core.css">
+<link rel="stylesheet" href="./css/05-glass-variants.css">
+<link rel="stylesheet" href="./css/06-buttons.css">
+<link rel="stylesheet" href="./css/07-forms.css">
+<link rel="stylesheet" href="./css/08-navigation.css">
+<link rel="stylesheet" href="./css/09-footer.css">
+<link rel="stylesheet" href="./css/10-motion.css">
+<link rel="stylesheet" href="./css/11-depth-3d.css">
+<link rel="stylesheet" href="./css/12-background-canvas.css">
+<link rel="stylesheet" href="./css/13-products.css">
+<link rel="stylesheet" href="./css/14-audio.css">
+<link rel="stylesheet" href="./css/15-modals.css">
+<link rel="stylesheet" href="./css/16-settings.css">
+<link rel="stylesheet" href="./css/17-auth.css">
+<link rel="stylesheet" href="./css/18-security.css">
+<link rel="stylesheet" href="./css/19-docs.css">
+<link rel="stylesheet" href="./css/20-responsive.css">
+<link rel="stylesheet" href="./css/21-accessibility.css">
+<link rel="stylesheet" href="./css/22-widgets.css">
+<link rel="stylesheet" href="./css/99-misc.css">
+</head>
+
+<body data-root="./" data-page="settings">
+<a class="skip-link" href="#main">Skip to content</a>
+<main class="page" id="main">
+
+<section class="section section--flush page-hero">
+  <div class="shell row row--between" style="align-items:flex-end">
+    <div class="stack stack--tight">
+      <p class="u-eyebrow reveal">CUSTOMIZE PIK</p>
+      <h1 class="u-display">Your studio, your rules</h1>
+      <p class="u-lede reveal">Themes, density, the ambient NCS soundtrack and the anonymity layer — every preference is saved locally and applied instantly.</p>
+    </div>
+    <span class="saved-flash chip" role="status">Saved ✓</span>
+  </div>
+</section>
+
+<div class="shell settings-layout" data-settings-page>
+  <nav class="settings-nav panel" aria-label="Settings sections">
+    <a class="settings-nav__item is-active" href="#appearance">Appearance</a>
+    <a class="settings-nav__item" href="#audio">Audio &amp; music</a>
+    <a class="settings-nav__item" href="#privacy">Privacy &amp; anonymity</a>
+    <a class="settings-nav__item" href="#motion">Motion &amp; effects</a>
+    <a class="settings-nav__item" href="#danger">Danger zone</a>
+  </nav>
+
+  <div class="settings-panel stack">
+
+    <section class="setting-group card glass" id="appearance">
+      <div class="setting-group__head">
+        <h2 class="setting-group__title">Appearance</h2>
+        <p class="setting-group__desc">Six curated themes built on the same glass system. Daylight flips the whole substrate to a light palette.</p>
+      </div>
+      <div class="swatches"><button class="swatch swatch--midnight" type="button" data-theme-set="midnight" aria-label="Midnight theme"><span class="sr-only">Midnight</span></button><button class="swatch swatch--aurora" type="button" data-theme-set="aurora" aria-label="Aurora theme"><span class="sr-only">Aurora</span></button><button class="swatch swatch--nebula" type="button" data-theme-set="nebula" aria-label="Nebula theme"><span class="sr-only">Nebula</span></button><button class="swatch swatch--ember" type="button" data-theme-set="ember" aria-label="Ember theme"><span class="sr-only">Ember</span></button><button class="swatch swatch--tide" type="button" data-theme-set="tide" aria-label="Tide theme"><span class="sr-only">Tide</span></button><button class="swatch swatch--daylight" type="button" data-theme-set="daylight" aria-label="Daylight theme"><span class="sr-only">Daylight</span></button></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Density</span><span class="setting-row__hint">Compact packs more per screen; roomy gives the glass space to breathe.</span></span><select class="input" data-density-select><option value="normal">Normal</option><option value="compact">Compact</option><option value="roomy">Roomy</option></select></div>
+    </section>
+
+    <section class="setting-group card glass" id="audio">
+      <div class="setting-group__head">
+        <h2 class="setting-group__title">Audio &amp; music</h2>
+        <p class="setting-group__desc">The site-wide ambience is synthesised live in your browser with the Web Audio API — no audio files, no streaming requests, nothing that could be logged about you. The playlist leans into NoCopyrightSounds-style electronica so it stays safe for shared screens and streams.</p>
+      </div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Enable music</span><span class="setting-row__hint">Master switch. Off means the synth never starts an oscillator.</span></span><label class="switch"><input type="checkbox" data-setting-input="audioEnabled" role="switch"><span class="switch__track"></span><span class="sr-only">Enable music</span></label></div>
+      <div class="setting-row">
+        <span class="setting-row__label"><span class="setting-row__name">Volume</span>
+        <span class="setting-row__hint">Applies to the whole mix bus.</span></span>
+        <span class="row" style="gap:.75rem">
+          <input class="range" type="range" min="0" max="100" value="35" data-audio-volume aria-label="Music volume">
+          <span class="value-readout" data-audio-volume-out>35%</span>
+        </span>
+      </div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Mute</span><span class="setting-row__hint">Silences instantly without forgetting your level.</span></span><label class="switch"><input type="checkbox" data-setting-input="audioMute" role="switch"><span class="switch__track"></span><span class="sr-only">Mute</span></label></div>
+      <div class="hash-preview">
+        <h3 class="u-h3">NCS-style playlist</h3>
+        <div class="kv-list" data-audio-tracks></div>
+        <p class="u-tiny u-faint">Click any track to switch the live synth pattern. Tempo, waveform and chord set change per track.</p>
+      </div>
+    </section>
+
+    <section class="setting-group card glass" id="privacy">
+      <div class="setting-group__head">
+        <h2 class="setting-group__title">Privacy &amp; anonymity</h2>
+        <p class="setting-group__desc">PIK records what you do only as hashes, and attributes each record to a public relay exit instead of your device. Rotate the chain whenever you like.</p>
+      </div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv__key">Anonymous alias</span><span class="kv__val" data-anon-alias>…</span></div>
+        <div class="kv"><span class="kv__key">Identity hash (SHA-256)</span><span class="kv__val hash-preview" data-anon-hash>…</span></div>
+        <div class="kv"><span class="kv__key">Visits on this device</span><span class="kv__val" data-anon-visits>—</span></div>
+      </div>
+      <div class="route-map" data-route-hops aria-label="Current relay route"></div>
+      <div class="btn-row">
+        <button class="btn btn--outline" type="button" data-rotate-route>Rotate route</button>
+      </div>
+    </section>
+
+    <section class="setting-group card glass" id="motion">
+      <div class="setting-group__head">
+        <h2 class="setting-group__title">Motion &amp; effects</h2>
+        <p class="setting-group__desc">Background canvas, tilt and reveals respect prefers-reduced-motion automatically; these switches are for taste.</p>
+      </div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Background effects</span><span class="setting-row__hint">Gradient mesh, particle canvas and grain overlay.</span></span><label class="switch"><input type="checkbox" data-setting-input="fx" role="switch"><span class="switch__track"></span><span class="sr-only">Background effects</span></label></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Lite mode</span><span class="setting-row__hint">Disables blur, glow and canvas entirely for low-power machines.</span></span><label class="switch"><input type="checkbox" data-setting-input="perf-lite" role="switch"><span class="switch__track"></span><span class="sr-only">Lite mode</span></label></div>
+    </section>
+
+    <section class="setting-group card glass danger-zone" id="danger">
+      <div class="setting-group__head">
+        <h2 class="setting-group__title">Danger zone</h2>
+        <p class="setting-group__desc">Everything PIK knows about you lives in this browser. Purging is instant and irreversible — there is no server copy to restore from, by design.</p>
+      </div>
+      <div class="setting-row">
+        <span class="setting-row__label"><span class="setting-row__name">Purge all local identity data</span>
+        <span class="setting-row__hint">Alias hash, activity log, route chain, accounts, sessions and waitlists.</span></span>
+        <button class="btn btn--danger" type="button" data-clear-identity>Purge</button>
+      </div>
+      <div class="hash-preview">
+        <h3 class="u-h3">Activity ledger</h3>
+        <div class="audit-log" data-activity-log aria-live="off"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+</main>
+<div data-footer></div>
+<script src="./js/crypto-hash.js"></script>
+<script src="./js/anonymity.js"></script>
+<script src="./js/audio-engine.js"></script>
+<script src="./js/toasts.js"></script>
+<script src="./js/motion.js"></script>
+<script src="./js/fx3d.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/settings.js"></script>
+<script src="./js/dock.js"></script>
+<script src="./js/chrome.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>
