@@ -1,0 +1,124 @@
+/* ============================================================================
+   PIK//NEXUS — 33-nexus-ide.css
+   The right-hand IDE dock: VS Code-flavoured tab bar, line-number gutter,
+   highlighted code layer under a transparent textarea, minimap, status strip.
+   Pure black/grey; token colors stay inside the grey family but with enough
+   luminance separation for real syntax legibility.
+   ========================================================================= */
+
+.nx-dock {
+  grid-area: dock; display: flex; flex-direction: column; min-width: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.005));
+  border-left: 1px solid var(--nx-line);
+  backdrop-filter: blur(calc(var(--nx-blur) * .8));
+}
+@media (min-width: 1281px) { .nx-dock { transform: none !important; } }
+
+.nx-dock__head { display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-bottom: 1px solid var(--nx-line); }
+.nx-dock__title { font-family: var(--nx-font-mono); font-size: .64rem; letter-spacing: .2em;
+  color: var(--nx-txt-faint); text-transform: uppercase; }
+.nx-dock__actions { margin-left: auto; display: flex; gap: 6px; }
+
+/* tabs */
+.nx-tabs { display: flex; overflow-x: auto; border-bottom: 1px solid var(--nx-line);
+  background: rgba(0,0,0,.45); scrollbar-width: none; }
+.nx-tabs::-webkit-scrollbar { display: none; }
+.nx-tab {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 9px 16px; font-family: var(--nx-font-mono); font-size: .72rem;
+  color: var(--nx-txt-faint); cursor: pointer; border-right: 1px solid var(--nx-line);
+  border-top: 2px solid transparent; transition: all var(--nx-fast);
+  background: transparent;
+}
+.nx-tab:hover { color: var(--nx-txt); background: rgba(255,255,255,.04); }
+.nx-tab.is-active { color: #fff; background: rgba(255,255,255,.06);
+  border-top-color: var(--nx-grey); box-shadow: inset 0 8px 18px -12px rgba(158,164,173,.5); }
+.nx-tab i.dotdir { width: 6px; height: 6px; border-radius: 2px; background: var(--nx-dgrey); }
+.nx-tab .x { opacity: .4; font-style: normal; }
+.nx-tab .x:hover { opacity: 1; color: var(--nx-danger); }
+
+/* editor body */
+.nx-editor { position: relative; flex: 1; display: flex; min-height: 0;
+  background: #08080a;
+  font-family: var(--nx-font-mono); font-size: .82rem; line-height: 1.55;
+}
+.nx-editor__gutter {
+  flex: 0 0 46px; overflow: hidden; text-align: right; padding: 12px 10px 12px 0;
+  color: #3c4046; background: #060608; border-right: 1px solid var(--nx-line);
+  user-select: none; white-space: pre; font-size: .74rem;
+}
+.nx-editor__code { position: relative; flex: 1; min-width: 0; overflow: hidden; }
+.nx-editor__hl, .nx-editor__ta {
+  position: absolute; inset: 0; margin: 0; padding: 12px 16px;
+  font: inherit; line-height: inherit; letter-spacing: 0; tab-size: 2;
+  white-space: pre; overflow: auto; border: 0;
+}
+.nx-editor__hl { pointer-events: none; color: #dfe2e6; z-index: 1; }
+.nx-editor__ta {
+  background: transparent; color: transparent; caret-color: var(--nx-grey-hi);
+  resize: none; outline: none; z-index: 2;
+}
+.nx-editor__ta::selection { background: rgba(158,164,173,.28); color: transparent; }
+
+/* active-line glow band */
+.nx-editor::after {
+  content: ""; position: absolute; left: 46px; right: 60px; top: 12px; height: 1.55em;
+  background: linear-gradient(90deg, rgba(158,164,173,.07), transparent);
+  pointer-events: none;
+}
+
+/* syntax token palette — greys w/ strong luminance steps + faint steel tints */
+.tk-k  { color: #e8eaee; font-weight: 600; }                       /* keywords: near-white */
+.tk-f  { color: #b9c0cb; }                                          /* functions: silver */
+.tk-t  { color: #8f96a1; text-decoration: underline;
+         text-decoration-color: rgba(158,164,173,.4); }              /* types/classes */
+.tk-st { color: #7fa39d; }                                          /* strings: cold steel-green */
+.tk-cm { color: #4b5057; font-style: italic; }                      /* comments */
+.tk-nu { color: #c9ced6; }                                          /* numbers: light grey */
+
+/* minimap */
+.nx-editor__minimap {
+  flex: 0 0 56px; overflow: hidden; background: #050506;
+  border-left: 1px solid var(--nx-line); position: relative; opacity: .8;
+}
+.nx-editor__minimap .mm__code {
+  font-size: 3px; line-height: 5px; padding: 4px; margin: 0;
+  transform-origin: top left; white-space: pre; filter: grayscale(.3);
+}
+
+/* editor status strip */
+.nx-editor__status {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+  font-family: var(--nx-font-mono); font-size: .62rem; color: var(--nx-txt-faint);
+  border-top: 1px solid var(--nx-line); background: rgba(0,0,0,.5);
+  overflow-x: auto; white-space: nowrap;
+}
+.nx-editor__status i { font-style: normal; opacity: .35; }
+.ed-digest { color: var(--nx-grey); }
+.ed-dirty { color: var(--nx-danger); animation: nx-pulse 1.6s infinite; }
+
+/* welcome pane when no file is open */
+.nx-editor__empty {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 10px;
+  text-align: center; color: var(--nx-txt-faint); font-size: .78rem; z-index: 3;
+  background: rgba(5,5,6,.8); backdrop-filter: blur(4px);
+}
+.nx-editor__empty svg { width: 42px; height: 42px; opacity: .3; margin: 0 auto; }
+
+/* push-to-github bar at dock bottom */
+.nx-pushbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-top: 1px solid var(--nx-line); background: rgba(255,255,255,.02); }
+.nx-pushbar input {
+  flex: 1; min-width: 0; background: rgba(0,0,0,.5); border: 1px solid var(--nx-line);
+  color: var(--nx-txt); font-family: var(--nx-font-mono); font-size: .68rem;
+  padding: 7px 10px; border-radius: 9px; outline: none;
+}
+.nx-pushbar input:focus { border-color: var(--nx-grey); box-shadow: 0 0 0 3px rgba(158,164,173,.12); }
+
+/* log panel (agent actions / digests) */
+.nx-log { max-height: 110px; overflow-y: auto; border-top: 1px solid var(--nx-line);
+  padding: 6px 12px; font-family: var(--nx-font-mono); font-size: .6rem; color: var(--nx-txt-faint);
+  background: rgba(0,0,0,.4); }
+.nx-log div { padding: 2px 0; border-bottom: 1px dashed rgba(255,255,255,.04); animation: nx-msgin .3s both; }
+.nx-log b { color: var(--nx-grey); font-weight: 500; }

@@ -1,0 +1,95 @@
+/* ============================================================================
+   PIK//NEXUS — 32-nexus-orb.css
+   The 3D thinking core: CSS-only rotating gyroscope whose ring count, spin
+   speed and glow scale with the Low -> Medium -> High -> Max ladder.
+   ========================================================================= */
+
+.nx-orbwrap { display: grid; place-items: center; padding: 8px 0 4px; }
+
+.orb {
+  --orb-spin: 5.5s; --orb-pulse: 5s;
+  position: relative; width: 120px; height: 120px;
+  transform-style: preserve-3d;
+  perspective: 600px;
+  transition: width var(--nx-slow) var(--nx-ease), height var(--nx-slow) var(--nx-ease);
+}
+.orb[data-level="low"]    { width: 78px;  height: 78px; }
+.orb[data-level="medium"] { width: 98px;  height: 98px; }
+.orb[data-level="high"]   { width: 120px; height: 120px; }
+.orb[data-level="max"]    { width: 148px; height: 148px; }
+
+/* core sphere — layered radial greys give it volume without color */
+.orb__core {
+  position: absolute; inset: 26%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.85), rgba(201,206,214,.35) 26%, transparent 55%),
+    radial-gradient(circle at 68% 74%, rgba(78,82,89,.9), transparent 60%),
+    radial-gradient(circle at 50% 50%, #2b2e33 0%, #101114 62%, #050506 100%);
+  box-shadow:
+    0 0 34px rgba(158,164,173,.35),
+    inset -8px -10px 22px rgba(0,0,0,.85),
+    inset 6px 8px 18px rgba(255,255,255,.12);
+  animation: orb-pulse var(--orb-pulse) ease-in-out infinite;
+}
+@keyframes orb-pulse {
+  0%,100% { transform: scale(1); filter: brightness(1); }
+  50%     { transform: scale(1.08); filter: brightness(1.25); }
+}
+
+/* orbit rings — each one a tilted 3D circle */
+.orb__ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(158,164,173,.5);
+  border-top-color: rgba(231,233,236,.9);
+  border-bottom-color: transparent;
+  transform-style: preserve-3d;
+  animation: orb-spin var(--orb-spin) linear infinite;
+}
+.orb__ring--1 { transform: rotateX(64deg); }
+.orb__ring--2 { transform: rotateX(64deg) rotateY(60deg);  animation-direction: reverse; opacity: .8; }
+.orb__ring--3 { transform: rotateX(24deg) rotateZ(48deg);  animation-duration: calc(var(--orb-spin) * 1.6); opacity: .65; }
+.orb__ring--4 { transform: rotateY(70deg) rotateZ(-30deg); animation-duration: calc(var(--orb-spin) * .8); opacity: .5;
+                border-style: dashed; }
+.orb__ring--5 { transform: rotateX(80deg) rotateY(20deg);  animation-duration: calc(var(--orb-spin) * 2.2); opacity: .4; }
+@keyframes orb-spin { to { transform: rotateX(64deg) rotateY(360deg); } }
+
+/* satellites riding the rings */
+.orb__sat {
+  position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px;
+  border-radius: 50%; background: var(--nx-grey-hi);
+  box-shadow: 0 0 12px 2px rgba(201,206,214,.7);
+}
+
+/* halo intensity per level */
+.orb::before {
+  content: ""; position: absolute; inset: -30%;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(158,164,173,.16), transparent 62%);
+  opacity: 0; transition: opacity var(--nx-slow);
+}
+.orb[data-level="medium"]::before { opacity: .5; }
+.orb[data-level="high"]::before   { opacity: .8; }
+.orb[data-level="max"]::before    { opacity: 1; animation: orb-pulse calc(var(--orb-pulse) * .7) ease-in-out infinite; }
+
+/* MAX mode gets an electric arc cage */
+.orb[data-level="max"] .orb__core {
+  box-shadow:
+    0 0 60px rgba(201,206,214,.55),
+    inset -8px -10px 22px rgba(0,0,0,.85),
+    inset 6px 8px 18px rgba(255,255,255,.2);
+}
+.orb[data-level="max"]::after {
+  content: ""; position: absolute; inset: -12px; border-radius: 50%;
+  border: 2px dotted rgba(201,206,214,.35);
+  animation: orb-spin 2.4s linear infinite reverse;
+}
+
+/* thinking label under the orb */
+.nx-orb-label { font-family: var(--nx-font-mono); font-size: .62rem; letter-spacing: .3em;
+  color: var(--nx-txt-faint); text-transform: uppercase; margin-top: 10px; }
+.nx-orb-label b { color: var(--nx-grey-hi); }
+
+/* idle (not streaming): dim + slow */
+.orb.is-idle { opacity: .35; filter: saturate(.4); }
+.orb.is-idle .orb__ring { animation-play-state: paused; }

@@ -1,0 +1,149 @@
+/* ============================================================================
+   PIK//NEXUS — 35-nexus-animations.css
+   Ambient + micro-interaction library: floating shards, gradient borders,
+   aurora drift, glitch-in text, magnetic hover, scroll reveals, marquee of
+   provider logos (CDN), press physics. Everything respects reduced-motion.
+   ========================================================================= */
+
+/* ---------- scroll reveal ---------- */
+.fx-reveal { opacity: 0; transform: translateY(26px) rotateX(8deg);
+  transition: opacity .7s var(--nx-ease), transform .7s var(--nx-ease); }
+.fx-reveal.is-revealed { opacity: 1; transform: none; }
+
+/* ---------- 3D tilt cards ---------- */
+.fx-tilt { transition: transform .18s ease-out, box-shadow .3s; will-change: transform; }
+.fx-tilt::after { /* sheen that follows the tilt hotspot */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(340px circle at var(--tilt-x, 50%) var(--tilt-y, 50%),
+              rgba(255,255,255,.09), transparent 60%);
+  opacity: 0; transition: opacity .3s;
+}
+.fx-tilt:hover::after { opacity: 1; }
+
+/* ---------- animated gradient border (conic) ---------- */
+.nx-glowborder { position: relative; }
+.nx-glowborder::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; z-index: -1;
+  background: conic-gradient(from var(--gb-a, 0deg),
+    transparent 0 60%, rgba(158,164,173,.7) 72%, rgba(78,82,89,.9) 80%, transparent 92%);
+  animation: gb-spin 6s linear infinite; filter: blur(.5px);
+}
+@property --gb-a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes gb-spin { to { --gb-a: 360deg; } }
+/* fallback for browsers without @property: keep a slow rotating pseudo */
+@supports not (background: conic-gradient(from var(--gb-a), red, blue)) {
+  .nx-glowborder::before { background: var(--nx-grad-primary); background-size: 300% 300%;
+    animation: nx-gradshift 8s ease infinite; opacity: .5; }
+}
+
+/* ---------- floating decorative shards (pure CSS 3D) ---------- */
+.nx-shards { position: fixed; inset: 0; pointer-events: none; z-index: 0; perspective: 900px; overflow: hidden; }
+.nx-shard {
+  position: absolute; width: var(--sw, 90px); height: var(--sh, 90px);
+  background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.01));
+  border: 1px solid rgba(255,255,255,.06); border-radius: 18px;
+  backdrop-filter: blur(2px);
+  animation: shard-float var(--sd, 26s) ease-in-out infinite alternate;
+  transform-style: preserve-3d; opacity: .5;
+}
+@keyframes shard-float {
+  from { transform: translateY(-3vh) rotateX(var(--rx, 20deg)) rotateY(0deg) rotateZ(var(--rz, 8deg)); }
+  to   { transform: translateY(4vh)  rotateX(calc(var(--rx, 20deg) * -1)) rotateY(180deg) rotateZ(calc(var(--rz, 8deg) * -1)); }
+}
+
+/* ---------- aurora drift band behind topbar ---------- */
+.nx-aurora { position: fixed; top: 0; left: 0; right: 0; height: 240px; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(600px 180px at 20% 0%, rgba(158,164,173,.10), transparent 70%),
+    radial-gradient(700px 200px at 70% 10%, rgba(78,82,89,.14), transparent 70%);
+  animation: aurora-drift 14s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift { to { transform: translateX(-4%) scale(1.06); opacity: .7; } }
+
+/* ---------- logo marquee (provider CDN logos) ---------- */
+.nx-marquee { overflow: hidden; position: relative; padding: 6px 0;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+.nx-marquee__track { display: flex; gap: 34px; width: max-content;
+  animation: mq-scroll 30s linear infinite; }
+.nx-marquee:hover .nx-marquee__track { animation-play-state: paused; }
+.nx-marquee img { height: 18px; width: auto; filter: grayscale(1) brightness(1.6); opacity: .5;
+  transition: all var(--nx-med); }
+.nx-marquee img:hover { filter: none; opacity: 1; transform: scale(1.25); }
+@keyframes mq-scroll { to { transform: translateX(-50%); } }
+
+/* ---------- glitch-in headings ---------- */
+.nx-glitch { position: relative; }
+.nx-glitch::before, .nx-glitch::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none;
+  clip-path: inset(0 0 60% 0); color: rgba(201,206,214,.5);
+  animation: gl-a 3.2s steps(2, jump-none) infinite; mix-blend-mode: screen;
+}
+.nx-glitch::after { clip-path: inset(55% 0 0 0); animation: gl-b 2.6s steps(2, jump-none) infinite reverse; }
+@keyframes gl-a { 0%,92%,100% { transform: none; opacity: 0; } 94% { transform: translate(-3px, 1px); opacity: 1; } }
+@keyframes gl-b { 0%,90%,100% { transform: none; opacity: 0; } 93% { transform: translate(3px, -1px); opacity: 1; } }
+
+/* ---------- streaming caret ---------- */
+.nx-caret { display: inline-block; width: 8px; height: 1.1em; margin-left: 3px; vertical-align: -2px;
+  background: var(--nx-grey-hi); animation: caret-blink .9s steps(1) infinite; }
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+/* ---------- button shine sweep on hover ---------- */
+.nx-btn::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: skewX(-20deg); transition: left .5s var(--nx-ease);
+}
+.nx-btn:hover::before { left: 120%; }
+
+/* ---------- press physics for clay tiles ---------- */
+.nx-clay:active { transform: translateY(2px) scale(.99);
+  box-shadow: inset 0 3px 8px var(--nx-clay-lo), inset 0 -1px 0 var(--nx-clay-hi); }
+
+/* ---------- toast in this theme ---------- */
+.toast-stack { position: fixed; bottom: 40px; right: 18px; z-index: 120; display: flex;
+  flex-direction: column; gap: 10px; }
+.toast { display: flex; gap: 10px; align-items: flex-start; min-width: 260px; max-width: 360px;
+  padding: 13px 16px; border-radius: var(--nx-r-md);
+  background: rgba(12,12,14,.9); backdrop-filter: blur(16px);
+  border: 1px solid var(--nx-line-hi); color: var(--nx-txt);
+  box-shadow: var(--nx-shadow-deep); font-size: .8rem;
+  animation: toast-pop .45s var(--nx-spring) both; }
+.toast__icon svg { width: 16px; height: 16px; stroke: var(--nx-grey); }
+.toast--warn .toast__icon svg { stroke: var(--nx-danger); }
+.toast--success .toast__icon svg { stroke: var(--nx-ok); }
+.toast.is-leaving { animation: toast-out .35s var(--nx-ease) forwards; }
+@keyframes toast-pop { from { transform: translateX(30px) scale(.9); opacity: 0; } }
+@keyframes toast-out { to { transform: translateX(30px); opacity: 0; } }
+
+/* ---------- thinking ladder "charge" effect when set to MAX ---------- */
+.nx-ladder:has(.is-on[data-level="max"]) { animation: ladder-charge 1.4s ease infinite; }
+@keyframes ladder-charge {
+  0%,100% { box-shadow: var(--nx-clay-inset); }
+  50% { box-shadow: var(--nx-clay-inset), 0 0 18px rgba(201,206,214,.35); }
+}
+
+/* ---------- send button rocket trail while streaming ---------- */
+.nx-send.is-streaming::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid rgba(201,206,214,.4); border-top-color: transparent; border-left-color: transparent;
+  animation: spin-fast .8s linear infinite;
+}
+@keyframes spin-fast { to { transform: rotate(360deg); } }
+
+/* ---------- file chip fly-to-dock hint ---------- */
+.nx-filechip.is-new { animation: chip-fly .7s var(--nx-spring) both; }
+@keyframes chip-fly {
+  0% { transform: translate(-40px, 20px) scale(.5) rotate(-8deg); opacity: 0; }
+  60% { transform: translate(4px, -4px) scale(1.06); }
+  100% { transform: none; opacity: 1; }
+}
+
+/* ---------- subtle noise texture overlay (SVG data URI, monochrome) ---------- */
+.nx-noise { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E"); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-shard, .nx-aurora, .nx-marquee__track, .nx-glitch::before, .nx-glitch::after,
+  .nx-glowborder::before { animation: none !important; }
+}
