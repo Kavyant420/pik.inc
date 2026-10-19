@@ -75,8 +75,14 @@ const PIKToasts = (() => {
     return el;
   }
 
-  return { show };
+  return { show: show, push: function (text, type) { return show({ type: type || "info", text: text }); } };
 })();
+
+/* window-references for sandboxed/strict loading + back-compat alias */
+if (typeof window !== "undefined") {
+  window.PIKToasts = PIKToasts;
+  window.Toast = PIKToasts;
+}
 
 const PIKWireless = (() => {
   const KEY = "pik.feature.wireless.seen";
@@ -105,3 +111,7 @@ const PIKWireless = (() => {
 
   return { maybeAnnounce };
 })();
+
+if (typeof window !== "undefined") {
+  window.PIKWireless = PIKWireless;
+}
