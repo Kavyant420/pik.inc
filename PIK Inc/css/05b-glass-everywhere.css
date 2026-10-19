@@ -1,0 +1,328 @@
+@layer pik.glass.max {
+  /* ============================================================
+     GLASS EVERYWHERE — global glassification pass.
+     Applied after the core/variant layers so it can promote any
+     surface (nav, footer, chips, tables, forms, modals, dock,
+     toasts, product cards) to full frosted glass.
+     ============================================================ */
+
+  /* ---- Sticky header: always-on frosted glass bar ---- */
+  .site-header {
+    background-color: color-mix(in srgb, var(--pik-space-900) 42%, transparent);
+    backdrop-filter: blur(var(--pik-blur-lg)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-lg)) saturate(180%);
+    border-block-end: 1px solid var(--pik-glass-line-soft);
+    box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.7);
+  }
+
+  .site-header.is-scrolled {
+    background-color: color-mix(in srgb, var(--pik-space-900) 62%, transparent);
+    backdrop-filter: blur(var(--pik-blur-xl)) saturate(200%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-xl)) saturate(200%);
+  }
+
+  /* Glass pill behind desktop nav links */
+  @media (min-width: 900px) {
+    .nav__links {
+      background-color: var(--pik-glass-bg);
+      border: 1px solid var(--pik-glass-line-soft);
+      border-radius: var(--pik-r-pill);
+      padding: 0.3rem 0.5rem;
+      backdrop-filter: blur(var(--pik-blur-md)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--pik-blur-md)) saturate(160%);
+      box-shadow: var(--pik-shadow-inset);
+    }
+
+    .nav__link {
+      border-radius: var(--pik-r-pill);
+    }
+
+    .nav__link[aria-current="page"],
+    .nav__link.is-active {
+      background-color: var(--pik-glass-bg-strong);
+      box-shadow: var(--pik-shadow-inset);
+    }
+  }
+
+  /* ---- Footer as a giant glass slab ---- */
+  .site-footer {
+    background-color: color-mix(in srgb, var(--pik-space-900) 55%, transparent);
+    backdrop-filter: blur(var(--pik-blur-lg)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-lg)) saturate(160%);
+    border-block-start: 1px solid var(--pik-glass-line-soft);
+  }
+
+  /* ---- Generic surfaces promoted to glass ---- */
+  .chip-row > .p-badge,
+  .chip,
+  .tag,
+  .stat,
+  .kv,
+  .code-block,
+  pre:not(.no-glass),
+  blockquote {
+    background-color: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line-soft);
+    backdrop-filter: blur(var(--pik-blur-sm)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-sm)) saturate(140%);
+    box-shadow: var(--pik-shadow-inset);
+    border-radius: var(--pik-r-sm);
+  }
+
+  /* Tables get a frosted frame + frosted rows */
+  table:not(.glass-table) {
+    background-color: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line-soft);
+    border-radius: var(--pik-r-md);
+    backdrop-filter: blur(var(--pik-blur-md)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-md)) saturate(150%);
+    overflow: hidden;
+    box-shadow: var(--pik-shadow-flat);
+  }
+
+  /* Form fields as inset glass */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    background-color: color-mix(in srgb, var(--pik-space-900) 40%, var(--pik-glass-bg));
+    border: 1px solid var(--pik-glass-line);
+    backdrop-filter: blur(var(--pik-blur-sm));
+    -webkit-backdrop-filter: blur(var(--pik-blur-sm));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: border-color var(--pik-fast) var(--pik-ease-out),
+      box-shadow var(--pik-fast) var(--pik-ease-out),
+      background-color var(--pik-fast) var(--pik-ease-out);
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    border-color: color-mix(in srgb, var(--pik-accent) 55%, var(--pik-glass-line));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 3px color-mix(in srgb, var(--pik-accent) 18%, transparent);
+    background-color: color-mix(in srgb, var(--pik-space-900) 28%, var(--pik-glass-bg-strong));
+  }
+
+  /* Buttons gain a subtle glass sheen */
+  .btn {
+    position: relative;
+    isolation: isolate;
+    backdrop-filter: blur(var(--pik-blur-sm)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-sm)) saturate(150%);
+  }
+
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: var(--pik-glass-shine);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .btn--outline {
+    background-color: var(--pik-glass-bg);
+    border-color: var(--pik-glass-line);
+  }
+
+  .btn--outline:hover {
+    background-color: var(--pik-glass-bg-strong);
+  }
+
+  /* Modals / dialogs / drawers / toasts / dock — deep frost */
+  .modal,
+  .modal__panel,
+  dialog,
+  .sheet-drawer,
+  .drawer,
+  .toast,
+  .audio-dock {
+    background-color: color-mix(in srgb, var(--pik-space-800) 62%, transparent);
+    backdrop-filter: blur(var(--pik-blur-xl)) saturate(190%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-xl)) saturate(190%);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-deep), var(--pik-shadow-inset);
+  }
+
+  /* Modal scrim + native dialog backdrop are frosted too */
+  .modal-backdrop,
+  dialog::backdrop {
+    backdrop-filter: blur(6px) brightness(0.7);
+    -webkit-backdrop-filter: blur(6px) brightness(0.7);
+  }
+
+  /* Product cards: hover lifts the frost + rim glow */
+  .product-card:hover,
+  .card:hover {
+    background-color: var(--pik-glass-bg-strong);
+    box-shadow:
+      var(--pik-shadow-deep),
+      var(--pik-shadow-inset),
+      0 0 0 1px color-mix(in srgb, var(--pik-accent) 22%, transparent);
+  }
+
+  /* Ticker reads as a glass strip */
+  .ticker {
+    background-color: var(--pik-glass-bg);
+    border-block: 1px solid var(--pik-glass-line-soft);
+    backdrop-filter: blur(var(--pik-blur-md)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-md)) saturate(160%);
+  }
+
+  /* Spec sheets, meters, badges on security/auth pages */
+  .meter,
+  .progress,
+  .strength__bars span,
+  .session-chip,
+  .activity-log {
+    background-color: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line-soft);
+    backdrop-filter: blur(var(--pik-blur-sm));
+    -webkit-backdrop-filter: blur(var(--pik-blur-sm));
+    border-radius: var(--pik-r-sm);
+  }
+
+  /* Light theme: keep contrast with milkier glass */
+  [data-theme="daylight"] .site-header,
+  [data-theme="daylight"] .site-footer {
+    background-color: color-mix(in srgb, #ffffff 55%, transparent);
+  }
+
+  /* ============================================================
+     PERFORMANCE TIERS — lite mode keeps the glass *look* but
+     drops the expensive compositing where frames matter.
+     ============================================================ */
+  [data-perf="lite"] .site-header.is-scrolled,
+  [data-perf="lite"] .modal__panel,
+  [data-perf="lite"] dialog,
+  [data-perf="lite"] .drawer,
+  [data-perf="lite"] .toast,
+  [data-perf="lite"] .audio-dock {
+    backdrop-filter: blur(calc(var(--pik-blur-md) * 0.55));
+    -webkit-backdrop-filter: blur(calc(var(--pik-blur-md) * 0.55));
+  }
+
+  [data-perf="lite"] input[type="text"],
+  [data-perf="lite"] input[type="email"],
+  [data-perf="lite"] input[type="password"],
+  [data-perf="lite"] textarea,
+  [data-perf="lite"] select,
+  [data-perf="lite"] .btn,
+  [data-perf="lite"] .chip-row > .p-badge,
+  [data-perf="lite"] pre,
+  [data-perf="lite"] blockquote {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  [data-perf="lite"] .fx-grain,
+  [data-perf="lite"] .fx-scanlines {
+    display: none;
+  }
+
+  [data-perf="lite"] .glass::after,
+  [data-perf="lite"] .btn::after {
+    opacity: 0.35;
+  }
+
+  /* GPU hints for animated glass — promotes layers instead of
+     re-rasterizing blur on every transform frame */
+  .card,
+  .product-card,
+  .dock,
+  .toast,
+  .audio-dock,
+  .site-header {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .card:hover,
+  .product-card:hover {
+    will-change: transform, box-shadow;
+  }
+
+  /* Contain paint so hover effects don't invalidate the blurred bg */
+  .card,
+  .product-card {
+    contain: layout paint style;
+  }
+
+  /* Reduced-transparency fallback (respects OS accessibility) */
+  @media (prefers-reduced-transparency: reduce) {
+    .glass,
+    .site-header,
+    .site-footer,
+    .modal__panel,
+    dialog,
+    .drawer,
+    .toast,
+    .dock,
+    .ticker {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background-color: var(--pik-glass-bg-solid);
+    }
+  }
+
+  /* ---- Global glassification sweep: promote every surface that is not
+     already glass to frosted glass, without clobbering existing styles ---- */
+  .section:not(.section--flush):not(.no-glass):not(.page-hero),
+  article:not(.no-glass),
+  aside:not(.no-glass),
+  .panel:not(.glass),
+  .sheet:not(.glass) {
+    background-color: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line-soft);
+    border-radius: var(--pik-r-lg);
+    backdrop-filter: blur(var(--pik-blur-md)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--pik-blur-md)) saturate(160%);
+    box-shadow: var(--pik-shadow-flat), var(--pik-shadow-inset);
+    padding-block: var(--pik-sp-5);
+    padding-inline: clamp(1rem, 3vw, 2rem);
+  }
+
+  /* Glass sections float as inset slabs within the page column */
+  .page > .section:not(.section--flush):not(.no-glass) {
+    max-inline-size: calc(var(--pik-maxw) + 4rem);
+    margin-inline: auto;
+    margin-block: var(--pik-sp-4);
+  }
+
+  /* Nested panels inside an already-glass parent stay flat (no blur-on-blur cost) */
+  section .panel,
+  section section,
+  .card .kv,
+  .modal .kv {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  /* Lite mode: cheaper sweep — solid translucent tint instead of live blur */
+  [data-perf="lite"] .section:not(.section--flush):not(.no-glass),
+  [data-perf="lite"] article:not(.no-glass),
+  [data-perf="lite"] aside:not(.no-glass) {
+    backdrop-filter: blur(calc(var(--pik-blur-sm) * 0.8));
+    -webkit-backdrop-filter: blur(calc(var(--pik-blur-sm) * 0.8));
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .section:not(.section--flush):not(.no-glass),
+    article:not(.no-glass),
+    aside:not(.no-glass) {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background-color: var(--pik-glass-bg-solid);
+    }
+  }
+}

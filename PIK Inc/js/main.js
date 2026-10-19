@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   PIKSettings.apply();
+  if (window.PIKPerf) PIKPerf.init();
   PIKChrome.mount();
   PIKDock.mount();
   PIK3D.init();

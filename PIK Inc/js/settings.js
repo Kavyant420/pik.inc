@@ -131,6 +131,8 @@ const PIKSettings = (() => {
     scope.querySelectorAll("[data-theme-set]").forEach(btn => {
       btn.addEventListener("click", () => {
         set({ theme: btn.dataset.themeSet });
+        /* let the FX engine re-read accent colors for the new theme */
+        document.dispatchEvent(new CustomEvent("pik:themechange"));
         scope.querySelectorAll("[data-theme-set]").forEach(b => b.classList.toggle("is-active", b === btn));
       });
     });
@@ -141,9 +143,10 @@ const PIKSettings = (() => {
     }
     const perf = scope.querySelector("[data-perf-toggle]");
     if (perf) {
-      perf.checked = load().perf === "lite";
+      perf.checked = load().perf === "lite" || (window.PIKPerf && PIKPerf.getMode() === "lite");
       perf.addEventListener("change", () => {
         set({ perf: perf.checked ? "lite" : "full" });
+        if (window.PIKPerf) PIKPerf.setMode(perf.checked ? "lite" : "full");
         if (perf.checked) PIK3D.stop(); else PIK3D.start();
       });
     }
