@@ -19,14 +19,33 @@ const PIK3D = (() => {
     if (reduced()) return;
     canvas = document.querySelector(".fx-canvas");
     if (!canvas) return;
-    ctx2d = canvas.getContext("2d");
+    ctx2d = canvas.getContext("2d", { alpha: true });
     resize();
-    window.addEventListener("resize", resize);
+    /* rAF-coalesced resize — avoids rebuilding the scene on every drag frame */
+    let resizeRaf = null;
+    window.addEventListener("resize", () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = null;
+        resize();
+        invalidateColors();
+      });
+    }, { passive: true });
+    /* pointer state only — no per-move style writes (was thrashing :root) */
     window.addEventListener("pointermove", ev => {
       tx = (ev.clientX / innerWidth - 0.5) * 2;
       ty = (ev.clientY / innerHeight - 0.5) * 2;
-      document.documentElement.style.setProperty("--mx", tx.toFixed(3));
-      document.documentElement.style.setProperty("--my", ty.toFixed(3));
+    }, { passive: true });
+    /* spotlight vars, rAF-coalesced to one write per frame */
+    let spotRaf = null;
+    window.addEventListener("pointermove", () => {
+      if (spotRaf) return;
+      spotRaf = requestAnimationFrame(() => {
+        spotRaf = null;
+        const s = document.documentElement.style;
+        s.setProperty("--mx", ((tx + 1) / 2 * 100).toFixed(1) + "%");
+        s.setProperty("--my", ((ty + 1) / 2 * 100).toFixed(1) + "%");
+      });
     }, { passive: true });
     start();
   }
@@ -75,6 +94,47 @@ const PIK3D = (() => {
     };
   }
 
+  /* Cache accent colors — getComputedStyle every frame was a layout thrash. */
+  let cachedCols = null;
+  function cols() {
+    if (!cachedCols) {
+      cachedCols = accentColor();
+      cachedCols.rgbA = hexToRgb(cachedCols.a);
+      cachedCols.rgbB = hexToRgb(cachedCols.b);
+    }
+    return cachedCols;
+  }
+  function invalidateColors() { cachedCols = null; }
+
+  /* Spatial-grid neighbor pass replaces the O(n²) link loop. */
+  function neighborLinks(particles, cell) {
+    const grid = new Map();
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      const key = Math.floor(p.x / cell) + "," + Math.floor(p.y / cell);
+      let bucket = grid.get(key);
+      if (!bucket) grid.set(key, (bucket = []));
+      bucket.push(i);
+    }
+    const links = [];
+    for (const [key, bucket] of grid) {
+      const [gx, gy] = key.split(",").map(Number);
+      for (let dx = 0; dx <= 1; dx++) {
+        for (let dy = (dx === 0 ? 0 : -1); dy <= 1; dy++) {
+          const other = grid.get(gx + dx + "," + (gy + dy));
+          if (!other) continue;
+          for (let a = 0; a < bucket.length; a++) {
+            const start = other === bucket ? a + 1 : 0;
+            for (let b = start; b < other.length; b++) {
+              links.push([bucket[a], other[b]]);
+            }
+          }
+        }
+      }
+    }
+    return links;
+  }
+
   function frame(now) {
     if (!running) return;
     ctx2d.clearRect(0, 0, innerWidth, innerHeight);
@@ -88,8 +148,8 @@ const PIK3D = (() => {
   function drawRings(now) {
     const cx = innerWidth * 0.78 + mx * 26;
     const cy = innerHeight * 0.34 + my * 18;
-    const cols = accentColor();
-    const [r1, g1, b1] = hexToRgb(cols.a);
+    const c = cols();
+    const [r1, g1, b1] = c.rgbA;
     rings.forEach((ring, i) => {
       ctx2d.save();
       ctx2d.translate(cx, cy);
@@ -112,9 +172,10 @@ const PIK3D = (() => {
   }
 
   function drawParticles() {
-    const cols = accentColor();
-    const [ra, ga, ba] = hexToRgb(cols.a);
-    const [rb, gb, bb] = hexToRgb(cols.b);
+    const c = cols();
+    const [ra, ga, ba] = c.rgbA;
+    const [rb, gb, bb] = c.rgbB;
+    /* batch dot fills by rounded color to cut state changes */
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
       p.x += p.vx + mx * p.z * 0.35;
@@ -131,33 +192,48 @@ const PIK3D = (() => {
       ctx2d.arc(p.x, p.y, p.size * p.z, 0, Math.PI * 2);
       ctx2d.fillStyle = "rgba(" + cr + "," + cg + "," + cb + "," + (0.16 * p.z + 0.05) + ")";
       ctx2d.fill();
-      for (let j = i + 1; j < particles.length; j++) {
-        const q = particles[j];
-        const dx = p.x - q.x, dy = p.y - q.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < 12000) {
-          ctx2d.beginPath();
-          ctx2d.moveTo(p.x, p.y);
-          ctx2d.lineTo(q.x, q.y);
-          ctx2d.strokeStyle = "rgba(" + cr + "," + cg + "," + cb + "," + (0.05 * (1 - d2 / 12000)) + ")";
-          ctx2d.lineWidth = 0.6;
-          ctx2d.stroke();
-        }
-      }
+    }
+    /* spatial-grid links: O(n·k) instead of O(n²) */
+    const cell = 110;
+    const links = neighborLinks(particles, cell);
+    ctx2d.lineWidth = 0.6;
+    for (let l = 0; l < links.length; l++) {
+      const p = particles[links[l][0]];
+      const q = particles[links[l][1]];
+      const dx = p.x - q.x, dy = p.y - q.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= 12000) continue;
+      const mix = (p.z + q.z) * 0.5;
+      const cr = Math.round(ra + (rb - ra) * mix);
+      const cg = Math.round(ga + (gb - ga) * mix);
+      const cb = Math.round(ba + (bb - ba) * mix);
+      ctx2d.beginPath();
+      ctx2d.moveTo(p.x, p.y);
+      ctx2d.lineTo(q.x, q.y);
+      ctx2d.strokeStyle = "rgba(" + cr + "," + cg + "," + cb + "," + (0.05 * (1 - d2 / 12000)) + ")";
+      ctx2d.stroke();
     }
   }
 
   function start() {
     if (running || !ctx2d) return;
+    invalidateColors();
     running = true;
     raf = requestAnimationFrame(frame);
   }
 
-  function stop() {
+  function stop(clear) {
     running = false;
     if (raf) cancelAnimationFrame(raf);
-    if (ctx2d) ctx2d.clearRect(0, 0, innerWidth, innerHeight);
+    if (clear !== false && ctx2d) ctx2d.clearRect(0, 0, innerWidth, innerHeight);
   }
 
-  return { init, start, stop };
+  function isRunning() {
+    return running;
+  }
+
+  /* Re-read theme accents when settings change them. */
+  document.addEventListener("pik:themechange", invalidateColors);
+
+  return { init, start, stop, isRunning };
 })();

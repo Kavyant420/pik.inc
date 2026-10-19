@@ -67,9 +67,24 @@ const PIKMotion = (() => {
   function initHeader() {
     const header = document.querySelector(".site-header");
     if (!header) return;
-    const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 12);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    /* rAF-throttled scroll: class toggle only when state actually changes */
+    let ticking = false;
+    let last = false;
+    const update = () => {
+      ticking = false;
+      const scrolled = window.scrollY > 12;
+      if (scrolled !== last) {
+        last = scrolled;
+        header.classList.toggle("is-scrolled", scrolled);
+      }
+    };
+    window.addEventListener("scroll", () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+    update();
   }
 
   function initNav(root) {
