@@ -1,0 +1,109 @@
+/* ============================================================================
+   PIK//NEXUS — 30-nexus-tokens.css
+   Standalone design tokens for the NEXUS agentic workbench.
+   Palette contract: BLACK/GREY 85:15 overall; within the grey accent band,
+   primary gradients are 50% grey / 50% dark-grey. No color images, no emojis.
+   ========================================================================= */
+
+.nx-root {
+  /* ---- blacks (85% of the surface area) ---- */
+  --nx-void:      #000000;
+  --nx-black:     #060607;
+  --nx-coal:      #0b0b0d;
+  --nx-onyx:      #121215;
+  --nx-slate:     #1a1a1f;
+  --nx-pitch:     #202026;
+
+  /* ---- greys (the 15%) : 50/50 pairs for every gradient ---- */
+  --nx-grey:      #9ea4ad;   /* light grey  */
+  --nx-dgrey:     #4e5259;   /* dark grey   */
+  --nx-grey-hi:   #c9ced6;
+  --nx-grey-lo:   #34373d;
+  --nx-ash:       #7d838d;
+
+  /* functional neutrals */
+  --nx-line:      rgba(255,255,255,.08);
+  --nx-line-hi:   rgba(255,255,255,.16);
+  --nx-txt:       #e7e9ec;
+  --nx-txt-dim:   #9aa0a8;
+  --nx-txt-faint: #5f646c;
+  --nx-danger:    #b9615f;   /* desaturated alert, stays in the monochrome family */
+  --nx-ok:        #7fa08a;
+
+  /* signature 50/50 gradients (grey | dark grey) */
+  --nx-grad-primary: linear-gradient(135deg, var(--nx-grey) 0%, var(--nx-dgrey) 50%, var(--nx-grey) 100%);
+  --nx-grad-flat:    linear-gradient(90deg,  var(--nx-grey) 50%, var(--nx-dgrey) 50%);
+  --nx-grad-radial:  radial-gradient(circle at 30% 20%, rgba(158,164,173,.18), transparent 60%),
+                     radial-gradient(circle at 75% 80%, rgba(78,82,89,.22), transparent 55%);
+  --nx-grad-text:    linear-gradient(100deg, #d7dade 0%, var(--nx-grey) 40%, var(--nx-dgrey) 75%, #d7dade 100%);
+  --nx-grad-edge:    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.03) 40%, rgba(255,255,255,0));
+
+  /* glassmorphism */
+  --nx-glass:        rgba(255,255,255,.045);
+  --nx-glass-strong: rgba(255,255,255,.08);
+  --nx-glass-solid:  rgba(10,10,12,.72);
+  --nx-blur:         22px;
+
+  /* claymorphism */
+  --nx-clay:      #16161a;
+  --nx-clay-hi:   rgba(255,255,255,.09);
+  --nx-clay-lo:   rgba(0,0,0,.85);
+  --nx-clay-inset: inset 0 2px 0 var(--nx-clay-hi), inset 0 -3px 6px var(--nx-clay-lo);
+  --nx-clay-out:   0 18px 30px -18px var(--nx-clay-lo), 0 4px 10px -4px #000;
+
+  /* depth / 3D */
+  --nx-persp: 1200px;
+  --nx-shadow-deep: 0 40px 90px -30px rgba(0,0,0,.95);
+
+  /* radii */
+  --nx-r-sm: 10px; --nx-r-md: 16px; --nx-r-lg: 24px; --nx-r-xl: 34px; --nx-r-pill: 999px;
+
+  /* motion */
+  --nx-ease: cubic-bezier(.22,1,.36,1);
+  --nx-spring: cubic-bezier(.34,1.56,.64,1);
+  --nx-fast: 160ms; --nx-med: 340ms; --nx-slow: 700ms;
+
+  /* fonts (CDN-loaded) */
+  --nx-font-display: "Sora", "Space Grotesk", sans-serif;
+  --nx-font-body: "Inter", system-ui, sans-serif;
+  --nx-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* layout */
+  --nx-topbar-h: 60px;
+  --nx-left-w: 268px;
+  --nx-right-w: 340px;
+
+  position: relative;
+  min-height: 100vh;
+  background: var(--nx-void);
+  color: var(--nx-txt);
+  font-family: var(--nx-font-body);
+}
+
+/* page shell: pure black with a faint grey aurora field */
+.nx-page {
+  background:
+    var(--nx-grad-radial),
+    radial-gradient(1200px 600px at 80% -10%, rgba(78,82,89,.14), transparent 65%),
+    var(--nx-void);
+}
+
+::selection { background: rgba(158,164,173,.35); color: #fff; }
+
+/* thin monochrome scrollbars everywhere in the workbench */
+.nx-root *::-webkit-scrollbar { width: 9px; height: 9px; }
+.nx-root *::-webkit-scrollbar-track { background: transparent; }
+.nx-root *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--nx-dgrey), var(--nx-grey-lo));
+  border-radius: 999px;
+  border: 2px solid var(--nx-black);
+}
+.nx-root *::-webkit-scrollbar-thumb:hover { background: var(--nx-grey); }
+.nx-root * { scrollbar-width: thin; scrollbar-color: var(--nx-dgrey) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-root *, .nx-root *::before, .nx-root *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
