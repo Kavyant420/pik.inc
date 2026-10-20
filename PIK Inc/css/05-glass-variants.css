@@ -7,7 +7,7 @@
   }
 
   .glass--smoke {
-    background-color: rgba(8, 11, 22, 0.72);
+    background-color: rgba(11,11,11,0.72);
     backdrop-filter: blur(var(--pik-blur-lg)) saturate(120%);
     -webkit-backdrop-filter: blur(var(--pik-blur-lg)) saturate(120%);
     border-color: var(--pik-glass-line-soft);

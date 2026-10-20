@@ -37,7 +37,7 @@
   }
 
   [data-theme="daylight"] .fx-vignette {
-    background: radial-gradient(ellipse at 50% 0%, transparent 45%, rgba(120, 135, 165, 0.22) 100%);
+    background: radial-gradient(ellipse at 50% 0%, transparent 45%, rgba(133,133,133,0.22) 100%);
   }
 
   .fx-grain {

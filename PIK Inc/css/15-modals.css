@@ -6,7 +6,7 @@
     display: grid;
     place-items: center;
     padding: var(--pik-sp-4);
-    background: rgba(3, 5, 12, 0.62);
+    background: rgba(5,5,5,0.62);
     backdrop-filter: blur(var(--pik-blur-sm));
     -webkit-backdrop-filter: blur(var(--pik-blur-sm));
     opacity: 0;

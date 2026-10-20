@@ -93,6 +93,18 @@
     /* ---------- helpers ---------- */
     get(id) { return this.byId[id] || null; },
 
+    /* CDN logo for ANY engine name (puter, pollinations, deepinfra-free…) —
+       used by chat.js so every avatar is an icon from the CDN, never emoji. */
+    logoFor(engineOrProvider) {
+      var p = String(engineOrProvider || "").toLowerCase();
+      if (p === "polli-alt" || p === "polli-get") p = "pollinations";
+      if (p === "deepinfra-free") p = "deepseek";
+      if (p === "openrouter") return CFG.LOGO_SI + "openrouter.svg";
+      var slug = CFG.PROVIDER_ICONS[p];
+      if (slug) return CFG.LOGO_SI + slug + ".svg";
+      return null;
+    },
+
     suggest() {
       return this.byId[CFG.SUGGESTED_MODEL] || this.all[0] || null;
     },

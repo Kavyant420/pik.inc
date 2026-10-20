@@ -15,26 +15,26 @@
   --nx-pitch:     #202026;
 
   /* ---- greys (the 15%) : 50/50 pairs for every gradient ---- */
-  --nx-grey:      #9ea4ad;   /* light grey  */
-  --nx-dgrey:     #4e5259;   /* dark grey   */
-  --nx-grey-hi:   #c9ced6;
-  --nx-grey-lo:   #34373d;
-  --nx-ash:       #7d838d;
+  --nx-grey:      #a3a3a3;   /* light grey  */
+  --nx-dgrey:     #515151;   /* dark grey   */
+  --nx-grey-hi:   #cdcdcd;
+  --nx-grey-lo:   #363636;
+  --nx-ash:       #828282;
 
   /* functional neutrals */
   --nx-line:      rgba(255,255,255,.08);
   --nx-line-hi:   rgba(255,255,255,.16);
   --nx-txt:       #e7e9ec;
-  --nx-txt-dim:   #9aa0a8;
-  --nx-txt-faint: #5f646c;
-  --nx-danger:    #b9615f;   /* desaturated alert, stays in the monochrome family */
-  --nx-ok:        #7fa08a;
+  --nx-txt-dim:   #9f9f9f;
+  --nx-txt-faint: #636363;
+  --nx-danger:    #737373;   /* desaturated alert, stays in the monochrome family */
+  --nx-ok:        #979797;
 
   /* signature 50/50 gradients (grey | dark grey) */
   --nx-grad-primary: linear-gradient(135deg, var(--nx-grey) 0%, var(--nx-dgrey) 50%, var(--nx-grey) 100%);
   --nx-grad-flat:    linear-gradient(90deg,  var(--nx-grey) 50%, var(--nx-dgrey) 50%);
-  --nx-grad-radial:  radial-gradient(circle at 30% 20%, rgba(158,164,173,.18), transparent 60%),
-                     radial-gradient(circle at 75% 80%, rgba(78,82,89,.22), transparent 55%);
+  --nx-grad-radial:  radial-gradient(circle at 30% 20%, rgba(163,163,163,.18), transparent 60%),
+                     radial-gradient(circle at 75% 80%, rgba(81,81,81,.22), transparent 55%);
   --nx-grad-text:    linear-gradient(100deg, #d7dade 0%, var(--nx-grey) 40%, var(--nx-dgrey) 75%, #d7dade 100%);
   --nx-grad-edge:    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.03) 40%, rgba(255,255,255,0));
 
@@ -92,7 +92,7 @@
 .nx-page {
   background:
     var(--nx-grad-radial),
-    radial-gradient(1200px 600px at 80% -10%, rgba(78,82,89,.14), transparent 65%),
+    radial-gradient(1200px 600px at 80% -10%, rgba(81,81,81,.14), transparent 65%),
     var(--nx-void);
   height: 100vh;
   height: 100dvh;
@@ -108,7 +108,7 @@
 html:has(.nx-root), html { height: 100%; }
 body.nx-root { height: 100dvh; }
 
-::selection { background: rgba(158,164,173,.35); color: #fff; }
+::selection { background: rgba(163,163,163,.35); color: #fff; }
 
 /* thin monochrome scrollbars everywhere in the workbench */
 .nx-root *::-webkit-scrollbar { width: 9px; height: 9px; }

@@ -23,11 +23,11 @@
   position: absolute; inset: 26%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.85), rgba(201,206,214,.35) 26%, transparent 55%),
-    radial-gradient(circle at 68% 74%, rgba(78,82,89,.9), transparent 60%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.85), rgba(205,205,205,.35) 26%, transparent 55%),
+    radial-gradient(circle at 68% 74%, rgba(81,81,81,.9), transparent 60%),
     radial-gradient(circle at 50% 50%, #2b2e33 0%, #101114 62%, #050506 100%);
   box-shadow:
-    0 0 34px rgba(158,164,173,.35),
+    0 0 34px rgba(163,163,163,.35),
     inset -8px -10px 22px rgba(0,0,0,.85),
     inset 6px 8px 18px rgba(255,255,255,.12);
   animation: orb-pulse var(--orb-pulse) ease-in-out infinite;
@@ -40,7 +40,7 @@
 /* orbit rings — each one a tilted 3D circle */
 .orb__ring {
   position: absolute; inset: 0; border-radius: 50%;
-  border: 1px solid rgba(158,164,173,.5);
+  border: 1px solid rgba(163,163,163,.5);
   border-top-color: rgba(231,233,236,.9);
   border-bottom-color: transparent;
   transform-style: preserve-3d;
@@ -58,14 +58,14 @@
 .orb__sat {
   position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px;
   border-radius: 50%; background: var(--nx-grey-hi);
-  box-shadow: 0 0 12px 2px rgba(201,206,214,.7);
+  box-shadow: 0 0 12px 2px rgba(205,205,205,.7);
 }
 
 /* halo intensity per level */
 .orb::before {
   content: ""; position: absolute; inset: -30%;
   border-radius: 50%; pointer-events: none;
-  background: radial-gradient(circle, rgba(158,164,173,.16), transparent 62%);
+  background: radial-gradient(circle, rgba(163,163,163,.16), transparent 62%);
   opacity: 0; transition: opacity var(--nx-slow);
 }
 .orb[data-level="medium"]::before { opacity: .5; }
@@ -75,13 +75,13 @@
 /* MAX mode gets an electric arc cage */
 .orb[data-level="max"] .orb__core {
   box-shadow:
-    0 0 60px rgba(201,206,214,.55),
+    0 0 60px rgba(205,205,205,.55),
     inset -8px -10px 22px rgba(0,0,0,.85),
     inset 6px 8px 18px rgba(255,255,255,.2);
 }
 .orb[data-level="max"]::after {
   content: ""; position: absolute; inset: -12px; border-radius: 50%;
-  border: 2px dotted rgba(201,206,214,.35);
+  border: 2px dotted rgba(205,205,205,.35);
   animation: orb-spin 2.4s linear infinite reverse;
 }
 

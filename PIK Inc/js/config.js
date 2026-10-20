@@ -40,6 +40,12 @@
     GH_AUTH_URL: "https://github.com/login/oauth/authorize",
     GH_API: "https://api.github.com",
 
+    /* ---- Puter.js (free, keyless provider — loaded on demand via CDN) ----
+       window.puter.ai.chat(...) requires NO API key and no signup; the user's
+       free Puter account sponsors the call. NEXUS treats it as a first-class
+       engine and auto-redirects between it and Pollinations on any failure. */
+    PUTER_CDN: "https://js.puter.com/v2/",
+
     /* ---- Logo CDNs -------------------------------------------------------- */
     LOGO_SI: "https://cdn.jsdelivr.net/npm/simple-icons@14/icons/",   // svg monochrome set
     LOGO_FAVICON: "https://www.google.com/s2/favicons?domain=",       // + domain + "&sz=64"
@@ -65,7 +71,7 @@
       xai: "xai", moonshotai: "moonshotai", perplexity: "perplexity",
       cohere: "cohere", poolside: "poolside", liquid: "liquid",
       thinkingmachines: "thinkingmachines", "dots-studio": "dotsstudio",
-      "xingchen-agi": "xingchen", pollinations: "pollinations"
+      "xingchen-agi": "xingchen", pollinations: "pollinations", puter: "puter"
     },
 
     /* Provider -> brand site (used for favicon fallbacks) */
@@ -76,7 +82,7 @@
       xai: "x.ai", moonshotai: "moonshot.ai", perplexity: "perplexity.ai",
       cohere: "cohere.com", poolside: "poolside.ai", liquid: "www.liquid.ai",
       thinkingmachines: "thinkingmachines.co", "dots-studio": "dots.studio",
-      "xingchen-agi": "teleai.com.cn", pollinations: "pollinations.ai"
+      "xingchen-agi": "teleai.com.cn", pollinations: "pollinations.ai", puter: "puter.com"
     },
 
     /* ---- Thinking ladder (UI scale Low -> Medium -> High -> Max) --------- */

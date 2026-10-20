@@ -115,13 +115,13 @@
     border-radius: var(--pik-r-md);
     overflow: hidden;
     aspect-ratio: 16 / 10;
-    background: linear-gradient(160deg, #0a1020, #060a16 60%, #0b1224);
+    background: linear-gradient(160deg, #0f0f0f, #0a0a0a 60%, #111111);
     border: 1px solid var(--pik-glass-line);
     box-shadow: var(--pik-shadow-deep);
   }
 
   [data-theme="daylight"] .screen {
-    background: linear-gradient(160deg, #dfe6f2, #cdd7e8);
+    background: linear-gradient(160deg, #e5e5e5, #d6d6d6);
   }
 
   .screen__chrome {

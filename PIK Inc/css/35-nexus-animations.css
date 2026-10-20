@@ -25,7 +25,7 @@
 .nx-glowborder::before {
   content: ""; position: absolute; inset: -1px; border-radius: inherit; z-index: -1;
   background: conic-gradient(from var(--gb-a, 0deg),
-    transparent 0 60%, rgba(158,164,173,.7) 72%, rgba(78,82,89,.9) 80%, transparent 92%);
+    transparent 0 60%, rgba(163,163,163,.7) 72%, rgba(81,81,81,.9) 80%, transparent 92%);
   animation: gb-spin 6s linear infinite; filter: blur(.5px);
 }
 @property --gb-a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
@@ -54,8 +54,8 @@
 /* ---------- aurora drift band behind topbar ---------- */
 .nx-aurora { position: fixed; top: 0; left: 0; right: 0; height: 240px; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(600px 180px at 20% 0%, rgba(158,164,173,.10), transparent 70%),
-    radial-gradient(700px 200px at 70% 10%, rgba(78,82,89,.14), transparent 70%);
+    radial-gradient(600px 180px at 20% 0%, rgba(163,163,163,.10), transparent 70%),
+    radial-gradient(700px 200px at 70% 10%, rgba(81,81,81,.14), transparent 70%);
   animation: aurora-drift 14s ease-in-out infinite alternate;
 }
 @keyframes aurora-drift { to { transform: translateX(-4%) scale(1.06); opacity: .7; } }
@@ -76,7 +76,7 @@
 .nx-glitch { position: relative; }
 .nx-glitch::before, .nx-glitch::after {
   content: attr(data-text); position: absolute; inset: 0; pointer-events: none;
-  clip-path: inset(0 0 60% 0); color: rgba(201,206,214,.5);
+  clip-path: inset(0 0 60% 0); color: rgba(205,205,205,.5);
   animation: gl-a 3.2s steps(2, jump-none) infinite; mix-blend-mode: screen;
 }
 .nx-glitch::after { clip-path: inset(55% 0 0 0); animation: gl-b 2.6s steps(2, jump-none) infinite reverse; }
@@ -120,13 +120,13 @@
 .nx-ladder:has(.is-on[data-level="max"]) { animation: ladder-charge 1.4s ease infinite; }
 @keyframes ladder-charge {
   0%,100% { box-shadow: var(--nx-clay-inset); }
-  50% { box-shadow: var(--nx-clay-inset), 0 0 18px rgba(201,206,214,.35); }
+  50% { box-shadow: var(--nx-clay-inset), 0 0 18px rgba(205,205,205,.35); }
 }
 
 /* ---------- send button rocket trail while streaming ---------- */
 .nx-send.is-streaming::after {
   content: ""; position: absolute; inset: -6px; border-radius: 50%;
-  border: 2px solid rgba(201,206,214,.4); border-top-color: transparent; border-left-color: transparent;
+  border: 2px solid rgba(205,205,205,.4); border-top-color: transparent; border-left-color: transparent;
   animation: spin-fast .8s linear infinite;
 }
 @keyframes spin-fast { to { transform: rotate(360deg); } }
