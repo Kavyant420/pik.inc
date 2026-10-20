@@ -75,6 +75,7 @@
 
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--nx-void);
   color: var(--nx-txt);
   font-family: var(--nx-font-body);
@@ -86,6 +87,13 @@
     var(--nx-grad-radial),
     radial-gradient(1200px 600px at 80% -10%, rgba(78,82,89,.14), transparent 65%),
     var(--nx-void);
+  /* the workbench is a fixed viewport app — kill any document-level
+     vertical overflow so there is never dead space under the site */
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 ::selection { background: rgba(158,164,173,.35); color: #fff; }
