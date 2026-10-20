@@ -24,7 +24,10 @@
         if (!v) return;
         await NexusSettings.setKey("github", v);
         refs.pat.value = "";
-        await PIKGitHub.refreshUser();
+        var u = await PIKGitHub.refreshUser();
+        if (window.PIKToasts) PIKToasts.show(u
+          ? { type: "success", title: "GitHub connected", text: "Signed in as @" + u.login }
+          : { type: "warn", title: "Token rejected", text: "GitHub returned 401 \u2014 check the token has repo scope and isn't expired." });
       });
       refs.forkBtn && refs.forkBtn.addEventListener("click", function () { self._toggleList("fork"); });
       refs.importBtn && refs.importBtn.addEventListener("click", function () { self._toggleList("import"); });
@@ -41,40 +44,45 @@
       this._loadRepos();
     },
 
-    /* ---------- connect: device flow first, PAT fallback ---------- */
+    /* ---------- connect: device flow first, manual/PAT fallback ---------- */
     async connect() {
       var box = this.els.deviceBox, self = this;
       box.hidden = false;
-      box.innerHTML = '<p style="font-size:.72rem;color:var(--nx-txt-faint)">Requesting a device code…</p>';
+      box.innerHTML = '<p style="font-size:.72rem;color:var(--nx-txt-faint)">Requesting a device code\u2026</p>';
       try {
         var dc = await PIKGitHub.startDeviceFlow();
+        var verifyUrl = (dc.verification_uri_complete || (dc.verification_uri + "?code=" + encodeURIComponent(dc.user_code)));
         box.innerHTML =
           '<p class="nx-rail__title">Enter this code at</p>' +
           '<div class="nx-codebox">' + esc(dc.user_code) + "</div>" +
-          '<a class="nx-keystatus" target="_blank" rel="noopener" href="' + esc(dc.verification_uri_complete || dc.verification_uri) +
-          '">' + esc(dc.verification_uri) + " ↗</a>" +
-          '<p style="font-size:.68rem;color:var(--nx-txt-faint)">Waiting for authorization…</p>';
+          '<a class="nx-keystatus" target="_blank" rel="noopener" href="' + esc(verifyUrl) +
+          '">Open github.com/login/device \u2197</a>' +
+          '<p style="font-size:.68rem;color:var(--nx-txt-faint)">Waiting for authorization\u2026 ' +
+          '<button class="nx-inlinecancel" data-nx="dev-cancel">cancel</button></p>';
+        var cancelBtn = box.querySelector("[data-nx='dev-cancel']");
         this._pollAbort = new AbortController();
+        if (cancelBtn) cancelBtn.addEventListener("click", function () { self._pollAbort.abort(); });
         await PIKGitHub.pollDeviceFlow(dc, dc.interval, this._pollAbort.signal);
         box.hidden = true;
+        box.innerHTML = "";
       } catch (e) {
         var why = String(e.message || e);
-        if (why.indexOf("device-flow") !== -1 || why.indexOf("Failed to fetch") !== -1) {
-          box.innerHTML =
-            '<p style="font-size:.72rem;color:var(--nx-txt-dim)">The browser can\'t reach GitHub\'s device endpoint directly (CORS).' +
-            " Paste a <b>fine-grained PAT</b> or classic token with <code>repo</code> scope instead:</p>" +
-            '<button class="nx-btn nx-btn--ghost" data-nx="pat-open">Use a personal access token</button>';
-          box.querySelector("[data-nx='pat-open']").addEventListener("click", function () {
-            box.hidden = true;
-            self.els.patForm.hidden = false;
-            self.els.pat.focus();
-          });
-        } else if (why === "aborted") {
+        if (why.indexOf("abort") !== -1) { box.hidden = true; box.innerHTML = ""; return; }
+        // Device endpoint unreachable from the browser -> direct them to GitHub
+        // and offer the guaranteed PAT path.
+        box.innerHTML =
+          '<p style="font-size:.72rem;color:var(--nx-txt-dim)">GitHub blocks direct browser access to its device endpoint.' +
+          ' Easiest path: create a token with <code>repo</code> scope and paste it.</p>' +
+          '<a class="nx-btn nx-btn--ghost nx-btn--sm" style="width:100%;text-decoration:none" target="_blank" rel="noopener" ' +
+          'href="https://github.com/settings/tokens/new?scopes=repo,gist&amp;description=PIK%20NEXUS">' +
+          'Create a token on GitHub \u2197</a>' +
+          '<button class="nx-btn nx-btn--ghost" data-nx="pat-open">Use a personal access token</button>';
+        var po = box.querySelector("[data-nx='pat-open']");
+        if (po) po.addEventListener("click", function () {
           box.hidden = true;
-        } else {
-          box.innerHTML = '<p style="font-size:.72rem;color:var(--nx-danger)">GitHub said: ' + esc(why) + "</p>";
-          setTimeout(function () { box.hidden = true; }, 4000);
-        }
+          self.els.patForm.hidden = false;
+          self.els.pat.focus();
+        });
       }
     },
 

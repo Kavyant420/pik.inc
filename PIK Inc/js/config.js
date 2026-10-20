@@ -18,6 +18,8 @@
     POLLINATIONS_URL: "https://text.pollinations.ai/openai",
     POLLINATIONS_MODELS_URL: "https://text.pollinations.ai/models",
     POLLINATIONS_DEFAULT_MODEL: "openai",
+    /* simple GET endpoint — returns plain text, no streaming, very reliable */
+    POLLINATIONS_GET_URL: "https://text.pollinations.ai/",
     /* openai-compatible chat backends tried in order when the primary one is
        down or rate-limited — all keyless / free */
     POLLINATIONS_CHAIN: [
@@ -25,10 +27,12 @@
       "https://universal.pollinations.ai"
     ],
 
-    /* ---- Public inference engines that need NO key (used after OpenRouter
-            free quota is exhausted; tried in order before hard-failing) ----- */
-    COHERE_PREVIEW_URL: "https://api.cohere.com/v2/chat",           // public preview model
-    COHERE_PREVIEW_MODEL: "c4ai-aya-mega-2025",                     // no-key preview model
+    /* ---- DeepInfra public inference API (keyless, free tier, CORS ok) -----
+       Tried after every pollinations hop fails. NOTE: the previous
+       "cohere-free" hop was removed because api.cohere.com ALWAYS returns
+       HTTP 401 without an API key — there is no truly keyless Cohere model. */
+    DEEPINFRA_CHAT_URL: "https://api.deepinfra.com/v1/openai/chat/completions",
+    DEEPINFRA_MODEL: "deepseek-ai/DeepSeek-V3",
 
     /* ---- GitHub OAuth (client id is PUBLIC by design — it is not a secret;
             the client SECRET must never appear in front-end code) ---------- */

@@ -6,9 +6,13 @@
         for this session ("free tier over") — we never hammer it again
      3. text.pollinations.ai  (keyless, free)          -> engine "pollinations"
      4. universal.pollinations.ai (keyless mirror)     -> engine "polli-alt"
-     5. Cohere public preview model (no key required)  -> engine "cohere-free"
-   Pollinations is streamed when possible; every engine that returns
-   reasoning/thought tokens feeds the live THINKING panel.
+     5. text.pollinations.ai GET endpoint (keyless)    -> engine "polli-get"
+     6. DeepInfra public inference API (keyless)       -> engine "deepinfra-free"
+   NOTE: the old "cohere-free" hop was REMOVED — api.cohere.com requires an
+   API key for every model and always answered HTTP 401 from the browser.
+   DeepInfra's public endpoint needs no key and supports streaming + CORS.
+   Every keyless engine is tried in order until one answers; the first token
+   of reasoning streams straight into the live THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
    a local audit ledger so you can verify exactly what left the machine.
    ========================================================================= */
@@ -20,9 +24,10 @@
   var Router = {
     /* usage ledger: timestamps of OR requests inside rolling window */
     _usage: [],
-    engine: "openrouter",   // openrouter | pollinations | polli-alt | cohere-free
+    engine: "openrouter",   // openrouter | pollinations | polli-alt | polli-get | deepinfra-free
     onEngineChange: null,   // callback(engine, reason)
     _orBurned: false,       // set once OpenRouter reports quota exhausted
+    _blacklist: {},         // engines that returned 401/403/404 this session (key-gated or dead)
 
     async init() {
       try {
@@ -100,24 +105,39 @@
         this._setEngine("pollinations", "budget-exhausted");
       }
 
-      /* keyless chain: pollinations -> alt mirror -> cohere public preview */
+      /* keyless chain: pollinations POST -> alt mirror -> pollinations GET
+         -> DeepInfra public endpoint. Any 401/403 on a hop means it secretly
+         needs a key — skip it forever (session blacklist), never show the
+         user "HTTP 401" as the final error when other free engines remain. */
       var attempts = [
         { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
         { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
-        { fn: this._viaCohereFree.bind(this, opts, settings), name: "cohere-free" }
+        { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
+        { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
       ];
-      var lastErr = null;
+      var lastErr = null, ok = false;
       for (var i = 0; i < attempts.length; i++) {
+        if (this._blacklist[attempts[i].name]) continue; // known key-gated / dead
         try {
           var res = await attempts[i].fn();
+          ok = true;
           this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
           return res;
         } catch (e) {
           if (e && e.name === "AbortError") throw e;
           lastErr = e;
+          var st = e && e.status;
+          if (st === 401 || st === 403 || st === 404) this._blacklist[attempts[i].name] = true;
         }
       }
-      throw lastErr || new Error("all free engines unavailable");
+      if (!ok) {
+        // everything genuinely unreachable — give a friendly message, not a raw 401
+        var msg = String((lastErr && lastErr.message) || "");
+        if (/401|403/.test(msg)) msg = "free engines unreachable (auth refused) — check your connection and retry";
+        var err = new Error(msg || "all free engines unavailable");
+        err.allEnginesFailed = true;
+        throw err;
+      }
     },
 
     _setEngine(engine, reason) {
@@ -202,7 +222,13 @@
         body: JSON.stringify(body),
         signal: opts.signal
       });
-      if (!res.ok) throw new Error(engineName + " HTTP " + res.status);
+      if (!res.ok) {
+        var errText = "";
+        try { errText = await res.text(); } catch (e) {}
+        var err = new Error(engineName + " HTTP " + res.status + " " + errText.slice(0, 160));
+        err.status = res.status;
+        throw err;
+      }
 
       var ctype = res.headers.get("content-type") || "";
       if (ctype.indexOf("event-stream") !== -1) {
@@ -223,29 +249,77 @@
       };
     },
 
-    /* ---------- Cohere public preview (no key needed from browser) -------- */
-    async _viaCohereFree(opts, settings) {
+    /* ---------- Pollinations simple GET endpoint (keyless last resort) -----
+       https://text.pollinations.ai/{prompt}?model=...&system=... returns the
+       completion as plain text. No streaming, but bulletproof CORS-wise.     */
+    async _viaPolliGet(opts, settings) {
+      var flat = opts.messages.filter(function (m) { return m.role !== "system"; });
+      var last = flat[flat.length - 1];
+      var prompt = last ? (typeof last.content === "string" ? last.content
+        : (last.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n")) : "";
+      if (!prompt) throw new Error("polli-get empty prompt");
+      /* include a compact transcript so multi-turn still works over GET */
+      var ctx = flat.slice(-6, -1).map(function (m) {
+        var c = typeof m.content === "string" ? m.content
+          : (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
+        return (m.role === "user" ? "User: " : "Assistant: ") + c.slice(0, 2000);
+      }).join("\n");
+      var full = ctx ? ctx + "\nUser: " + prompt : prompt;
       var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
-      var msgs = [{ role: "system", content: sys }]
-        .concat(opts.messages.map(function (m) {
-          var c = typeof m.content === "string" ? m.content
-            : (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
-          return { role: m.role === "assistant" ? "CHATBOT" : m.role === "user" ? "USER" : "SYSTEM", content: c };
-        }));
-      var body = { model: CFG.COHERE_PREVIEW_MODEL, messages: msgs, max_tokens: 4000 };
+      var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
+      var u = CFG.POLLINATIONS_GET_URL + encodeURIComponent(full.slice(0, 24000)) +
+        "?model=" + encodeURIComponent(model) + "&system=" + encodeURIComponent(sys.slice(0, 2000)) + "&json=false";
+      var meta = await this.digest({ url: u });
+      var res = await fetch(u, { signal: opts.signal });
+      if (!res.ok) {
+        var e = new Error("polli-get HTTP " + res.status);
+        e.status = res.status;
+        throw e;
+      }
+      var text = (await res.text() || "").trim();
+      if (!text || text.length < 2) throw new Error("polli-get empty response");
+      if (opts.onDelta) { try { opts.onDelta(text, false); } catch (er) {} }
+      return { text: text, reasoning: "", engine: "polli-get", model: model, digest: meta.digest, usedFallback: true };
+    },
+
+    /* ---------- DeepInfra public inference API (no key needed) -------------
+       Keyless OpenAI-compatible endpoint with SSE streaming support. */
+    async _viaDeepInfra(opts, settings) {
+      var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
+      var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
+        if (typeof m.content === "string") return m;
+        var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
+        return { role: m.role, content: txt };
+      }));
+      var body = {
+        model: CFG.DEEPINFRA_MODEL,
+        messages: messages,
+        stream: true,
+        max_tokens: 4000
+      };
+      if (typeof opts.temperature === "number") body.temperature = opts.temperature;
       var meta = await this.digest(body);
-      var res = await fetch(CFG.COHERE_PREVIEW_URL, {
+      var res = await fetch(CFG.DEEPINFRA_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
         body: JSON.stringify(body),
         signal: opts.signal
       });
-      if (!res.ok) throw new Error("cohere-free HTTP " + res.status);
+      if (!res.ok) {
+        var e = new Error("deepinfra-free HTTP " + res.status);
+        e.status = res.status;
+        throw e;
+      }
+      var ctype = res.headers.get("content-type") || "";
+      if (ctype.indexOf("event-stream") !== -1) {
+        return this._consumeSSE(res, opts, { engine: "deepinfra-free", model: CFG.DEEPINFRA_MODEL, digest: meta.digest, usedFallback: true });
+      }
       var json = await res.json();
-      var text = (json.message && json.message.content && json.message.content[0] && json.message.content[0].text) || "";
-      if (!text) throw new Error("cohere-free empty response");
-      if (opts.onDelta) { try { opts.onDelta(text, false); } catch (e) {} }
-      return { text: text, reasoning: "", engine: "cohere-free", model: CFG.COHERE_PREVIEW_MODEL, digest: meta.digest, usedFallback: true };
+      var msg = (json.choices && json.choices[0] && json.choices[0].message) || {};
+      var text = msg.content || "";
+      if (!text) throw new Error("deepinfra-free empty response");
+      if (opts.onDelta) { try { opts.onDelta(text, false); } catch (er) {} }
+      return { text: text, reasoning: msg.reasoning || "", engine: "deepinfra-free", model: CFG.DEEPINFRA_MODEL, digest: meta.digest, usedFallback: true };
     },
 
     /* ---------- shared SSE reader ---------- */
