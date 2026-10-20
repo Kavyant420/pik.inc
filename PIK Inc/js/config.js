@@ -14,10 +14,21 @@
     OR_MODELS_URL: "https://openrouter.ai/api/v1/models",
     OR_CHAT_URL: "https://openrouter.ai/api/v1/chat/completions",
 
-    /* ---- Pollinations fallback (keyless, free tier) ---------------------- */
+    /* ---- Pollinations primary (keyless, free — no API key ever needed) --- */
     POLLINATIONS_URL: "https://text.pollinations.ai/openai",
     POLLINATIONS_MODELS_URL: "https://text.pollinations.ai/models",
-    POLLINATIONS_DEFAULT_MODEL: "openai-fast",
+    POLLINATIONS_DEFAULT_MODEL: "openai",
+    /* openai-compatible chat backends tried in order when the primary one is
+       down or rate-limited — all keyless / free */
+    POLLINATIONS_CHAIN: [
+      "https://text.pollinations.ai/openai",
+      "https://universal.pollinations.ai"
+    ],
+
+    /* ---- Public inference engines that need NO key (used after OpenRouter
+            free quota is exhausted; tried in order before hard-failing) ----- */
+    COHERE_PREVIEW_URL: "https://api.cohere.com/v2/chat",           // public preview model
+    COHERE_PREVIEW_MODEL: "c4ai-aya-mega-2025",                     // no-key preview model
 
     /* ---- GitHub OAuth (client id is PUBLIC by design — it is not a secret;
             the client SECRET must never appear in front-end code) ---------- */
@@ -38,6 +49,9 @@
       "google/gemma-4-26b-a4b-it:free",
       "poolside/laguna-s-2.1:free"
     ],
+
+    /* ---- Editor theme presets (IDE customization) -------------------------- */
+    EDITOR_THEMES: ["graphite", "midnight", "amber", "forest"],
 
     /* Provider -> simple-icons slug (verified against the CDN) */
     PROVIDER_ICONS: {

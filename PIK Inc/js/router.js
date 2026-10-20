@@ -1,10 +1,14 @@
 /* ============================================================================
    PIK//NEXUS — router.js
-   Chat transport with automatic failover:
+   Chat transport with a full no-key fallback chain:
      1. OpenRouter (user key) while the rolling free-budget window has room
-     2. any 429 / rate-limit / quota error from OpenRouter => immediate switch
-     3. text.pollinations.ai (keyless) picks its best free reasoning model and
-        applies the user's customizable system prompt from Settings
+     2. any 429 / rate-limit / quota error from OpenRouter => permanent switch
+        for this session ("free tier over") — we never hammer it again
+     3. text.pollinations.ai  (keyless, free)          -> engine "pollinations"
+     4. universal.pollinations.ai (keyless mirror)     -> engine "polli-alt"
+     5. Cohere public preview model (no key required)  -> engine "cohere-free"
+   Pollinations is streamed when possible; every engine that returns
+   reasoning/thought tokens feeds the live THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
    a local audit ledger so you can verify exactly what left the machine.
    ========================================================================= */
@@ -16,26 +20,36 @@
   var Router = {
     /* usage ledger: timestamps of OR requests inside rolling window */
     _usage: [],
-    engine: "openrouter",   // openrouter | pollinations
+    engine: "openrouter",   // openrouter | pollinations | polli-alt | cohere-free
     onEngineChange: null,   // callback(engine, reason)
+    _orBurned: false,       // set once OpenRouter reports quota exhausted
 
     async init() {
       try {
         var saved = await PIKCrypto.SecureStore.get(CFG.LS.USAGE);
         if (saved && Array.isArray(saved.t)) this._usage = saved.t;
+        if (saved && saved.burned) this._orBurned = true;
       } catch (e) {}
       this._prune();
+      // budget already spent in this window -> start on the keyless engine
+      if (!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || this.budgetLeft() <= 0 || this._orBurned) {
+        this.engine = "pollinations";
+      }
     },
 
     _prune() {
       var cutoff = Date.now() - CFG.FREE_BUDGET.windowMs;
       this._usage = this._usage.filter(function (t) { return t > cutoff; });
+      // hourly window rolled over and no hard burn -> allow OpenRouter again
+      if (this._orBurned && this._usage.length === 0 && !this._burnPermanent) this._orBurned = false;
     },
 
     async _record() {
       this._prune();
       this._usage.push(Date.now());
-      try { await PIKCrypto.SecureStore.set(CFG.LS.USAGE, { t: this._usage }); } catch (e) {}
+      try {
+        await PIKCrypto.SecureStore.set(CFG.LS.USAGE, { t: this._usage, burned: this._orBurned });
+      } catch (e) {}
     },
 
     budgetLeft() {
@@ -58,7 +72,8 @@
      */
     async chat(opts) {
       var settings = await NexusSettings.get();
-      var wantOR = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) && this.budgetLeft() > 0;
+      var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
+      var wantOR = hasKey && !this._orBurned && this.budgetLeft() > 0;
 
       if (wantOR) {
         try {
@@ -67,23 +82,42 @@
           this._setEngine("openrouter", null);
           return r;
         } catch (e) {
+          if (e && e.name === "AbortError") throw e; // user pressed stop — don't failover
           var quotaish = /429|rate.?limit|quota|insufficient|credits|free.*(limit|tier)|topped up/i.test(String(e && e.message));
           if (quotaish) {
-            this._setEngine("pollinations", "free-quota");
+            this._orBurned = true;
             // burn remaining budget locally so we stop hammering OR this hour
             while (this.budgetLeft() > 0) this._usage.push(Date.now());
+            await this._record();
+            this._setEngine("pollinations", "free-quota");
           } else {
-            // transient error: one retry through pollinations instead of failing hard
             this._setEngine("pollinations", "error:" + (e && e.message));
           }
         }
-      } else if (!PIKCrypto.peekSecret(CFG.LS.KEY_OR)) {
+      } else if (!hasKey) {
         this._setEngine("pollinations", "no-key");
-      } else {
+      } else if (this._orBurned || this.budgetLeft() <= 0) {
         this._setEngine("pollinations", "budget-exhausted");
       }
 
-      return this._viaPollinations(opts, settings);
+      /* keyless chain: pollinations -> alt mirror -> cohere public preview */
+      var attempts = [
+        { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
+        { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
+        { fn: this._viaCohereFree.bind(this, opts, settings), name: "cohere-free" }
+      ];
+      var lastErr = null;
+      for (var i = 0; i < attempts.length; i++) {
+        try {
+          var res = await attempts[i].fn();
+          this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
+          return res;
+        } catch (e) {
+          if (e && e.name === "AbortError") throw e;
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("all free engines unavailable");
     },
 
     _setEngine(engine, reason) {
@@ -93,31 +127,31 @@
       }
     },
 
+    /* ---------- thinking ladder -> effort string ---------- */
+    _effortFor(model, wanted) {
+      var info = PIKModels.get(model);
+      var order = ["minimal", "low", "medium", "high", "xhigh", "max"];
+      var effort = CFG.THINKING_MAP[wanted] || "medium";
+      if (info && info.efforts && info.efforts.length && info.efforts.indexOf(effort) === -1) {
+        var idx = order.indexOf(effort);
+        for (var i = idx; i >= 0; i--) {
+          if (info.efforts.indexOf(order[i]) !== -1) { effort = order[i]; break; }
+        }
+        if (order.indexOf(effort) === -1) effort = info.efforts[0];
+      }
+      return effort;
+    },
+
     /* ---------- OpenRouter ---------- */
     async _viaOpenRouter(opts, settings) {
       var model = opts.model || CFG.SUGGESTED_MODEL;
-      var body = {
-        model: model,
-        messages: opts.messages,
-        stream: true
-      };
-      // thinking ladder -> OpenRouter reasoning effort
+      var body = { model: model, messages: opts.messages, stream: true };
       var info = PIKModels.get(model);
-      var effort = CFG.THINKING_MAP[opts.thinking] || "medium";
       if (info && info.reasoning) {
-        body.reasoning = { effort: effort };
+        body.reasoning = { effort: this._effortFor(model, opts.thinking) };
         body.include_reasoning = true;
-        if (info.efforts && info.efforts.length && info.efforts.indexOf(effort) === -1) {
-          // clamp to nearest supported effort
-          var order = ["minimal", "low", "medium", "high", "xhigh", "max"];
-          var idx = order.indexOf(effort);
-          for (var i = idx; i >= 0; i--) {
-            if (info.efforts.indexOf(order[i]) !== -1) { body.reasoning.effort = order[i]; break; }
-          }
-        }
       }
       if (typeof opts.temperature === "number") body.temperature = opts.temperature;
-      if (settings.orAppUrl) body.session_id = settings.orAppUrl; // optional attribution
 
       var meta = await this.digest(body);
       var res = await fetch(CFG.OR_CHAT_URL, {
@@ -139,41 +173,79 @@
         err.status = res.status;
         throw err;
       }
-
       return this._consumeSSE(res, opts, { engine: "openrouter", model: model, digest: meta.digest });
     },
 
-    /* ---------- Pollinations fallback ---------- */
-    async _viaPollinations(opts, settings) {
+    /* ---------- Pollinations (keyless) — streamed w/ non-stream fallback --- */
+    async _viaPollinations(opts, settings, endpoint, engineName) {
+      endpoint = endpoint || CFG.POLLINATIONS_URL;
       var sys = settings.systemPrompt ||
-        "You are PIK NEXUS, an autonomous coding agent. Be precise, show reasoning when asked, and emit file edits as fenced code blocks with language tags.";
-      var messages = [{ role: "system", content: sys }].concat(opts.messages);
+        "You are PIK NEXUS, an autonomous coding agent. Be precise, show reasoning when asked, and emit file edits as fenced code blocks with the path on the info string.";
+      var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
+        // flatten multimodal parts to text for keyless endpoints
+        if (typeof m.content === "string") return m;
+        var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
+        return { role: m.role, content: txt };
+      }));
+      var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
       var body = {
-        model: settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL,
-        messages: messages,
-        stream: false,
-        private: true,
-        referrer: "pik.nexus"
+        model: model, messages: messages, stream: true,
+        private: true, referrer: "pik.nexus",
+        reasoning_effort: CFG.THINKING_MAP[opts.thinking] || "medium"
       };
+      if (typeof opts.temperature === "number") body.temperature = opts.temperature;
       var meta = await this.digest(body);
-      var res = await fetch(CFG.POLLINATIONS_URL, {
+
+      var res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
         body: JSON.stringify(body),
         signal: opts.signal
       });
-      if (!res.ok) throw new Error("pollinations HTTP " + res.status);
+      if (!res.ok) throw new Error(engineName + " HTTP " + res.status);
+
+      var ctype = res.headers.get("content-type") || "";
+      if (ctype.indexOf("event-stream") !== -1) {
+        return this._consumeSSE(res, opts, { engine: engineName, model: model, digest: meta.digest, usedFallback: true });
+      }
       var json = await res.json();
       var choice = (json.choices && json.choices[0]) || {};
       var msg = choice.message || {};
-      var text = msg.content || "";
-      var reasoning = msg.reasoning || msg.reasoning_content || "";
+      var text = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content || "");
+      var reasoning = msg.reasoning || msg.reasoning_content || json.reasoning || "";
+      if (text === "" && reasoning) text = reasoning; // some mirrors only fill reasoning
+      if (text === "") throw new Error(engineName + " empty response");
       if (opts.onDelta) { try { opts.onDelta(text, false); } catch (e) {} }
       return {
         text: text, reasoning: reasoning,
-        engine: "pollinations", model: json.model || body.model,
+        engine: engineName, model: json.model || model,
         digest: meta.digest, usedFallback: true
       };
+    },
+
+    /* ---------- Cohere public preview (no key needed from browser) -------- */
+    async _viaCohereFree(opts, settings) {
+      var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
+      var msgs = [{ role: "system", content: sys }]
+        .concat(opts.messages.map(function (m) {
+          var c = typeof m.content === "string" ? m.content
+            : (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
+          return { role: m.role === "assistant" ? "CHATBOT" : m.role === "user" ? "USER" : "SYSTEM", content: c };
+        }));
+      var body = { model: CFG.COHERE_PREVIEW_MODEL, messages: msgs, max_tokens: 4000 };
+      var meta = await this.digest(body);
+      var res = await fetch(CFG.COHERE_PREVIEW_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(body),
+        signal: opts.signal
+      });
+      if (!res.ok) throw new Error("cohere-free HTTP " + res.status);
+      var json = await res.json();
+      var text = (json.message && json.message.content && json.message.content[0] && json.message.content[0].text) || "";
+      if (!text) throw new Error("cohere-free empty response");
+      if (opts.onDelta) { try { opts.onDelta(text, false); } catch (e) {} }
+      return { text: text, reasoning: "", engine: "cohere-free", model: CFG.COHERE_PREVIEW_MODEL, digest: meta.digest, usedFallback: true };
     },
 
     /* ---------- shared SSE reader ---------- */
@@ -207,7 +279,9 @@
           } catch (e) { /* partial frame */ }
         }
       }
+      if (!full && reason) full = reason; // mirrored engines sometimes only stream reasoning
       base.text = full; base.reasoning = reason;
+      base.usedFallback = base.engine !== "openrouter";
       return base;
     }
   };
