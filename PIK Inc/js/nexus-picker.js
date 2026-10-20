@@ -115,6 +115,7 @@
       if (rows[this.selIdx]) rows[this.selIdx].scrollIntoView({ block: "nearest" });
     },
 
+    getSelected: function () { return this.currentId(); },
     currentId: function () { return this.els.chip.dataset.model || CFG.SUGGESTED_MODEL; },
 
     setSelected: function (id, silent) {
@@ -137,6 +138,7 @@
         (logo ? '<img src="' + esc(logo) + '" alt="" ' +
           'onerror="this.onerror=null;this.src=\'' + esc(CFG.LOGO_FAVICON + "openrouter.ai&sz=64") + '\'">' : "") +
         "<span>" + esc(name) + "</span>" +
+        (m && m.local ? '<span class="nx-chip--local"></span>' : "") +
         '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>';
       document.dispatchEvent(new CustomEvent("pik:model", { detail: this.currentId() }));
     }

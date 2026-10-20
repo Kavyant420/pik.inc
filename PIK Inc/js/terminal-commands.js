@@ -235,7 +235,7 @@
         "github  : " + (gh ? "token present" : "anonymous"),
         "or key  : " + (or ? "present" : "none — :free only"),
         "files   : " + PIKWorkspace.listFiles().length + " hashed in workspace",
-        "usage   : " + PIKUsage.total() + " call(s) today (cap " + CFG.USAGE_CAP_PER_DAY + ")",
+        "usage   : " + (global.PIKUsage ? PIKUsage.summary() : "n/a"),
         "uptime  : " + Math.round(performance.now() / 1000) + "s session"
       ];
       return ok(lines.join("\n") + "\n");
