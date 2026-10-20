@@ -35,7 +35,12 @@
     "brand  top    top"
     "rail   main   dock"
     "rail   status status";
+  /* lock the workbench to exactly one viewport — no scrollable dead space beneath */
   height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
   gap: 0;
   background: transparent;
 }
@@ -359,7 +364,19 @@
 .nx-send:hover { transform: scale(1.08) rotate(-4deg); }
 .nx-send:active { transform: scale(.92); }
 .nx-send:disabled { opacity: .45; cursor: wait; animation-play-state: paused; }
-.nx-send svg { width: 18px; height: 18px; }
+.nx-send svg { width: 18px; height: 18px; display: block; }
+/* inline SVG icon (paper-plane) — CSS fallback so the glyph can never disappear */
+.nx-send:not(:has(svg))::before {
+  content: ""; display: block; width: 18px; height: 18px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 14.5c0 .5.37.93.87.99L15 16 2.88 18.5c-.5.07-.87.5-.87 1l.01 1c0 .82.63 1.32 1.38.9z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 14.5c0 .5.37.93.87.99L15 16 2.88 18.5c-.5.07-.87.5-.87 1l.01 1c0 .82.63 1.32 1.38.9z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* stop-square variant while streaming */
+.nx-send.is-streaming:not(:has(svg))::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='6' y='6' width='12' height='12' rx='2.5'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='6' y='6' width='12' height='12' rx='2.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 
 /* attach button + hidden input */
 .nx-attach { position: relative; }

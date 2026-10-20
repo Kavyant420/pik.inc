@@ -8,7 +8,8 @@
    ========================================================================= */
 
 /* ---------- ambient particle field (behind everything, pointer-transparent) */
-#nx-particles {
+#nx-particles,
+.nx-particles {
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -132,7 +133,7 @@ body.pane-hidden .nx-pane { transform: translateY(24px); opacity: 0; pointer-eve
 
 /* ---------- reduced motion: kill all of the above ---------- */
 @media (prefers-reduced-motion: reduce) {
-  #nx-particles { display: none; }
+  #nx-particles, .nx-particles { display: none; }
   .nx-btn--primary::after,
   .nx-btn--glow,
   [data-fx='orb'],

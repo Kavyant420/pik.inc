@@ -94,6 +94,10 @@
   pointer-events: none;
   transition: opacity .28s ease;
 }
+/* NOTE: the modal is injected inside <body class="nx-page"> whose overflow is
+   locked — it must escape that clip with fixed positioning (above) and never
+   rely on `display:none` toggles that fight the open animation. */
+.nx-thinkmodal[hidden] { display: none !important; }
 .nx-thinkmodal:not([hidden]) { display: grid; }
 .nx-thinkmodal.is-open { opacity: 1; pointer-events: auto; }
 
