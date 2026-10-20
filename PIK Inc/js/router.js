@@ -83,7 +83,7 @@
       /* ---------- on-device route: PIK MicroEngine (unmetered, offline) ---------- */
       if (global.PIKMicro && PIKMicro.isLocalModel(opts.model)) {
         if (!global.MicroEngine || !MicroEngine.ready) {
-          try { await Micro.boot(settings.microTier || "small", null, null, true); } catch (e) {}
+          try { await PIKMicro.boot(settings.microTier || "small", null, null, true); } catch (e) {}
         }
         if (!global.MicroEngine || !MicroEngine.ready) {
           throw new Error("Local core is not booted — open Settings ▸ Local inference core and press “Boot local core”.");
@@ -105,7 +105,12 @@
          When the cap is hit we either hand off to the local core (if enabled)
          or surface an honest reset countdown instead of silently failing. */
       if (global.PIKUsage && !PIKUsage.allowed()) {
-        if (settings.localEnabled && global.MicroEngine && MicroEngine.ready) {
+        var localReady = global.MicroEngine && MicroEngine.ready;
+        if (settings.localEnabled && !localReady && global.PIKMicro) {
+          try { await PIKMicro.boot(settings.microTier || "small", null, null, true); } catch (e) {}
+          localReady = global.MicroEngine && MicroEngine.ready;
+        }
+        if (settings.localEnabled && localReady) {
           this._setEngine("local-micro", "skill-cap");
           var cres = await MicroEngine.generate({
             messages: opts.messages, thinking: opts.thinking,

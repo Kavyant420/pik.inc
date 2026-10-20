@@ -261,4 +261,18 @@
   global.PIKPreview = Preview;
   /* alias: terminal + hosting modules reference the bundle API as PIKLivePreview */
   global.PIKLivePreview = Preview;
+  /* hosting-backend.js calls PIKLivePreviewBundle(entryPath, files) directly —
+     expose a standalone function that builds the single self-contained doc. */
+  global.PIKLivePreviewBundle = function (entryPath, files) {
+    try {
+      var list = Array.isArray(files) ? files.slice() : [];
+      if (list.indexOf(entryPath) === -1) list.unshift(entryPath);
+      /* hosting deploys always bundle the active project, which is already
+         resident in PIKWorkspace — build the single self-contained doc. */
+      return Preview._bundle(entryPath);
+    } catch (e) {
+      return { html: "<!doctype html><meta charset=utf-8><title>deploy error</title><pre>" +
+        String(e && e.message || e).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</pre>" };
+    }
+  };
 })(window);

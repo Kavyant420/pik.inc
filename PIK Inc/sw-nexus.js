@@ -10,13 +10,13 @@
    ========================================================================= */
 "use strict";
 
-const VERSION = "nexus-v4";
+const VERSION = "nexus-v5";
 const SHELL = [
   "./",
   "./nexus.html",
   "./js/config.js", "./js/crypto.js", "./js/toasts.js", "./js/models.js",
   "./js/nexus-settings.js", "./js/markdown.js", "./js/md-codeenhance.js",
-  "./js/stream-renderer.js", "./js/workspace.js", "./js/github.js",
+  "./js/stream-renderer.js", "./js/usage-cap.js", "./js/workspace.js", "./js/github.js",
   "./js/micro-tokenizer.js", "./js/micro-weights.js", "./js/micro-math.js",
   "./js/micro-sampler.js", "./js/micro-engine.js", "./js/micro-bootstrap.js",
   "./js/router.js", "./js/editor.js", "./js/livepreview.js",
