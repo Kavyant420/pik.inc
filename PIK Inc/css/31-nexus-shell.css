@@ -390,3 +390,79 @@
 .nx-status a { color: var(--nx-txt-dim); text-decoration: none; border-bottom: 1px dotted transparent; }
 .nx-status a:hover { color: #fff; border-bottom-color: var(--nx-grey); }
 .nx-status__right { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+
+/* ============================================================================
+   UPDATE — "Thinking…" shimmer chip + richer markdown in chat replies
+   ========================================================================= */
+
+/* replaces the old three bouncing dots: a clickable, shimmering status line.
+   Light gray <-> dark gray pulse; clicking expands the live reasoning panel. */
+.nx-thinking {
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 2px; user-select: none;
+}
+.nx-thinking__txt {
+  font-family: var(--nx-font-mono); font-size: .78rem; letter-spacing: .06em;
+  background: linear-gradient(90deg, #2e3136 0%, #d7dade 35%, #6b7078 55%, #2e3136 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  animation: nx-shine 1.9s linear infinite;
+}
+@keyframes nx-shine { from { background-position: 220% 0; } to { background-position: -60% 0; } }
+.nx-thinking__chev { color: #565b62; display: inline-flex; transition: transform var(--nx-fast); }
+.nx-thinking:hover .nx-thinking__chev { color: var(--nx-txt); }
+.nx-thinking:hover .nx-thinking__txt { animation-duration: 1.1s; }
+@media (prefers-reduced-motion: reduce) {
+  .nx-thinking__txt { animation: none; background: none; color: var(--nx-txt-dim);
+    -webkit-text-fill-color: var(--nx-txt-dim); }
+}
+
+/* retry button shown after a transport error */
+.nx-retry {
+  all: unset; cursor: pointer; margin-left: 8px; font-family: var(--nx-font-mono);
+  font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--nx-grey);
+  border: 1px solid var(--nx-line-hi); border-radius: var(--nx-r-pill); padding: 3px 10px;
+}
+.nx-retry:hover { background: rgba(158,164,173,.15); color: #fff; }
+
+/* download icon inside agent file chips */
+.nx-filechip__dl {
+  all: unset; cursor: pointer; display: inline-grid; place-items: center;
+  width: 18px; height: 18px; border-radius: 6px; color: var(--nx-txt-faint);
+}
+.nx-filechip__dl:hover { color: #fff; background: rgba(158,164,173,.28); }
+.nx-filechip__dl svg { width: 12px; height: 12px; }
+.nx-filechip__p { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+/* markdown rendering inside assistant replies */
+.nx-msg__text.md h1, .nexus-md h1 { font-family: var(--nx-font-display); font-size: 1.25rem; color: #fff; margin: 14px 0 8px; }
+.nx-msg__text.md h2, .nexus-md h2 { font-family: var(--nx-font-display); font-size: 1.08rem; color: #f0f1f3; margin: 13px 0 7px; }
+.nx-msg__text.md h3, .nexus-md h3 { font-family: var(--nx-font-display); font-size: .96rem; color: var(--nx-txt); margin: 12px 0 6px; }
+.nx-msg__text.md h4, .nx-msg__text.md h5, .nx-msg__text.md h6 { font-size: .9rem; color: var(--nx-txt); margin: 10px 0 5px; }
+.nx-msg__text.md p { margin: 7px 0; }
+.nx-msg__text.md ul, .nx-msg__text.md ol { margin: 7px 0 7px 20px; }
+.nx-msg__text.md li { margin: 3px 0; }
+.nx-msg__text.md code:not(pre code) {
+  font-family: var(--nx-font-mono); font-size: .8em; padding: 2px 6px; border-radius: 6px;
+  background: rgba(255,255,255,.07); border: 1px solid var(--nx-line); color: #dfe2e6;
+}
+.nx-msg__text.md pre {
+  position: relative; margin: 10px 0; border-radius: var(--nx-r-md); overflow: auto;
+  background: #0a0a0c; border: 1px solid var(--nx-line); padding: 12px 14px;
+}
+.nx-msg__text.md pre code { font-family: var(--nx-font-mono); font-size: .76rem; line-height: 1.6; color: #dfe2e6; white-space: pre; }
+.nx-msg__text.md blockquote { border-left: 3px solid var(--nx-grey); margin: 8px 0; padding: 2px 12px; color: var(--nx-txt-dim); }
+.nx-msg__text.md table { border-collapse: collapse; margin: 10px 0; font-size: .82rem; }
+.nx-msg__text.md th, .nx-msg__text.md td { border: 1px solid var(--nx-line); padding: 5px 10px; }
+.nx-msg__text.md th { background: rgba(255,255,255,.05); color: #fff; }
+.nx-msg__text.md hr { border: 0; border-top: 1px dashed var(--nx-line); margin: 12px 0; }
+.nx-msg__text.md a { color: var(--nx-grey-hi, #b9c0cb); text-decoration: underline dotted; }
+.md-copy {
+  all: unset; cursor: pointer; position: absolute; top: 8px; right: 8px; z-index: 2;
+  font-family: var(--nx-font-mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--nx-txt-faint); background: rgba(255,255,255,.06); border: 1px solid var(--nx-line);
+  border-radius: 8px; padding: 3px 9px; opacity: 0; transition: opacity .2s;
+}
+.nx-msg__text.md pre:hover .md-copy, .md-copy:focus { opacity: 1; }
+.md-copy:hover { color: #fff; background: rgba(158,164,173,.2); }

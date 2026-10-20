@@ -122,3 +122,50 @@
   background: rgba(0,0,0,.4); }
 .nx-log div { padding: 2px 0; border-bottom: 1px dashed rgba(255,255,255,.04); animation: nx-msgin .3s both; }
 .nx-log b { color: var(--nx-grey); font-weight: 500; }
+
+/* ============================================================================
+   UPDATE — IDE dock sizing: drag-resize, collapse, expand-to-wide, close+reopen
+   ========================================================================= */
+.nx-dock { transition: width .35s var(--nx-ease), transform .45s var(--nx-ease); }
+@media (min-width: 1281px) {
+  .nx-shell { transition: grid-template-columns .05s linear; }
+}
+
+/* the vertical grabber on the dock's left edge */
+.nx-resizer {
+  position: absolute; left: -4px; top: 0; bottom: 0; width: 9px; z-index: 80;
+  cursor: col-resize; background: transparent; touch-action: none;
+}
+.nx-resizer::after {
+  content: ""; position: absolute; left: 4px; top: 0; bottom: 0; width: 1px;
+  background: transparent; transition: background .2s, box-shadow .2s;
+}
+.nx-resizer:hover::after, body.is-resizing-dock .nx-resizer::after {
+  background: var(--nx-grey);
+  box-shadow: 0 0 14px 2px rgba(158,164,173,.45);
+}
+body.is-resizing-dock { cursor: col-resize; user-select: none; }
+body.is-resizing-dock .nx-editor__ta { pointer-events: none; }
+
+/* small icon buttons used by min / max */
+.nx-ibtn--sm { width: 26px; height: 26px; }
+.nx-ibtn--sm svg { width: 13px; height: 13px; }
+
+/* expanded state — hide chrome that only matters at narrow widths */
+.nx-dock.is-max .nx-editor__minimap { display: none; }
+.nx-dock.is-max .nx-tabs { font-size: .78rem; }
+
+/* floating tab that reappears whenever the dock is closed */
+.nx-dockreopen {
+  position: fixed; right: 0; top: 50%; transform: translateX(110%) translateY(-50%);
+  z-index: 90; display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 10px; border: 1px solid var(--nx-line-hi); border-right: 0;
+  border-radius: 16px 0 0 16px; cursor: pointer; color: var(--nx-txt-dim);
+  background: var(--nx-clay); backdrop-filter: blur(var(--nx-blur));
+  box-shadow: var(--nx-clay-out); font-family: var(--nx-font-mono); font-size: .6rem;
+  letter-spacing: .18em; writing-mode: vertical-rl; text-orientation: mixed;
+  transition: transform .4s var(--nx-spring), color .2s, background .2s;
+}
+.nx-dockreopen.is-shown { transform: translateX(0) translateY(-50%); }
+.nx-dockreopen:hover { color: #fff; background: rgba(158,164,173,.16); }
+.nx-dockreopen svg { width: 16px; height: 16px; writing-mode: horizontal-tb; }

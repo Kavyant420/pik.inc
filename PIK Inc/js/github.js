@@ -41,52 +41,106 @@
     },
 
     /* ---------- Device Flow (client id is public; secret stays server-side) --
-       Works without any backend: GitHub's device flow is designed for CLI/apps
-       that cannot keep a secret. We poll for the token ourselves.            */
-    async startDeviceFlow() {
-      var params = new URLSearchParams({ client_id: CFG.GH_CLIENT_ID, scope: "repo" });
-      var res = await fetch("https://github.com/login/device/code", {
-        method: "POST",
-        headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-        body: params.toString()
-      });
-      // Device endpoint may reject CORS from browsers -> surface the manual path
-      var text = await res.text();
-      if (!res.ok) throw new Error(res.status === 404 ? "device-flow-disabled" : "device HTTP " + res.status);
-      try {
-        var data = Object.fromEntries(new URLSearchParams(text));
-        if (!data.device_code) throw new Error("bad-payload");
-        return data; // { device_code, user_code, verification_uri, interval, expires_in }
-      } catch (e) {
-        throw new Error("device-flow-cors");
-      }
+       GitHub's /login/device/code endpoint does NOT send CORS headers, so a
+       direct browser fetch always fails ("Failed to fetch"). We therefore try
+       the device endpoint through a tiny public CORS relay first; if that is
+       unavailable we fall back to the manual link flow: open github.com/login/
+       device in a new tab ourselves and still poll for the token — polling
+       /login/oauth/access_token DOES work from the browser via the same relay.
+       A PAT paste remains the guaranteed offline path.                     */
+    _ghRelay(path, bodyForm) {
+      // jsDelivr-hosted CORS relays are unreliable for POSTs; use corsproxy.io style
+      var targets = [
+        "https://corsproxy.io/?url=" + encodeURIComponent("https://github.com" + path),
+        "https://api.cors.lol/?url=" + encodeURIComponent("https://github.com" + path)
+      ];
+      return { targets: targets, body: bodyForm };
     },
 
-    async pollDeviceFlow(dc, interval, signal) {
+    async startDeviceFlow() {
+      var params = new URLSearchParams({ client_id: CFG.GH_CLIENT_ID, scope: "repo,gist" });
+      var relay = this._ghRelay("/login/device/code", params.toString());
+      var lastErr = null;
+      for (var i = 0; i < relay.targets.length; i++) {
+        try {
+          var res = await fetch(relay.targets[i], {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+            body: relay.body
+          });
+          if (!res.ok) { lastErr = new Error(res.status === 404 ? "device-flow-disabled" : "device HTTP " + res.status); continue; }
+          var text = await res.text();
+          var data = Object.fromEntries(new URLSearchParams(text));
+          if (!data.device_code) {
+            // relay may have returned JSON
+            try { data = JSON.parse(text); } catch (e) {}
+          }
+          if (data.device_code) {
+            data._relay = relay.targets[i]; // remember which relay worked for polling
+            return data; // { device_code, user_code, verification_uri, interval, expires_in }
+          }
+          lastErr = new Error(data.error || "bad-payload");
+        } catch (e) { lastErr = e; }
+      }
+      // Direct attempt too (works if GitHub ever enables CORS or under extensions)
+      try {
+        var res2 = await fetch("https://github.com/login/device/code", {
+          method: "POST",
+          headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString()
+        });
+        if (res2.ok) {
+          var t2 = await res2.text();
+          var d2 = Object.fromEntries(new URLSearchParams(t2));
+          if (d2.device_code) return d2;
+        }
+      } catch (e) {}
+      var err = new Error("device-flow-unreachable");
+      err.fallbackUrl = "https://github.com/login/device";
+      throw err;
+    },
+
+    async pollDeviceFlow(dc, interval, signal, onManualOpen) {
       interval = Math.max(3, interval || 5);
       var deadline = Date.now() + (dc.expires_in || 900) * 1000;
+      var pollTargets = dc._relay
+        ? [dc._relay, this._ghRelay("/login/oauth/access_token", "").targets[1]]
+        : ["https://corsproxy.io/?url=" + encodeURIComponent("https://github.com/login/oauth/access_token"),
+           "https://api.cors.lol/?url=" + encodeURIComponent("https://github.com/login/oauth/access_token")];
       while (Date.now() < deadline) {
         await new Promise(function (r, rej) {
           var id = setTimeout(r, interval * 1000);
           if (signal) signal.addEventListener("abort", function () { clearTimeout(id); rej(new Error("aborted")); });
         });
-        var res = await fetch("https://github.com/login/oauth/access_token", {
-          method: "POST",
-          headers: { "Accept": "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify({
-            client_id: CFG.GH_CLIENT_ID,
-            device_code: dc.device_code,
-            grant_type: "urn:ietf:params:oauth:grant-type:device_code"
-          })
-        }).catch(function () { return null; });
-        if (!res) continue;
-        var j = await res.json().catch(function () { return {}; });
-        if (j.access_token) {
-          await NexusSettings.setKey("github", j.access_token);
-          await this.refreshUser();
-          return j.access_token;
+        var payload = JSON.stringify({
+          client_id: CFG.GH_CLIENT_ID,
+          device_code: dc.device_code,
+          grant_type: "urn:ietf:params:oauth:grant-type:device_code"
+        });
+        for (var ti = 0; ti < pollTargets.length; ti++) {
+          try {
+            var res = await fetch(pollTargets[ti], {
+              method: "POST",
+              headers: { "Accept": "application/json", "Content-Type": "application/json" },
+              body: payload
+            });
+            if (!res.ok) continue;
+            var j = await res.json().catch(function () {
+              return res.text().then(function (t) { return Object.fromEntries(new URLSearchParams(t)); });
+            });
+            if (j && j.access_token) {
+              await NexusSettings.setKey("github", j.access_token);
+              await this.refreshUser();
+              return j.access_token;
+            }
+            if (j && (j.error === "expired_token" || j.error === "access_denied")) throw new Error(j.error);
+            if (j && j.error === "authorization_pending") break; // try next target only on transport junk
+          } catch (e) {
+            if (String(e.message) === "authorization_pending") break;
+            if (e.message === "expired_token" || e.message === "access_denied") throw e;
+            if (e.name === "AbortError" || e.message === "aborted") throw e;
+          }
         }
-        if (j.error === "expired_token" || j.error === "access_denied") throw new Error(j.error);
       }
       throw new Error("device-flow-timeout");
     },

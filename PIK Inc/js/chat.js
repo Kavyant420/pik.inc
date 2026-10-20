@@ -159,7 +159,16 @@
       /* assistant shell: think-panel + body + typing dots */
       var node = this._addAssistantShell();
       var bodyEl = node.body, thinkWrap = node.think, thinkBody = node.thinkBody;
-      bodyEl.innerHTML = '<span class="nx-typing"><i></i><i></i><i></i></span>';
+      /* no more three-dots: a shimmering "Thinking\u2026" label that also acts
+         as the expand toggle for the reasoning stream */
+      bodyEl.innerHTML = '<button class="nx-thinking" type="button">' +
+        '<span class="nx-thinking__txt">Thinking\u2026</span>' +
+        '<span class="nx-thinking__chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></span>' +
+        '</button>';
+      var thinkBtn = bodyEl.querySelector(".nx-thinking");
+      thinkBtn.addEventListener("click", function () {
+        self._toggleThink(node);
+      });
 
       try {
         var res = await PIKRouter.chat({
@@ -172,18 +181,29 @@
               thinkWrap.hidden = false;
               thinkBody.textContent += d;
               thinkBody.scrollTop = thinkBody.scrollHeight;
+              /* live reasoning arrived -> reveal the panel automatically */
+              if (!node._autoOpened) { node._autoOpened = true; node.think.classList.remove("is-closed"); }
             } else {
-              if (bodyEl.querySelector(".nx-typing")) bodyEl.innerHTML = "";
+              var tb = bodyEl.querySelector(".nx-thinking");
+              if (tb) { bodyEl.innerHTML = ""; }
               bodyEl.textContent += d;
             }
             self._scrollThread();
           }
         });
 
-        /* final render with light markdown */
+        /* final render with markdown syntax (## headings, **bold**, etc.) */
         bodyEl.innerHTML = mdLite(res.text || "(empty response)");
         if (res.reasoning && !thinkBody.textContent) thinkBody.textContent = res.reasoning;
-        if (!res.reasoning) thinkWrap.hidden = true; // no chain-of-thought from this engine/model
+        if (!res.reasoning) {
+          thinkWrap.hidden = true; // no chain-of-thought tokens from this engine
+          node.thinkLabel.textContent = "";
+        } else {
+          /* collapse by default but keep the strip visible & expandable */
+          node.thinkLabel.textContent = "THOUGHT PROCESS";
+          node.think.classList.add("is-closed");
+          if (node._autoOpened) node.think.classList.remove("is-closed");
+        }
 
         if (res.digest) node.digest.innerHTML = "<b>sha256</b> " + esc(res.digest.slice(0, 20)) +
           " <b>engine</b> " + esc(res.engine) + " <b>model</b> " + esc(String(res.model || ""));
@@ -197,13 +217,29 @@
             var c = document.createElement("span");
             c.className = "nx-filechip is-new";
             c.style.animationDelay = (i * 90) + "ms";
-            c.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' + esc(f.path);
-            c.onclick = function () { document.dispatchEvent(new CustomEvent("pik:openfile", { detail: f.path })); };
+            c.title = "Click: open in IDE \u00b7 Download icon: save to disk";
+            c.innerHTML = SVG_FILE + "<span class=\"nx-filechip__p\">" + esc(f.path) + "</span>";
+            /* clicking the chip name opens the file in the IDE */
+            c.addEventListener("click", function () {
+              document.dispatchEvent(new CustomEvent("pik:openfile", { detail: f.path }));
+            });
+            /* dedicated download button inside the chip -> real file download */
+            var dl = document.createElement("button");
+            dl.className = "nx-filechip__dl";
+            dl.title = "Download " + f.path;
+            dl.innerHTML = SVG_DL;
+            dl.addEventListener("click", function (ev) {
+              ev.stopPropagation();
+              if (global.PIKPreview) PIKPreview.downloadFile(f.path);
+            });
+            c.appendChild(dl);
             chipWrap.appendChild(c);
           });
           node.body.parentNode.appendChild(chipWrap);
+          /* tell the live-preview dock the agent finished writing files */
+          document.dispatchEvent(new CustomEvent("pik:agentfiles", { detail: wrote.map(function (w) { return w.path; }) }));
           if (window.PIKToasts) PIKToasts.show({ type: "success", title: "Workspace updated",
-            text: wrote.length + " file(s) written by the agent into the IDE." });
+            text: wrote.length + " file(s) written by the agent into the IDE — click a chip to open, or hit its download icon." });
         }
 
         this.history.push({ role: "assistant", content: res.text || "" });
@@ -211,7 +247,12 @@
         if (String(e.message || e).indexOf("aborted") !== -1 || e.name === "AbortError") {
           bodyEl.innerHTML = '<em style="color:var(--nx-txt-faint)">— stream stopped by user —</em>';
         } else {
-          bodyEl.innerHTML = '<span style="color:var(--nx-danger)">transport error: ' + esc(String(e.message || e)) + "</span>";
+          var em = String(e.message || e);
+          if (/401/.test(em)) em += " \u2014 every keyless engine refused; check your internet connection and press send again.";
+          bodyEl.innerHTML = '<span style="color:var(--nx-danger)">transport error: ' + esc(em) +
+            '</span> <button class="nx-retry" type="button">retry</button>';
+          var rb = bodyEl.querySelector(".nx-retry");
+          if (rb) rb.addEventListener("click", function () { self.send(); });
         }
       } finally {
         this.busy = false;
@@ -262,7 +303,7 @@
         '<div class="nx-msg__avatar">' + (m.logo ? '<img src="' + m.logo + '" alt="" loading="lazy">' : "NX") + "</div>" +
         '<div class="nx-msg__body">' +
           '<div class="nx-think" hidden><div class="nx-think__bar">' +
-            '<span class="nx-think__label">THINKING</span>' +
+            '<span class="nx-think__label">THINKING…</span>' +
             '<span class="nx-think__effort">' + this.lastEffort.toUpperCase() + "</span>" +
             '<span class="nx-think__chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span>' +
           '</div><div class="nx-think__body"></div></div>' +
@@ -281,8 +322,19 @@
         body: div.querySelector(".nx-msg__text"),
         digest: div.querySelector(".nx-msg__digest"),
         think: think,
+        thinkLabel: think.querySelector(".nx-think__label"),
         thinkBody: think.querySelector(".nx-think__body")
       };
+    },
+
+    /* expand/collapse the reasoning panel from the shimmering Thinking chip */
+    _toggleThink: function (node) {
+      node.think.hidden = false;
+      node.think.classList.toggle("is-closed");
+      var body = node.thinkBody;
+      if (!body.textContent) {
+        body.textContent = "Waiting for reasoning tokens\u2026 some free engines batch the whole chain-of-thought and deliver it when the answer completes \u2014 it will appear here.";
+      }
     }
   };
 
