@@ -18,10 +18,17 @@
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  /* markdown-lite renderer: ## headings, **bold**, *italic*, `code`, lists,
-     fenced blocks, links — delegated to the shared PIKMD module */
+  /* markdown renderer — PIKMD handles blocks (headings/tables/lists) and
+     stashes math sentinels unescaped; PIKMath renders the TeX inside them. */
   function mdLite(s) {
-    return global.PIKMD ? PIKMD.render(s) : "<p>" + esc(s).replace(/\n/g, "<br>") + "</p>";
+    var raw = String(s == null ? "" : s);
+    if (global.PIKMD) {
+      var html = PIKMD.render(raw);
+      if (global.PIKMath) html = PIKMath.renderHtml(html);
+      return html;
+    }
+    if (global.PIKMath) return PIKMath.render(raw);
+    return "<p>" + esc(raw).replace(/\n/g, "<br>") + "</p>";
   }
 
   var SVG_FILE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
@@ -192,8 +199,10 @@
           }
         });
 
-        /* final render with markdown syntax (## headings, **bold**, etc.) */
+        /* final render with markdown syntax (## headings, **bold**, tables, math) */
+        bodyEl.classList.add("md");
         bodyEl.innerHTML = mdLite(res.text || "(empty response)");
+        if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
         if (res.reasoning && !thinkBody.textContent) thinkBody.textContent = res.reasoning;
         if (!res.reasoning) {
           thinkWrap.hidden = true; // no chain-of-thought tokens from this engine
@@ -290,7 +299,8 @@
         '<div class="nx-msg__avatar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c0c0e" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 5-6 8-6s6.2 2 8 6"/></svg></div>' +
         '<div class="nx-msg__body"><div class="nx-msg__head"><span class="nx-msg__who">You</span>' +
         (files && files.length ? '<span class="nx-msg__tag">' + files.length + ' file(s)</span>' : "") + "</div>" +
-        '<div class="nx-msg__text">' + mdLite(text) + "</div></div>";
+        '<div class="nx-msg__text md">' + mdLite(text) + "</div></div>";
+      PIKMD.wire && PIKMD.wire(div);
       this.els.thread.appendChild(div);
       this._scrollThread();
     },
