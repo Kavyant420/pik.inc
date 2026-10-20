@@ -51,6 +51,10 @@
     src = String(src == null ? "" : src);
     var fences = [];
     /* pull fenced code blocks out first so their contents are never mangled */
+    /* close a dangling ``` fence virtually so an unclosed block still renders
+       as code (prevents raw text + stray fences leaking into the page) */
+    var _ft = (src.match(/```/g) || []).length;
+    if (_ft % 2 === 1) src += "\n```";
     src = src.replace(/```([\w\-./=]*)\r?\n([\s\S]*?)```/g, function (_, info, body) {
       var lang = String(info || "").trim().split(/[\s:]/)[0].toLowerCase();
       var i = fences.length;

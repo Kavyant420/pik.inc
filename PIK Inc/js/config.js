@@ -28,6 +28,13 @@
     POLLINATIONS_CHAIN: [
       "https://text.pollinations.ai/openai"
     ],
+    /* Models verified accepted by text.pollinations.ai's OpenAI endpoint.
+       The router validates settings.polliModel against this list and falls
+       back to POLLINATIONS_DEFAULT_MODEL instead of triggering HTTP 400s. */
+    POLLI_MODELS: [
+      "openai", "openai-large", "openai-reasoning", "mistral", "llama",
+      "deepseek", "qwen-coder", "trinity", "unity", "kernel", "searchgpt"
+    ],
 
     /* ---- DeepInfra public inference API (keyless, free tier, CORS ok) -----
        Tried after every pollinations hop fails. NOTE: the previous

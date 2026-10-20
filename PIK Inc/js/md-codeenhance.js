@@ -202,7 +202,7 @@
 
     enhance: function (root) {
       if (!root) return;
-      var pres = root.querySelectorAll(".md-pre");
+      var pres = root.querySelectorAll(".md-pre, .md-code");
       Array.prototype.forEach.call(pres, function (pre, idx) {
         if (pre.dataset.enhanced) return;
         pre.dataset.enhanced = "1";
