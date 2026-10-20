@@ -116,7 +116,14 @@
     },
 
     getSelected: function () { return this.currentId(); },
-    currentId: function () { return this.els.chip.dataset.model || CFG.SUGGESTED_MODEL; },
+    /* hardened: micro-bootstrap.bindUI may call this before mount() has run,
+       when els.chip is still undefined — never touch dataset blindly. */
+    currentId: function () {
+      try {
+        var id = (this.els && this.els.chip && this.els.chip.dataset) ? this.els.chip.dataset.model : null;
+        return id || CFG.SUGGESTED_MODEL;
+      } catch (e) { return CFG.SUGGESTED_MODEL; }
+    },
 
     setSelected: function (id, silent) {
       this.els.chip.dataset.model = id;

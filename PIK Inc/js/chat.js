@@ -208,13 +208,21 @@
       node.genShown = true;
       var genEl = bodyEl.querySelector(".nx-gen");
       if (genEl) genEl.addEventListener("click", function () {
-        /* click the generating card -> see the entire thinking process */
+        /* click the generating card -> see the entire thinking process.
+         No auto-expanding writing view anymore: nothing is revealed until
+         the user clicks — then the full-trace modal opens. */
         if (global.PIKThinkPanel) {
-          thinkWrap.hidden = false;
-          if (!thinkBody.textContent) thinkBody.textContent = "Reasoning is being collected\u2026";
-          PIKThinkPanel.open(thinkWrap.__think || { getText: function () { return thinkBody.textContent || ""; }, model: self.modelId(), engine: PIKRouter.engine, effort: self.lastEffort });
+          var tmeta = thinkWrap.__think || { getText: function () { return thinkBody.textContent || ""; }, model: self.modelId(), engine: PIKRouter.engine, effort: self.lastEffort };
+          thinkWrap.__think = tmeta;
+          PIKThinkPanel.open(tmeta);
         }
       });
+      /* the collapsed THINKING… strip itself also opens the full-trace modal
+         (delegated handler in think-panel.js relies on __think being bound) */
+      thinkWrap.__think = {
+        getText: function () { return thinkBody.textContent || ""; },
+        model: this.modelId(), engine: PIKRouter.engine, effort: this.lastEffort
+      };
 
       /* Codex/Claude-Code style incremental rendering: rAF-batched paints,
          virtually-closed code fences while streaming, blinking block caret. */
@@ -231,12 +239,16 @@
           signal: (this.controller = new AbortController()).signal,
           onDelta: function (d, isReasoning) {
             if (isReasoning) {
+              /* thinking space stays LIMITED: reasoning tokens are collected
+                 silently into the hidden body — nothing is written on screen.
+                 The user clicks the shining THINKING… strip to read the entire
+                 process in the full-trace modal. */
               thinkWrap.hidden = false;
               thinkBody.textContent += d;
-              thinkBody.scrollTop = thinkBody.scrollHeight;
-              /* live reasoning arrived -> reveal the panel automatically */
-              if (!node._autoOpened) { node._autoOpened = true; node.think.classList.remove("is-closed"); }
-              /* keep the full-trace modal live if the user opened it mid-stream */
+              if (!node._thinkCount) node._thinkCount = 0;
+              node._thinkCount += d.length;
+              node.thinkLabel.textContent = "THINKING\u2026";
+              /* keep the full-trace modal live only if the user opened it */
               if (global.PIKThinkPanel) { try { PIKThinkPanel.tick(); } catch (e) {} }
             } else {
               /* first answer token -> retire the GENERATING overlay; the body
@@ -260,14 +272,16 @@
         if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
         scrubEmoji(bodyEl); // CDN icons only — no emoji ever in AI output
         if (res.reasoning && !thinkBody.textContent) thinkBody.textContent = res.reasoning;
-        if (!res.reasoning) {
+        if (!thinkBody.textContent) {
           thinkWrap.hidden = true; // no chain-of-thought tokens from this engine
           node.thinkLabel.textContent = "";
         } else {
-          /* collapse by default but keep the strip visible & expandable */
+          /* LIMITED thinking space: strip stays collapsed with a shining
+             "THOUGHT PROCESS" label — clicking it opens the entire trace in
+             the modal. No inline writing view, ever. */
           node.thinkLabel.textContent = "THOUGHT PROCESS";
           node.think.classList.add("is-closed");
-          if (node._autoOpened) node.think.classList.remove("is-closed");
+          node.think.classList.add("is-shining");
         }
 
         if (res.digest) node.digest.innerHTML = "<b>sha256</b> " + esc(res.digest.slice(0, 20)) +
@@ -383,8 +397,10 @@
       this.els.thread.appendChild(div);
       var think = div.querySelector(".nx-think");
       var thinkBodyEl = think.querySelector(".nx-think__body");
+      /* clicking the shining THINKING… text opens the FULL reasoning modal —
+         there is no inline expand/collapse writing view anymore */
       think.querySelector(".nx-think__bar").addEventListener("click", function () {
-        think.classList.toggle("is-closed");
+        if (global.PIKThinkPanel && think.__think) PIKThinkPanel.open(think.__think);
       });
       /* register the full reasoning trace so clicking the panel opens the
          modal with the entire thinking process (think-panel.js) */

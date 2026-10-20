@@ -277,10 +277,15 @@
         return { role: m.role, content: txt };
       }));
       var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
+      /* "max" is NOT a valid reasoning_effort on the free endpoint — sending
+         it produced HTTP 400. CFG.THINKING_MAP clamps max -> high now, but
+         double-guard here so any stale value can never poison the request. */
+      var effort = CFG.THINKING_MAP[opts.thinking] || "medium";
+      if (["low", "medium", "high"].indexOf(effort) === -1) effort = "high";
       var body = {
         model: model, messages: messages, stream: true,
         private: true, referrer: "pik.nexus",
-        reasoning_effort: CFG.THINKING_MAP[opts.thinking] || "medium"
+        reasoning_effort: effort
       };
       if (typeof opts.temperature === "number") body.temperature = opts.temperature;
       var meta = await this.digest(body);
