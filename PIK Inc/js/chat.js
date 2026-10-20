@@ -18,12 +18,15 @@
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  /* tiny markdown-ish renderer (bold / inline code / fenced blocks stay raw) */
+  /* markdown-lite renderer: ## headings, **bold**, *italic*, `code`, lists,
+     fenced blocks, links — delegated to the shared PIKMD module */
   function mdLite(s) {
-    return esc(s)
-      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      .replace(/`([^`\n]+)`/g, '<code class="nx-inline">$1</code>');
+    return global.PIKMD ? PIKMD.render(s) : "<p>" + esc(s).replace(/\n/g, "<br>") + "</p>";
   }
+
+  var SVG_FILE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+  var SVG_DL = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
+  var SVG_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
 
   var Chat = {
     els: {},
@@ -32,6 +35,8 @@
     busy: false,
     controller: null,
     lastEffort: "high",
+    _streamBuf: "",
+    _streamRAF: 0,
 
     mount: function (refs) {
       this.els = refs;
@@ -47,6 +52,10 @@
           e.target.style.height = Math.min(240, e.target.scrollHeight) + "px";
         }, 0);
       });
+
+      /* attach button opens the hidden file input */
+      var attachBtn = document.getElementById("nx-attach-btn");
+      if (attachBtn) attachBtn.addEventListener("click", function () { self.els.fileIn.click(); });
 
       /* ladder buttons */
       this.els.ladder.querySelectorAll("button").forEach(function (b) {
@@ -72,12 +81,14 @@
 
       /* engine change -> toast + pill */
       PIKRouter.onEngineChange = function (engine, reason) {
+        var keyless = engine !== "openrouter";
         if (window.PIKToasts) PIKToasts.show({
-          type: engine === "pollinations" ? "warn" : "info",
-          title: engine === "pollinations" ? "Failover engaged" : "Engine switch",
-          text: engine === "pollinations"
-            ? "Free OpenRouter budget reached — routed through pollinations.ai with your custom system prompt."
-            : "Back on OpenRouter."
+          type: keyless ? "warn" : "info",
+          title: keyless ? "Switched to free keyless engine" : "Back on OpenRouter",
+          text: keyless
+            ? "OpenRouter free tier exhausted or no key set \u2014 NEXUS now runs on " + engine +
+              " (no API key needed)" + (reason ? ", reason: " + reason : "") + "."
+            : "OpenRouter budget available again."
         });
         document.dispatchEvent(new CustomEvent("pik:engine", { detail: { engine: engine, reason: reason } }));
       };
