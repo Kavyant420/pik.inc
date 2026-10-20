@@ -101,7 +101,7 @@
   /* wrap tokens with line numbers aligned to a gutter */
   function withLineNumbers(htmlSrc, src) {
     var lines = src.split("\n");
-    var g = lines.map(function (_, idx) => String(idx + 1)).join("\n");
+    var g = lines.map(function (_, idx) { return String(idx + 1); }).join("\n");
     return '<div class="md-code__gutter" aria-hidden="true">' + g + "</div>" +
            '<div class="md-code__main"><pre>' + htmlSrc + "</pre></div>";
   }

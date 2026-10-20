@@ -1,0 +1,177 @@
+/* ============================================================================
+   PIK//NEXUS — 39-nexus-thinkpanel.css
+   The agent "thinking space": a deliberately SMALL inline reasoning strip on
+   every assistant message (2 visible lines, fading out) that opens the FULL
+   chain-of-thought in a modal overlay when clicked.
+   ========================================================================= */
+
+/* ---------- inline thinking strip (intentionally compact) ---------- */
+.nx-think {
+  position: relative;
+  margin: 0 0 10px;
+  border: 1px solid var(--nx-line, rgba(255, 255, 255, .08));
+  border-left: 2px solid var(--nx-violet, #8b7cf7);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(139, 124, 247, .07), rgba(139, 124, 247, .02)),
+    var(--nx-bg-2, #101014);
+  overflow: hidden;
+  transition: border-color .25s ease, background .25s ease;
+}
+.nx-think:hover { border-left-color: var(--nx-cyan, #56d4dd); cursor: pointer; }
+
+.nx-think__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: .68rem;
+  letter-spacing: .12em;
+  color: var(--nx-txt-2, #a7abb5);
+  user-select: none;
+}
+.nx-think__label { font-weight: 700; text-transform: uppercase; }
+.nx-think__effort {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--nx-line, rgba(255,255,255,.1));
+  font-size: .6rem;
+  color: var(--nx-violet, #8b7cf7);
+  background: rgba(139, 124, 247, .08);
+}
+.nx-think__chev {
+  display: inline-flex;
+  transition: transform .28s cubic-bezier(.22, .8, .3, 1);
+  color: var(--nx-txt-3, #7d828c);
+}
+.nx-think.is-closed .nx-think__chev { transform: rotate(-90deg); }
+
+/* the small window: at most two lines, masked fade at the bottom */
+.nx-think__body {
+  max-height: 2.6em;                 /* the "limited thinking space" */
+  overflow: hidden;
+  padding: 0 10px 8px;
+  font-family: var(--nx-mono, ui-monospace, monospace);
+  font-size: .74rem;
+  line-height: 1.3em;
+  color: var(--nx-txt-2, #9aa0ab);
+  white-space: pre-wrap;
+  word-break: break-word;
+  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  transition: max-height .3s ease;
+}
+.nx-think.is-closed .nx-think__body { max-height: 0; padding-bottom: 0; }
+
+/* live shimmer while tokens are still arriving */
+.nx-think.is-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, rgba(139, 124, 247, .12) 50%, transparent 60%);
+  background-size: 300% 100%;
+  animation: nx-think-sweep 2.4s linear infinite;
+}
+@keyframes nx-think-sweep {
+  from { background-position: 120% 0; }
+  to   { background-position: -120% 0; }
+}
+
+/* ---------- full-screen thinking modal ---------- */
+.nx-thinkmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 4vw, 40px);
+  background: rgba(4, 4, 7, .62);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+.nx-thinkmodal:not([hidden]) { display: grid; }
+.nx-thinkmodal.is-open { opacity: 1; pointer-events: auto; }
+
+.nx-thinkmodal__panel {
+  width: min(860px, 100%);
+  max-height: min(78vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--nx-line-strong, rgba(255,255,255,.14));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .55), 0 0 0 1px rgba(139,124,247,.08) inset;
+  transform: translateY(14px) scale(.985);
+  opacity: 0;
+  transition: transform .32s cubic-bezier(.22, .8, .3, 1), opacity .32s ease;
+}
+.nx-thinkmodal.is-open .nx-thinkmodal__panel { transform: none; opacity: 1; }
+
+.nx-thinkmodal__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--nx-line, rgba(255,255,255,.08));
+}
+.nx-thinkmodal__title {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  color: var(--nx-violet, #8b7cf7);
+}
+.nx-thinkmodal__title::before {
+  content: "";
+  display: inline-block;
+  width: 7px; height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--nx-violet, #8b7cf7);
+  box-shadow: 0 0 10px var(--nx-violet, #8b7cf7);
+  animation: nx-pulse-dot 1.6s ease-in-out infinite;
+}
+.nx-thinkmodal__meta {
+  font-family: var(--nx-mono, ui-monospace, monospace);
+  font-size: .66rem;
+  color: var(--nx-txt-3, #7d828c);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-thinkmodal__head .nx-ibtn:last-of-type { margin-left: auto; }
+
+.nx-thinkmodal__body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+  font-family: var(--nx-mono, ui-monospace, monospace);
+  font-size: .8rem;
+  line-height: 1.65;
+  color: var(--nx-txt-1, #cfd3da);
+  white-space: pre-wrap;
+  word-break: break-word;
+  scrollbar-width: thin;
+}
+.nx-thinkmodal__foot {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid var(--nx-line, rgba(255,255,255,.08));
+  font-size: .66rem;
+  color: var(--nx-txt-3, #7d828c);
+}
+
+@keyframes nx-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .45; transform: scale(.72); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-think.is-live::after { animation: none; }
+  .nx-thinkmodal__panel, .nx-think__chev { transition: none; }
+  .nx-thinkmodal__title::before { animation: none; }
+}

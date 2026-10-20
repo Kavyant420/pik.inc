@@ -74,6 +74,37 @@
     },
     isOpen: function () { return this.openState; },
 
+    /* ---------- blob-URL bundle API (used by terminal runPreview + hosting) ----------
+       Same assembly as the srcdoc preview, but returned as an object URL so a
+       real iframe src / deploy step can consume it. Cached per build stamp. */
+    _blobUrl: null,
+    _blobAt: 0,
+    bundle: function (entryPath, force) {
+      var W = PIKWorkspace;
+      var entry = entryPath || this._entry();
+      if (!entry) return { ok: false, error: "no html entry in workspace" };
+      var b = this._bundle(entry);
+      var latest = 0;
+      try {
+        Object.keys(W.project.files).forEach(function (p) {
+          var f = W.project.files[p];
+          if (f && f.updatedAt && f.updatedAt > latest) latest = f.updatedAt;
+        });
+      } catch (e) {}
+      if (!force && this._blobUrl && this._blobAt >= latest) {
+        return { ok: true, url: this._blobUrl, path: entry };
+      }
+      try {
+        if (this._blobUrl) URL.revokeObjectURL(this._blobUrl);
+        var blob = new Blob([b.html + "\n" + this._bridge()], { type: "text/html;charset=utf-8" });
+        this._blobUrl = URL.createObjectURL(blob);
+        this._blobAt = Date.now();
+        return { ok: true, url: this._blobUrl, path: entry };
+      } catch (e) {
+        return { ok: false, error: String(e.message || e) };
+      }
+    },
+
     /* ---------- pick the entry document ---------- */
     _entry: function () {
       var files = PIKWorkspace.listFiles().filter(function (p) {
@@ -228,4 +259,6 @@
   };
 
   global.PIKPreview = Preview;
+  /* alias: terminal + hosting modules reference the bundle API as PIKLivePreview */
+  global.PIKLivePreview = Preview;
 })(window);

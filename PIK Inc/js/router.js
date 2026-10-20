@@ -52,6 +52,8 @@
     async _record() {
       this._prune();
       this._usage.push(Date.now());
+      /* daily skill cap ledger (remote calls only — local core is unmetered) */
+      if (global.PIKUsage) { try { PIKUsage.record(this.engine); } catch (e) {} }
       try {
         await PIKCrypto.SecureStore.set(CFG.LS.USAGE, { t: this._usage, burned: this._orBurned });
       } catch (e) {}
@@ -77,6 +79,46 @@
      */
     async chat(opts) {
       var settings = await NexusSettings.get();
+
+      /* ---------- on-device route: PIK MicroEngine (unmetered, offline) ---------- */
+      if (global.PIKMicro && PIKMicro.isLocalModel(opts.model)) {
+        if (!global.MicroEngine || !MicroEngine.ready) {
+          try { await Micro.boot(settings.microTier || "small", null, null, true); } catch (e) {}
+        }
+        if (!global.MicroEngine || !MicroEngine.ready) {
+          throw new Error("Local core is not booted — open Settings ▸ Local inference core and press “Boot local core”.");
+        }
+        this._setEngine("local-micro", null);
+        var lres = await MicroEngine.generate({
+          messages: opts.messages,
+          thinking: opts.thinking,
+          signal: opts.signal,
+          onDelta: opts.onDelta
+        });
+        lres.engine = "local-micro";
+        lres.model = opts.model;
+        lres.usedFallback = false;
+        return lres;
+      }
+
+      /* ---------- AI skill cap: rolling daily budget for remote calls ----------
+         When the cap is hit we either hand off to the local core (if enabled)
+         or surface an honest reset countdown instead of silently failing. */
+      if (global.PIKUsage && !PIKUsage.allowed()) {
+        if (settings.localEnabled && global.MicroEngine && MicroEngine.ready) {
+          this._setEngine("local-micro", "skill-cap");
+          var cres = await MicroEngine.generate({
+            messages: opts.messages, thinking: opts.thinking,
+            signal: opts.signal, onDelta: opts.onDelta
+          });
+          cres.engine = "local-micro"; cres.model = opts.model; cres.usedFallback = false;
+          return cres;
+        }
+        var capped = new Error("Daily skill cap reached (" + PIKUsage.summary() + "). Enable the on-device MicroEngine in Settings to keep building, or retry after the reset.");
+        capped.skillCap = true;
+        throw capped;
+      }
+
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
       var wantOR = hasKey && !this._orBurned && this.budgetLeft() > 0;
 
@@ -121,6 +163,8 @@
         try {
           var res = await attempts[i].fn();
           ok = true;
+          /* every remote completion counts against the daily skill cap */
+          if (global.PIKUsage) { try { PIKUsage.record(attempts[i].name); } catch (e) {} }
           this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
           return res;
         } catch (e) {

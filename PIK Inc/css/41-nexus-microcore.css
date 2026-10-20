@@ -1,0 +1,138 @@
+/* ============================================================================
+   PIK//NEXUS — 41-nexus-microcore.css
+   The on-device MicroEngine (local ~500-600 MB core): settings block, boot
+   ladder, progress bar, status pill and the "LOCAL" badge in the model chip.
+   ========================================================================= */
+
+.nx-micro {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--nx-line, rgba(255,255,255,.09));
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(86, 212, 221, .07), transparent 55%),
+    var(--nx-bg-2, #101014);
+}
+
+.nx-micro__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nx-micro__title {
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--nx-cyan, #56d4dd);
+}
+.nx-micro__sub { font-size: .7rem; color: var(--nx-txt-3, #7d828c); margin-top: 2px; }
+
+/* size ladder: tiny / small / medium tiers of the local core */
+.nx-micro-ladder {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--nx-line, rgba(255,255,255,.08));
+  background: rgba(0, 0, 0, .25);
+}
+.nx-micro-ladder button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--nx-txt-2, #a7abb5);
+  font-family: var(--nx-mono, ui-monospace, monospace);
+  font-size: .68rem;
+  padding: 6px 4px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+.nx-micro-ladder button:hover { color: #fff; }
+.nx-micro-ladder button.is-on {
+  color: #0b0c10;
+  background: linear-gradient(135deg, var(--nx-cyan, #56d4dd), var(--nx-violet, #8b7cf7));
+  box-shadow: 0 2px 12px rgba(139, 124, 247, .35);
+  font-weight: 700;
+}
+
+/* boot progress */
+.nx-micro-bar {
+  width: 100%;
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.nx-micro-bar::-webkit-progress-bar { background: transparent; }
+.nx-micro-bar::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--nx-cyan, #56d4dd), var(--nx-violet, #8b7cf7));
+  border-radius: 999px;
+  transition: width .25s ease;
+}
+.nx-micro-bar::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--nx-cyan, #56d4dd), var(--nx-violet, #8b7cf7));
+  border-radius: 999px;
+}
+
+/* status pill */
+.nx-micro-status {
+  font-family: var(--nx-mono, ui-monospace, monospace);
+  font-size: .66rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--nx-line, rgba(255,255,255,.12));
+  color: var(--nx-txt-3, #8b909a);
+  background: rgba(255, 255, 255, .03);
+  white-space: nowrap;
+}
+.nx-micro-status[data-kind="ok"]   { color: #57d98a; border-color: rgba(87,217,138,.45); background: rgba(87,217,138,.08); }
+.nx-micro-status[data-kind="warn"] { color: #f7c66d; border-color: rgba(247,198,109,.45); background: rgba(247,198,109,.08); }
+.nx-micro-status[data-kind="bad"]  { color: #ff8372; border-color: rgba(255,131,114,.45); background: rgba(255,131,114,.08); }
+.nx-micro-status[data-kind="ok"]::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #57d98a;
+  box-shadow: 0 0 8px #57d98a;
+  animation: nx-micro-breath 2.2s ease-in-out infinite;
+}
+@keyframes nx-micro-breath {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .5; transform: scale(.7); }
+}
+
+/* LOCAL badge shown on the picker chip + catalog rows when micro is selected */
+.nx-chip--local::after,
+.nx-model__badge--local {
+  content: "ON-DEVICE";
+  font-size: .56rem;
+  letter-spacing: .12em;
+  font-weight: 800;
+  color: #0b0c10;
+  background: linear-gradient(90deg, var(--nx-cyan, #56d4dd), #7ee2a8);
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+.nx-chip--local::after { content: "ON-DEVICE"; display: inline-block; vertical-align: middle; }
+
+/* resident-memory readout line */
+.nx-micro__mem {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--nx-mono, ui-monospace, monospace);
+  font-size: .64rem;
+  color: var(--nx-txt-3, #7d828c);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-micro-status[data-kind="ok"]::before { animation: none; }
+}
