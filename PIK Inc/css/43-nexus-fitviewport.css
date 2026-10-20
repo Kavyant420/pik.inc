@@ -1,0 +1,122 @@
+/* ============================================================================
+   PIK//NEXUS — 43-nexus-fitviewport.css
+   Final-layer guarantee: the workbench occupies EXACTLY one viewport.
+   Loaded last so it wins every cascade fight against late-injected rules.
+   Also hardens the send-button glyph so its icon can never disappear.
+   ========================================================================= */
+
+/* 1) document chrome can never scroll or stretch */
+html {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* 2) the app root is exactly one viewport tall — never taller.
+      (min-height was the original culprit for dead space under the chat.) */
+body.nx-root.nx-page {
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  display: block;
+}
+
+/* 3) shell grid fills the body precisely; rows are strictly bounded */
+body.nx-root .nx-shell {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  grid-template-rows: var(--nx-topbar-h, 60px) minmax(0, 1fr) 26px !important;
+}
+
+/* 4) every vertical chain member must allow shrinking below content size */
+body.nx-root .nx-main,
+body.nx-root .nx-rail,
+body.nx-root .nx-dock {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 5) only the thread scrolls — the composer stays pinned to the bottom */
+body.nx-root .nx-thread {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+}
+body.nx-root .nx-wellwrap,
+body.nx-root .nx-attlist {
+  flex: 0 0 auto !important;
+  min-height: 0;
+}
+
+/* 6) fixed decorative layers must not extend the page box */
+body.nx-root .nx-aurora,
+body.nx-root .nx-noise,
+body.nx-root .nx-shards,
+body.nx-root #nx-particles,
+body.nx-root .nx-particles {
+  position: fixed !important;
+  inset: 0 !important;
+  height: 100% !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  pointer-events: none;
+}
+
+/* 7) send-button icon armor — the paper plane / stop square always renders */
+.nx-send {
+  appearance: none; -webkit-appearance: none;
+  width: 46px; height: 46px;
+  min-width: 46px; min-height: 46px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  position: relative;
+  cursor: pointer;
+  color: #0a0a0c;
+  background-image: linear-gradient(135deg, #9ea4ad 0%, #4e5259 50%, #9ea4ad 100%);
+  background-color: #9ea4ad; /* fallback if custom props fail */
+  box-shadow: 0 10px 26px -10px rgba(158,164,173,.75),
+              inset 0 2px 3px rgba(255,255,255,.6),
+              inset 0 -4px 8px rgba(0,0,0,.35);
+}
+.nx-send svg {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px; min-height: 18px;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  fill-rule: nonzero;
+}
+/* CSS-masked fallback glyph when no <svg> child exists yet */
+.nx-send:not(:has(svg))::after {
+  content: "";
+  display: block;
+  width: 18px; height: 18px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 14.5c0 .5.37.93.87.99L15 16 2.88 18.5c-.5.07-.87.5-.87 1l.01 1c0 .82.63 1.32 1.38.9z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 14.5c0 .5.37.93.87.99L15 16 2.88 18.5c-.5.07-.87.5-.87 1l.01 1c0 .82.63 1.32 1.38.9z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* 8) kill any stray element that pushes past the fold inside main column */
+body.nx-root .nx-main > :not(.nx-thread):not(.nx-wellwrap):not(.nx-stars):not(.nx-pane) {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.nx-root .nx-send { animation: none !important; }
+}

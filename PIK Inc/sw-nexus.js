@@ -10,7 +10,7 @@
    ========================================================================= */
 "use strict";
 
-const VERSION = "nexus-v3";
+const VERSION = "nexus-v4";
 const SHELL = [
   "./",
   "./nexus.html",
@@ -30,7 +30,7 @@ const SHELL = [
   "./css/33-nexus-ide.css", "./css/34-nexus-models.css", "./css/35-nexus-animations.css",
   "./css/36-nexus-terminal.css", "./css/37-nexus-preview.css", "./css/38-nexus-hosting.css",
   "./css/39-nexus-thinkpanel.css", "./css/40-nexus-output.css", "./css/41-nexus-microcore.css",
-  "./css/42-nexus-motion-plus.css"
+  "./css/42-nexus-motion-plus.css", "./css/43-nexus-fitviewport.css"
 ];
 
 self.addEventListener("install", (event) => {

@@ -277,9 +277,11 @@
       this.els.send.disabled = false;
       this.els.send.classList.toggle("is-streaming", on);
       this.els.send.title = on ? "Stop (Esc)" : "Send (Enter)";
+      // explicit width/height attrs + fill rule so the glyph can never render
+      // at 0x0 even if a stylesheet fails to load or is stale-cached
       this.els.send.innerHTML = on
-        ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12l16-8-6 8 6 8z"/></svg>';
+        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 8 6 8z"/></svg>';
     },
 
     _scrollThread: function () {
