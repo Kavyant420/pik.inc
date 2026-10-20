@@ -180,6 +180,8 @@
 
     /* ---------- events ---------- */
     onChange(fn) { this.listeners.push(fn); },
+    /* alias: terminal.js and older modules call subscribe() — same contract */
+    subscribe(fn) { this.listeners.push(fn); },
     _emit() {
       var s = this;
       this.listeners.forEach(function (fn) { try { fn(s.project); } catch (e) {} });

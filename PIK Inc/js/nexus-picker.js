@@ -18,7 +18,7 @@
   }
 
   var Picker = {
-    els: {},
+    els: { chip: null, overlay: null, openBtn: null, search: null, list: null },
     list: [],
     selIdx: -1,
     open: false,
