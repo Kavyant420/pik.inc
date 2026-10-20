@@ -101,9 +101,21 @@
     },
 
     /* ---------- repo list (mine when authed, curated orgs otherwise) ---- */
+    _ghCache: null,          // in-memory cache of the public-org listing
+    _ghCacheAt: 0,
+    _ghCacheTtlMs: 10 * 60 * 1000,
     async _loadRepos(mine) {
       var wrap = this.els.repos, self = this;
       wrap.hidden = false;
+
+      /* Unauthenticated GitHub REST calls are rate-limited per-IP (60/hr),
+         which is why six parallel requests came back HTTP 403. Serve the
+         cached listing when fresh, and stop hammering on 403/429. */
+      if (!mine && this._ghCache && (Date.now() - this._ghCacheAt) < this._ghCacheTtlMs) {
+        this._renderRepoList(wrap, this._ghCache);
+        return;
+      }
+
       wrap.innerHTML = '<p style="font-size:.7rem;color:var(--nx-txt-faint);padding:6px">loading repositories…</p>';
       try {
         var items = [];
@@ -115,9 +127,12 @@
           });
         } else {
           var owners = ["minimax-io", "google-deepmind", "NVIDIA", "poolsideai", "mistralai", "cohere-ai"];
+          var rateLimited = false;
           for (var i = 0; i < owners.length; i++) {
+            if (rateLimited) break; // stop hammering once GitHub signals the quota is gone
             try {
               var res = await fetch("https://api.github.com/users/" + owners[i] + "/repos?per_page=3&sort=updated");
+              if (res.status === 403 || res.status === 429) { rateLimited = true; continue; }
               if (!res.ok) continue;
               var arr = await res.json();
               arr.forEach(function (r) {
@@ -125,19 +140,31 @@
               });
             } catch (e) {}
           }
+          if (items.length && !rateLimited) { this._ghCache = items; this._ghCacheAt = Date.now(); }
         }
-        if (!items.length) { wrap.innerHTML = '<p style="font-size:.7rem;color:var(--nx-txt-faint);padding:6px">no repos found (rate limit?)</p>'; return; }
-        wrap.innerHTML = items.map(function (r) {
-          return '<div class="nx-repo" data-full="' + esc(r.full_name) + '">' +
-            '<img src="' + esc(r.logo) + '" alt="" loading="lazy"><span>' + esc(r.full_name) + "</span>" +
-            "<em>★ " + (r.stars || 0) + "</em></div>";
-        }).join("");
-        wrap.querySelectorAll(".nx-repo").forEach(function (el) {
-          el.addEventListener("click", function () { self._onRepoPick(el.dataset.full); });
-        });
+        if (!items.length) {
+          /* fall back to a stale cache instead of an empty panel */
+          if (this._ghCache) { this._renderRepoList(wrap, this._ghCache); return; }
+          wrap.innerHTML = '<p style="font-size:.7rem;color:var(--nx-txt-faint);padding:6px">GitHub rate limit reached — connect (top button) or retry in a few minutes.</p>';
+          return;
+        }
+        this._renderRepoList(wrap, items);
       } catch (e) {
         wrap.innerHTML = '<p style="font-size:.7rem;color:var(--nx-danger);padding:6px">could not list repos</p>';
       }
+    },
+
+    /* shared renderer for the repo list (fresh fetch, cache hit, or stale) */
+    _renderRepoList: function (wrap, items) {
+      var self = this;
+      wrap.innerHTML = items.map(function (r) {
+        return '<div class="nx-repo" data-full="' + esc(r.full_name) + '">' +
+          '<img src="' + esc(r.logo) + '" alt="" loading="lazy"><span>' + esc(r.full_name) + "</span>" +
+          "<em>★ " + (r.stars || 0) + "</em></div>";
+      }).join("");
+      wrap.querySelectorAll(".nx-repo").forEach(function (el) {
+        el.addEventListener("click", function () { self._onRepoPick(el.dataset.full); });
+      });
     },
 
     _mode: "fork",

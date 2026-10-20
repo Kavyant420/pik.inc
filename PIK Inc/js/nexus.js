@@ -84,9 +84,80 @@
       var pushBtn = $("[data-nx='push']");
       pushBtn.addEventListener("click", function () { PIKGHUI.pushAll($("[data-nx='branch']")); });
 
+      /* ---------- left-rail action buttons (Save / New file / Export) ------ */
+      function askText(title, placeholder, initial, okLabel) {
+        return new Promise(function (resolve) {
+          var ov = document.createElement("div");
+          ov.className = "nx-askfx";
+          ov.innerHTML =
+            '<div class="nx-askfx__panel nx-clay" role="dialog" aria-modal="true">' +
+              '<h4>' + title + '</h4>' +
+              '<input type="text" placeholder="' + (placeholder || "") + '" value="' + (initial || "") + '">' +
+              '<div class="nx-askfx__row">' +
+                '<button class="nx-btn nx-btn--ghost nx-btn--sm" data-a="cancel">Cancel</button>' +
+                '<button class="nx-btn nx-btn--sm" data-a="ok">' + (okLabel || "OK") + '</button>' +
+              '</div>' +
+            '</div>';
+          document.body.appendChild(ov);
+          requestAnimationFrame(function () { ov.classList.add("is-open"); });
+          var inp = ov.querySelector("input");
+          inp.focus(); inp.select();
+          function done(v) { ov.classList.remove("is-open"); setTimeout(function () { ov.remove(); }, 200); resolve(v); }
+          ov.querySelector("[data-a='cancel']").addEventListener("click", function () { done(null); });
+          ov.querySelector("[data-a='ok']").addEventListener("click", function () { done(inp.value.trim() || null); });
+          inp.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") { e.preventDefault(); done(inp.value.trim() || null); }
+            if (e.key === "Escape") done(null);
+          });
+          ov.addEventListener("click", function (e) { if (e.target === ov) done(null); });
+        });
+      }
+
+      /* Save button: force-persists the current file NOW and shows its digest */
+      var saveBtn = $("[data-nx='save-file']");
+      if (saveBtn) saveBtn.addEventListener("click", async function () {
+        var p = PIKWorkspace.activePath;
+        if (!p) {
+          if (window.PIKToasts) PIKToasts.show({ type: "warn", title: "Nothing to save", text: "Open a file in the editor first." });
+          return;
+        }
+        var content = PIKEditor.getValue ? PIKEditor.getValue() : PIKWorkspace.readFile(p);
+        var res = await PIKWorkspace.writeFile(p, content, { by: "user", note: "manual save" });
+        if (window.PIKToasts) PIKToasts.show({ type: "success", title: "Saved", text: p + " \u00b7 sha256:" + String((res && res.digest) || "").slice(0, 10) });
+      });
+
+      /* New file button: create an empty file and open it */
+      var nfBtn = $("[data-nx='newfile']");
+      if (nfBtn) nfBtn.addEventListener("click", async function () {
+        var name = await askText("New file", "e.g. src/app.js", "", "Create");
+        if (!name) return;
+        name = name.replace(/^\/+/, "");
+        if (PIKWorkspace.fileMeta && PIKWorkspace.fileMeta(name)) {
+          if (window.PIKToasts) PIKToasts.show({ type: "warn", title: "Already exists", text: name });
+          return;
+        }
+        await PIKWorkspace.writeFile(name, "", { by: "user", note: "created" });
+        if (window.PIKEditor && PIKEditor.openFile) PIKEditor.openFile(name);
+      });
+
+      /* Export button: download the whole project as a JSON bundle */
+      var exBtn = $("[data-nx='export-proj']");
+      if (exBtn) exBtn.addEventListener("click", function () {
+        var files = PIKWorkspace.listFiles ? PIKWorkspace.listFiles() : [];
+        var bundle = { name: (PIKWorkspace.project && PIKWorkspace.project.name) || "project", exportedAt: Date.now(), files: {} };
+        files.forEach(function (f) { bundle.files[f.path || f] = PIKWorkspace.readFile(f.path || f); });
+        var blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = (bundle.name || "nexus-project") + ".pik.json";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        if (window.PIKToasts) PIKToasts.show({ type: "success", title: "Project exported", text: Object.keys(bundle.files).length + " files bundled" });
+      });
+
       /* ---------- new project / rename ---------- */
-      $("[data-nx='newproj']").addEventListener("click", function () {
-        var name = prompt("Project name");
+      $("[data-nx='newproj']").addEventListener("click", async function () {
+        var name = await askText("New project", "project name", "my-app", "Create");
         if (name) { PIKWorkspace.newProject(name, "local"); }
       });
 

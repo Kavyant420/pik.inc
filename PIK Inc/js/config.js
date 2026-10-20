@@ -22,9 +22,11 @@
     POLLINATIONS_GET_URL: "https://text.pollinations.ai/",
     /* openai-compatible chat backends tried in order when the primary one is
        down or rate-limited — all keyless / free */
+    /* NOTE: universal.pollinations.ai was removed — it does not resolve
+       (net::ERR_NAME_NOT_RESOLVED) and only produced console noise. The chain
+       now contains real, keyless hosts only. */
     POLLINATIONS_CHAIN: [
-      "https://text.pollinations.ai/openai",
-      "https://universal.pollinations.ai"
+      "https://text.pollinations.ai/openai"
     ],
 
     /* ---- DeepInfra public inference API (keyless, free tier, CORS ok) -----
@@ -87,8 +89,11 @@
 
     /* ---- Thinking ladder (UI scale Low -> Medium -> High -> Max) --------- */
     THINKING_LEVELS: ["low", "medium", "high", "max"],
+    /* Max thinking on free models: pollinations' openai-compatible endpoint
+       validates reasoning_effort strictly and answers HTTP 400 for unknown
+       values like "max" — so "max" maps to its strongest accepted level. */
     THINKING_MAP: {
-      low: "low", medium: "medium", high: "high", max: "max"
+      low: "low", medium: "medium", high: "high", max: "high"
     },
 
     /* ---- Storage keys ------------------------------------------------------ */

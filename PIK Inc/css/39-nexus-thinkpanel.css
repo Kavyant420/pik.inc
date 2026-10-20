@@ -1,8 +1,9 @@
 /* ============================================================================
    PIK//NEXUS — 39-nexus-thinkpanel.css
-   The agent "thinking space": a deliberately SMALL inline reasoning strip on
-   every assistant message (2 visible lines, fading out) that opens the FULL
-   chain-of-thought in a modal overlay when clicked.
+   The agent "thinking space": a deliberately SMALL inline strip on every
+   assistant message. NO live writing process is ever shown — the body stays
+   collapsed; clicking the shining THINKING… text opens the FULL chain-of-
+   thought in the modal overlay. Monochrome (black/grey) only.
    ========================================================================= */
 
 /* ---------- inline thinking strip (intentionally compact) ---------- */
@@ -10,15 +11,16 @@
   position: relative;
   margin: 0 0 10px;
   border: 1px solid var(--nx-line, rgba(255, 255, 255, .08));
-  border-left: 2px solid var(--nx-violet, #888888);
+  border-left: 2px solid #6e6e6e;
   border-radius: 10px;
   background:
     linear-gradient(180deg, rgba(136,136,136,.07), rgba(136,136,136,.02)),
     var(--nx-bg-2, #101014);
   overflow: hidden;
+  cursor: pointer;
   transition: border-color .25s ease, background .25s ease;
 }
-.nx-think:hover { border-left-color: var(--nx-cyan, #b9b9b9); cursor: pointer; }
+.nx-think:hover { border-left-color: #b9b9b9; }
 
 .nx-think__bar {
   display: flex;
@@ -31,13 +33,24 @@
   user-select: none;
 }
 .nx-think__label { font-weight: 700; text-transform: uppercase; }
+/* SHINING thinking text — the only affordance to read the reasoning.
+   Monochrome shimmer (grey sweep), never a writing view. */
+.nx-think__label, .nx-think.is-shining .nx-think__label {
+  background: linear-gradient(90deg, #4b4b4b 0%, #e9ebee 38%, #8a8a8a 58%, #4b4b4b 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  animation: nx-thinkshine 2.2s linear infinite;
+}
+@keyframes nx-thinkshine { from { background-position: 220% 0; } to { background-position: -60% 0; } }
+.nx-think:hover .nx-think__label { animation-duration: 1.2s; }
 .nx-think__effort {
   margin-left: auto;
   padding: 1px 7px;
   border-radius: 999px;
   border: 1px solid var(--nx-line, rgba(255,255,255,.1));
   font-size: .6rem;
-  color: var(--nx-violet, #888888);
+  color: #a8a8a8;
   background: rgba(136,136,136,.08);
 }
 .nx-think__chev {
