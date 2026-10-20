@@ -247,13 +247,19 @@
               thinkBody.textContent += d;
               if (!node._thinkCount) node._thinkCount = 0;
               node._thinkCount += d.length;
-              node.thinkLabel.textContent = "THINKING\u2026";
+              /* shining Thinking… line ONLY — no box, no inline trace */
+              node.think.classList.add("is-shining", "is-closed");
+              node.thinkLabel.textContent = "Thinking\u2026";
               /* keep the full-trace modal live only if the user opened it */
               if (global.PIKThinkPanel) { try { PIKThinkPanel.tick(); } catch (e) {} }
             } else {
-              /* first answer token -> retire the GENERATING overlay; the body
-                 fills in only at completion (no live writing process shown) */
+              /* first answer token -> retire the GENERATING overlay and stream
+                 the markdown straight into the response section. Fences are
+                 closed virtually per frame (stream-renderer/markdown.js), so a
+                 half-received code block NEVER renders as raw text or dumps its
+                 line numbers above the code — it is highlighted live. */
               if (node.genShown) { node.genShown = false; bodyEl.classList.remove("is-generating"); bodyEl.innerHTML = ""; }
+              if (!bodyEl.classList.contains("md")) bodyEl.classList.add("md");
               if (sr) { sr.push(d); }
               else { bodyEl.textContent += d; self._scrollThread(); }
             }
@@ -279,7 +285,7 @@
           /* LIMITED thinking space: strip stays collapsed with a shining
              "THOUGHT PROCESS" label — clicking it opens the entire trace in
              the modal. No inline writing view, ever. */
-          node.thinkLabel.textContent = "THOUGHT PROCESS";
+          node.thinkLabel.textContent = "Thought process \u00b7 click to read";
           node.think.classList.add("is-closed");
           node.think.classList.add("is-shining");
         }

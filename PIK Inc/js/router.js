@@ -277,11 +277,25 @@
         return { role: m.role, content: txt };
       }));
       var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
+      /* validate the model against the live catalog — an unknown model name
+         makes the strict OpenAI-compatible endpoint answer HTTP 400. Fall back
+         to the keyless default instead of poisoning every hop in the chain. */
+      if (CFG.POLLI_MODELS && CFG.POLLI_MODELS.length && CFG.POLLI_MODELS.indexOf(model) === -1) {
+        model = CFG.POLLINATIONS_DEFAULT_MODEL;
+      }
       /* "max" is NOT a valid reasoning_effort on the free endpoint — sending
          it produced HTTP 400. CFG.THINKING_MAP clamps max -> high now, but
          double-guard here so any stale value can never poison the request. */
       var effort = CFG.THINKING_MAP[opts.thinking] || "medium";
       if (["low", "medium", "high"].indexOf(effort) === -1) effort = "high";
+      /* Max thinking on free models: when the endpoint accepts no native
+         reasoning_effort ladder at the requested level, ask the model to run
+         its full internal chain-of-thought anyway (reasoning tokens stream
+         back into the THINKING trace, never into the visible answer). */
+      if (opts.thinking === "max") {
+        messages[0] = { role: "system", content: messages[0].content +
+          "\n- MAX REASONING MODE: think through the problem exhaustively step by step internally before answering. Keep all extended reasoning inside your internal chain-of-thought; the final visible answer must stay concise and well-formatted." };
+      }
       var body = {
         model: model, messages: messages, stream: true,
         private: true, referrer: "pik.nexus",
