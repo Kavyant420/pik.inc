@@ -33,7 +33,7 @@
 }
 .nx-tab:hover { color: var(--nx-txt); background: rgba(255,255,255,.04); }
 .nx-tab.is-active { color: #fff; background: rgba(255,255,255,.06);
-  border-top-color: var(--nx-grey); box-shadow: inset 0 8px 18px -12px rgba(158,164,173,.5); }
+  border-top-color: var(--nx-grey); box-shadow: inset 0 8px 18px -12px rgba(163,163,163,.5); }
 .nx-tab i.dotdir { width: 6px; height: 6px; border-radius: 2px; background: var(--nx-dgrey); }
 .nx-tab .x { opacity: .4; font-style: normal; }
 .nx-tab .x:hover { opacity: 1; color: var(--nx-danger); }
@@ -45,7 +45,7 @@
 }
 .nx-editor__gutter {
   flex: 0 0 46px; overflow: hidden; text-align: right; padding: 12px 10px 12px 0;
-  color: #3c4046; background: #060608; border-right: 1px solid var(--nx-line);
+  color: #3f3f3f; background: #060608; border-right: 1px solid var(--nx-line);
   user-select: none; white-space: pre; font-size: .74rem;
 }
 .nx-editor__code { position: relative; flex: 1; min-width: 0; overflow: hidden; }
@@ -59,23 +59,23 @@
   background: transparent; color: transparent; caret-color: var(--nx-grey-hi);
   resize: none; outline: none; z-index: 2;
 }
-.nx-editor__ta::selection { background: rgba(158,164,173,.28); color: transparent; }
+.nx-editor__ta::selection { background: rgba(163,163,163,.28); color: transparent; }
 
 /* active-line glow band */
 .nx-editor::after {
   content: ""; position: absolute; left: 46px; right: 60px; top: 12px; height: 1.55em;
-  background: linear-gradient(90deg, rgba(158,164,173,.07), transparent);
+  background: linear-gradient(90deg, rgba(163,163,163,.07), transparent);
   pointer-events: none;
 }
 
 /* syntax token palette — greys w/ strong luminance steps + faint steel tints */
 .tk-k  { color: #e8eaee; font-weight: 600; }                       /* keywords: near-white */
-.tk-f  { color: #b9c0cb; }                                          /* functions: silver */
-.tk-t  { color: #8f96a1; text-decoration: underline;
-         text-decoration-color: rgba(158,164,173,.4); }              /* types/classes */
-.tk-st { color: #7fa39d; }                                          /* strings: cold steel-green */
-.tk-cm { color: #4b5057; font-style: italic; }                      /* comments */
-.tk-nu { color: #c9ced6; }                                          /* numbers: light grey */
+.tk-f  { color: #bfbfbf; }                                          /* functions: silver */
+.tk-t  { color: #959595; text-decoration: underline;
+         text-decoration-color: rgba(163,163,163,.4); }              /* types/classes */
+.tk-st { color: #9a9a9a; }                                          /* strings: cold steel-green */
+.tk-cm { color: #4f4f4f; font-style: italic; }                      /* comments */
+.tk-nu { color: #cdcdcd; }                                          /* numbers: light grey */
 
 /* minimap */
 .nx-editor__minimap {
@@ -114,7 +114,7 @@
   color: var(--nx-txt); font-family: var(--nx-font-mono); font-size: .68rem;
   padding: 7px 10px; border-radius: 9px; outline: none;
 }
-.nx-pushbar input:focus { border-color: var(--nx-grey); box-shadow: 0 0 0 3px rgba(158,164,173,.12); }
+.nx-pushbar input:focus { border-color: var(--nx-grey); box-shadow: 0 0 0 3px rgba(163,163,163,.12); }
 
 /* log panel (agent actions / digests) */
 .nx-log { max-height: 110px; overflow-y: auto; border-top: 1px solid var(--nx-line);
@@ -142,7 +142,7 @@
 }
 .nx-resizer:hover::after, body.is-resizing-dock .nx-resizer::after {
   background: var(--nx-grey);
-  box-shadow: 0 0 14px 2px rgba(158,164,173,.45);
+  box-shadow: 0 0 14px 2px rgba(163,163,163,.45);
 }
 body.is-resizing-dock { cursor: col-resize; user-select: none; }
 body.is-resizing-dock .nx-editor__ta { pointer-events: none; }
@@ -167,5 +167,5 @@ body.is-resizing-dock .nx-editor__ta { pointer-events: none; }
   transition: transform .4s var(--nx-spring), color .2s, background .2s;
 }
 .nx-dockreopen.is-shown { transform: translateX(0) translateY(-50%); }
-.nx-dockreopen:hover { color: #fff; background: rgba(158,164,173,.16); }
+.nx-dockreopen:hover { color: #fff; background: rgba(163,163,163,.16); }
 .nx-dockreopen svg { width: 16px; height: 16px; writing-mode: horizontal-tb; }

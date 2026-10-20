@@ -140,22 +140,22 @@
   }
 
   .swatch--aurora {
-    background: linear-gradient(135deg, #5ee7c8, #6aa8ff);
+    background: linear-gradient(135deg, #c7c7c7, #a1a1a1);
   }
   .swatch--nebula {
-    background: linear-gradient(135deg, #a98cff, #ff8fd0);
+    background: linear-gradient(135deg, #9a9a9a, #ababab);
   }
   .swatch--ember {
-    background: linear-gradient(135deg, #ffb45c, #ff7a8a);
+    background: linear-gradient(135deg, #bdbdbd, #979797);
   }
   .swatch--tide {
-    background: linear-gradient(135deg, #58d6ff, #7c8cff);
+    background: linear-gradient(135deg, #bebebe, #909090);
   }
   .swatch--mono {
-    background: linear-gradient(135deg, #4fe3c1, #9d8cff);
+    background: linear-gradient(135deg, #c1c1c1, #979797);
   }
   .swatch--daylight {
-    background: linear-gradient(135deg, #eef2fb, #b9c6dd);
+    background: linear-gradient(135deg, #f1f1f1, #c4c4c4);
   }
 
   .value-readout {

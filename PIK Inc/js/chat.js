@@ -35,6 +35,40 @@
   var SVG_DL = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
   var SVG_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
 
+  /* ---------- fancy "generating" overlay (logo + shimmering label) ----------
+     Replaces the old live writing process: while the agent works we show a
+     monochrome logo mark with orbiting rings, a word-shimmer headline and an
+     indeterminate scanline. Clicking it opens the full reasoning modal. */
+  function genMarkup(modelLogo) {
+    return '' +
+      '<div class="nx-gen">' +
+        '<div class="nx-gen__mark">' +
+          (modelLogo
+            ? '<img src="' + modelLogo + '" alt="" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fallback\')">'
+            : '') +
+          '<span class="nx-gen__glyph">NX</span>' +
+          '<i class="nx-gen__ring"></i><i class="nx-gen__ring nx-gen__ring--b"></i>' +
+        '</div>' +
+        '<div class="nx-gen__label">G E N E R A T I N G</div>' +
+        '<div class="nx-gen__dots"><i></i><i></i><i></i></div>' +
+        '<div class="nx-gen__scan"></div>' +
+      '</div>';
+  }
+
+  /* strip emoji / pictographs from any rendered output — CDN icons only */
+  var EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/gu;
+  function scrubEmoji(elOrText) {
+    if (typeof elOrText === "string") return elOrText.replace(EMOJI_RE, "");
+    try {
+      var w = document.createTreeWalker(elOrText, NodeFilter.SHOW_TEXT);
+      var n, dirty = false;
+      while ((n = w.nextNode())) {
+        if (EMOJI_RE.test(n.nodeValue)) { n.nodeValue = n.nodeValue.replace(EMOJI_RE, ""); dirty = true; }
+      }
+      return dirty;
+    } catch (e) { return elOrText; }
+  }
+
   var Chat = {
     els: {},
     history: [],          // {role, content}
@@ -163,18 +197,23 @@
       this.els.input.value = ""; this.els.input.style.height = "auto";
       this._hideHero();
 
-      /* assistant shell: think-panel + body + typing dots */
+      /* assistant shell: think-panel + body. No live writing process anymore —
+         a fancy GENERATING overlay (logo + shimmer) shows while the agent
+         works; clicking it opens the full reasoning modal. */
       var node = this._addAssistantShell();
       var bodyEl = node.body, thinkWrap = node.think, thinkBody = node.thinkBody;
-      /* no more three-dots: a shimmering "Thinking\u2026" label that also acts
-         as the expand toggle for the reasoning stream */
-      bodyEl.innerHTML = '<button class="nx-thinking" type="button">' +
-        '<span class="nx-thinking__txt">Thinking\u2026</span>' +
-        '<span class="nx-thinking__chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></span>' +
-        '</button>';
-      var thinkBtn = bodyEl.querySelector(".nx-thinking");
-      thinkBtn.addEventListener("click", function () {
-        self._toggleThink(node);
+      var genLogo = (global.PIKModels && PIKModels.logoFor) ? PIKModels.logoFor(this.modelId().split("/")[0]) : null;
+      bodyEl.innerHTML = genMarkup(genLogo);
+      bodyEl.classList.add("is-generating");
+      node.genShown = true;
+      var genEl = bodyEl.querySelector(".nx-gen");
+      if (genEl) genEl.addEventListener("click", function () {
+        /* click the generating card -> see the entire thinking process */
+        if (global.PIKThinkPanel) {
+          thinkWrap.hidden = false;
+          if (!thinkBody.textContent) thinkBody.textContent = "Reasoning is being collected\u2026";
+          PIKThinkPanel.open(thinkWrap.__think || { getText: function () { return thinkBody.textContent || ""; }, model: self.modelId(), engine: PIKRouter.engine, effort: self.lastEffort });
+        }
       });
 
       /* Codex/Claude-Code style incremental rendering: rAF-batched paints,
@@ -200,8 +239,9 @@
               /* keep the full-trace modal live if the user opened it mid-stream */
               if (global.PIKThinkPanel) { try { PIKThinkPanel.tick(); } catch (e) {} }
             } else {
-              var tb = bodyEl.querySelector(".nx-thinking");
-              if (tb) { bodyEl.innerHTML = ""; }
+              /* first answer token -> retire the GENERATING overlay; the body
+                 fills in only at completion (no live writing process shown) */
+              if (node.genShown) { node.genShown = false; bodyEl.classList.remove("is-generating"); bodyEl.innerHTML = ""; }
               if (sr) { sr.push(d); }
               else { bodyEl.textContent += d; self._scrollThread(); }
             }
@@ -218,6 +258,7 @@
         }
         if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
         if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
+        scrubEmoji(bodyEl); // CDN icons only — no emoji ever in AI output
         if (res.reasoning && !thinkBody.textContent) thinkBody.textContent = res.reasoning;
         if (!res.reasoning) {
           thinkWrap.hidden = true; // no chain-of-thought tokens from this engine

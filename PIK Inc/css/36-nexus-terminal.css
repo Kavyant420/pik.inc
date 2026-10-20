@@ -5,7 +5,7 @@
 .nx-term {
   flex: 1; min-height: 0; overflow: auto; padding: 12px 14px 4px;
   font-family: var(--nx-font-mono); font-size: .78rem; line-height: 1.55;
-  color: #d7dbe0; background: transparent; scrollbar-width: thin;
+  color: #dadada; background: transparent; scrollbar-width: thin;
 }
 .nx-term__line { white-space: pre-wrap; word-break: break-word; animation: term-in .18s ease both; }
 @keyframes term-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
@@ -24,14 +24,14 @@
 .nx-term__inputrow input::placeholder { color: var(--nx-txt-faint); }
 
 /* ANSI token colors (rendered by terminal-ansi.js as <span class="ta-*">) */
-.ta-dim   { color: #7c838d; }
+.ta-dim   { color: #828282; }
 .ta-acc   { color: var(--nx-accent); }
-.ta-warn  { color: #f2c94c; }
+.ta-warn  { color: #c8c8c8; }
 .ta-err   { color: var(--nx-danger); }
-.ta-ok    { color: #6ee7b7; }
-.ta-info  { color: #7dd3fc; }
-.ta-head  { color: #c4b5fd; font-weight: 600; }
-.ta-em    { font-style: italic; color: #a5adba; }
+.ta-ok    { color: #c9c9c9; }
+.ta-info  { color: #c3c3c3; }
+.ta-head  { color: #bdbdbd; font-weight: 600; }
+.ta-em    { font-style: italic; color: #acacac; }
 .ta-b     { font-weight: 700; }
 
 /* busy + focus feedback */
@@ -44,7 +44,7 @@
 .nx-term:focus-visible { outline: 1px solid color-mix(in srgb, var(--nx-accent) 45%, transparent); outline-offset: -1px; }
 
 /* subtle CRT life without hurting readability */
-.nx-term::selection { background: rgba(79, 227, 193, .25); }
+.nx-term::selection { background: rgba(193,193,193,.25); }
 @media (prefers-reduced-motion: no-preference) {
-  .nx-term { text-shadow: 0 0 12px rgba(79, 227, 193, .05); }
+  .nx-term { text-shadow: 0 0 12px rgba(193,193,193,.05); }
 }

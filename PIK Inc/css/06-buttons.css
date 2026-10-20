@@ -60,10 +60,10 @@
   .btn--primary {
     --btn-bg: linear-gradient(
       100deg,
-      color-mix(in srgb, var(--pik-accent) 92%, #0b1020),
-      color-mix(in srgb, var(--pik-accent-alt) 82%, #0b1020)
+      color-mix(in srgb, var(--pik-accent) 92%, #101010),
+      color-mix(in srgb, var(--pik-accent-alt) 82%, #101010)
     );
-    --btn-fg: #04070f;
+    --btn-fg: #060606;
     border-color: transparent;
   }
 

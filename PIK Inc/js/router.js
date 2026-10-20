@@ -152,22 +152,40 @@
         this._setEngine("pollinations", "budget-exhausted");
       }
 
-      /* keyless chain: pollinations POST -> alt mirror -> pollinations GET
-         -> DeepInfra public endpoint. Any 401/403 on a hop means it secretly
-         needs a key — skip it forever (session blacklist), never show the
-         user "HTTP 401" as the final error when other free engines remain. */
-      var attempts = [
-        { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
-        { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
-        { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
-        { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
-      ];
+      /* ---------- free keyless pair: puter + pollinations ----------
+         The two free providers are tried in a rotating order (whoever answered
+         last goes to the back) so NEXUS auto-redirects between puter and
+         pollinations on rate-limits, empty replies or network errors — no API
+         key is ever needed for either. Remaining hops stay as safety nets. */
+      var attempts;
+      if (this._puterLastGood) {
+        attempts = [
+          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
+          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
+          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
+          { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
+          { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
+        ];
+      } else {
+        attempts = [
+          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
+          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
+          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
+          { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
+          { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
+        ];
+      }
       var lastErr = null, ok = false;
       for (var i = 0; i < attempts.length; i++) {
         if (this._blacklist[attempts[i].name]) continue; // known key-gated / dead
         try {
           var res = await attempts[i].fn();
           ok = true;
+          /* remember which free provider answered so the NEXT request starts
+             with the other one (automatic round-robin between puter and
+             pollinations — a dead/rate-limited provider is skipped first) */
+          if (attempts[i].name === "puter") this._puterLastGood = true;
+          else if (attempts[i].name.indexOf("polli") === 0 || attempts[i].name === "pollinations") this._puterLastGood = false;
           /* every remote completion counts against the daily skill cap */
           if (global.PIKUsage) { try { PIKUsage.record(attempts[i].name); } catch (e) {} }
           this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
@@ -214,6 +232,8 @@
     /* ---------- OpenRouter ---------- */
     async _viaOpenRouter(opts, settings) {
       var model = opts.model || CFG.SUGGESTED_MODEL;
+      /* max thinking: never cap output tokens — let reasoning models run to
+         their full completion budget instead of truncating mid-thought */
       var body = { model: model, messages: opts.messages, stream: true };
       var info = PIKModels.get(model);
       if (info && info.reasoning) {
@@ -344,7 +364,7 @@
         model: CFG.DEEPINFRA_MODEL,
         messages: messages,
         stream: true,
-        max_tokens: 4000
+        max_tokens: 8000   /* generous ceiling so chain-of-thought never truncates */
       };
       if (typeof opts.temperature === "number") body.temperature = opts.temperature;
       var meta = await this.digest(body);
@@ -369,6 +389,60 @@
       if (!text) throw new Error("deepinfra-free empty response");
       if (opts.onDelta) { try { opts.onDelta(text, false); } catch (er) {} }
       return { text: text, reasoning: msg.reasoning || "", engine: "deepinfra-free", model: CFG.DEEPINFRA_MODEL, digest: meta.digest, usedFallback: true };
+    },
+
+    /* ---------- Puter.js free keyless provider (no API key, ever) ----------
+       Loads https://js.puter.com/v2/ on demand and calls puter.ai.chat with
+       stream:true. Supports reasoning models (gpt-5-nano / claude / deepseek
+       via mode:"thinking") depending on what the free tier exposes; we pass
+       max thinking as temperature 1 + a thinking-mode hint where supported. */
+    _puterPromise: null,
+    ensurePuter() {
+      if (global.puter && global.puter.ai) return Promise.resolve(global.puter);
+      if (this._puterPromise) return this._puterPromise;
+      this._puterPromise = new Promise(function (resolve, reject) {
+        var s = document.createElement("script");
+        s.src = CFG.PUTER_CDN;
+        s.async = true;
+        s.onload = function () {
+          if (global.puter && global.puter.ai) resolve(global.puter);
+          else reject(new Error("puter loaded but puter.ai missing"));
+        };
+        s.onerror = function () {
+          PIKRouter._puterPromise = null;
+          reject(new Error("puter CDN unreachable"));
+        };
+        document.head.appendChild(s);
+      });
+      return this._puterPromise;
+    },
+
+    async _viaPuter(opts, settings) {
+      var pt = await this.ensurePuter();
+      var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
+      var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
+        if (typeof m.content === "string") return m;
+        var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
+        return { role: m.role, content: txt };
+      }));
+      var kw = { stream: true, temperature: typeof opts.temperature === "number" ? opts.temperature : 0.7 };
+      if (opts.thinking === "max" || opts.thinking === "high") kw.mode = "thinking";
+      var it = pt.ai.chat(messages, kw);
+      if (!it) throw new Error("puter empty iterator");
+      var full = "", reason = "";
+      for await (const part of it) {
+        if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
+        if (!part) continue;
+        var d = (part && part.delta != null) ? String(part.delta)
+              : (part && part.cached != null && !part.cached) ? String(part.message || "") : "";
+        if (!d && typeof part === "string") d = part;
+        if (!d) continue;
+        if (part.type === "reasoning" || part.reasoning) { reason += d; if (opts.onDelta) opts.onDelta(d, true); }
+        else { full += d; if (opts.onDelta) opts.onDelta(d, false); }
+      }
+      if (!full && reason) full = reason;
+      if (!full) throw new Error("puter empty response");
+      return { text: full, reasoning: reason, engine: "puter", model: "puter-free", digest: "", usedFallback: true };
     },
 
     /* ---------- shared SSE reader ---------- */
