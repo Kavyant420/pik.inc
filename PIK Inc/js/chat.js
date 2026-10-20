@@ -177,6 +177,13 @@
         self._toggleThink(node);
       });
 
+      /* Codex/Claude-Code style incremental rendering: rAF-batched paints,
+         virtually-closed code fences while streaming, blinking block caret. */
+      var sr = null;
+      if (global.PIKStream) {
+        try { sr = PIKStream.create(bodyEl); } catch (e) { sr = null; }
+      }
+
       try {
         var res = await PIKRouter.chat({
           model: this.modelId(),
@@ -190,19 +197,27 @@
               thinkBody.scrollTop = thinkBody.scrollHeight;
               /* live reasoning arrived -> reveal the panel automatically */
               if (!node._autoOpened) { node._autoOpened = true; node.think.classList.remove("is-closed"); }
+              /* keep the full-trace modal live if the user opened it mid-stream */
+              if (global.PIKThinkPanel) { try { PIKThinkPanel.tick(); } catch (e) {} }
             } else {
               var tb = bodyEl.querySelector(".nx-thinking");
               if (tb) { bodyEl.innerHTML = ""; }
-              bodyEl.textContent += d;
+              if (sr) { sr.push(d); }
+              else { bodyEl.textContent += d; self._scrollThread(); }
             }
-            self._scrollThread();
           }
         });
 
         /* final render with markdown syntax (## headings, **bold**, tables, math) */
         bodyEl.classList.add("md");
-        bodyEl.innerHTML = mdLite(res.text || "(empty response)");
+        if (sr) {
+          sr.finish(); // flush any pending rAF paint and drop the caret
+          if (!res.text) bodyEl.innerHTML = '<em style="color:var(--nx-txt-faint)">(empty response)</em>';
+        } else {
+          bodyEl.innerHTML = mdLite(res.text || "(empty response)");
+        }
         if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
+        if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
         if (res.reasoning && !thinkBody.textContent) thinkBody.textContent = res.reasoning;
         if (!res.reasoning) {
           thinkWrap.hidden = true; // no chain-of-thought tokens from this engine
@@ -277,9 +292,11 @@
       this.els.send.disabled = false;
       this.els.send.classList.toggle("is-streaming", on);
       this.els.send.title = on ? "Stop (Esc)" : "Send (Enter)";
+      // explicit width/height attrs + fill rule so the glyph can never render
+      // at 0x0 even if a stylesheet fails to load or is stale-cached
       this.els.send.innerHTML = on
-        ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12l16-8-6 8 6 8z"/></svg>';
+        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 8 6 8z"/></svg>';
     },
 
     _scrollThread: function () {
@@ -324,9 +341,20 @@
         "</div>";
       this.els.thread.appendChild(div);
       var think = div.querySelector(".nx-think");
+      var thinkBodyEl = think.querySelector(".nx-think__body");
       think.querySelector(".nx-think__bar").addEventListener("click", function () {
         think.classList.toggle("is-closed");
       });
+      /* register the full reasoning trace so clicking the panel opens the
+         modal with the entire thinking process (think-panel.js) */
+      if (global.PIKThinkPanel) {
+        PIKThinkPanel.bind(think, {
+          getText: function () { return thinkBodyEl.textContent || ""; },
+          model: this.modelId(),
+          engine: "nexus",
+          effort: this.lastEffort
+        });
+      }
       return {
         node: div,
         body: div.querySelector(".nx-msg__text"),

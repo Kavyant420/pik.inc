@@ -78,7 +78,7 @@
       });
 
       /* auto-boot when the user enabled it previously and picked it */
-      if (settings.localEnabled && PIKPicker.getSelected() === MICRO_ID) {
+      if (settings.localEnabled && PIKPicker.currentId() === MICRO_ID) {
         Micro.boot(tier, statusEl, bar, true);
       }
     },
