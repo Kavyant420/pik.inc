@@ -1,0 +1,62 @@
+/* ============================================================================
+   PIK//NEXUS — 38-nexus-hosting.css
+   Nexus Pages host tab: deployment rows, badges, empty state, security foot.
+   ========================================================================= */
+.nx-host { flex-direction: column; overflow: hidden; }
+
+.nx-host__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-bottom: 1px solid var(--nx-line); flex: none;
+}
+.nx-host__head b { display: block; font: 700 .82rem/1.3 var(--nx-font-ui); color: var(--nx-txt); }
+.nx-host__head small { font: 400 .64rem/1.4 var(--nx-font-mono); color: var(--nx-txt-faint); }
+
+.nx-host__list { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; display: grid; gap: 8px; align-content: start; }
+
+.nx-hrow {
+  display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 12px; align-items: center;
+  border: 1px solid var(--nx-line); border-radius: 12px; padding: 10px 12px;
+  background: rgba(255,255,255,.02);
+  animation: hrow-in .3s ease both; transition: border-color .15s, background .15s;
+}
+.nx-hrow:hover { border-color: color-mix(in srgb, var(--nx-accent) 40%, var(--nx-line)); background: rgba(79,227,193,.03); }
+@keyframes hrow-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.nx-hrow__id { min-width: 0; }
+.nx-hrow__id b { display: block; font: 600 .76rem/1.3 var(--nx-font-ui); color: var(--nx-txt); }
+.nx-hrow__url { display: block; font: 400 .62rem/1.4 var(--nx-font-mono); color: var(--nx-accent); opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.nx-hrow__meta { display: flex; gap: 8px; align-items: center; font: 400 .62rem/1 var(--nx-font-mono); color: var(--nx-txt-faint); }
+.nx-hbadge {
+  border: 1px solid var(--nx-line); border-radius: 999px; padding: 3px 8px;
+  font-size: .6rem; letter-spacing: .03em; color: #cfd4da; background: rgba(255,255,255,.03);
+}
+.nx-hbadge--sec { color: #6ee7b7; border-color: rgba(110,231,183,.35); background: rgba(110,231,183,.06); }
+
+.nx-hrow__acts { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; }
+.nx-ibtn--danger:hover { color: var(--nx-danger); border-color: var(--nx-danger); }
+
+.nx-host__empty {
+  margin: auto; text-align: center; max-width: 46ch; display: grid; gap: 8px;
+  color: var(--nx-txt-faint); font-size: .72rem; line-height: 1.6; padding: 24px;
+}
+.nx-host__empty b { color: var(--nx-txt); font-size: .86rem; }
+
+.nx-host__foot {
+  display: flex; justify-content: space-between; gap: 12px; padding: 9px 14px;
+  border-top: 1px solid var(--nx-line); font: 400 .62rem/1.4 var(--nx-font-mono);
+  color: var(--nx-txt-faint); flex: none;
+}
+.nx-host__sec { display: inline-flex; align-items: center; gap: 7px; }
+.nx-host__sec i {
+  width: 7px; height: 7px; border-radius: 50%; background: #6ee7b7;
+  box-shadow: 0 0 8px rgba(110,231,183,.8); animation: sec-pulse 2.4s ease infinite;
+}
+@keyframes sec-pulse { 50% { opacity: .45; } }
+
+.nx-btn.is-busy { pointer-events: none; opacity: .7; }
+.nx-btn.is-busy::before {
+  content: ""; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px;
+  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+  display: inline-block; animation: spin .7s linear infinite; vertical-align: -1px;
+}

@@ -1,0 +1,52 @@
+/* ============================================================================
+   PIK//NEXUS — 37-nexus-preview.css
+   Bottom pane shell + live-preview frame chrome (URL pill, reload spin).
+   ========================================================================= */
+.nx-pane {
+  display: flex; flex-direction: column; min-height: 0;
+  height: var(--pane-h, 300px); border-top: 1px solid var(--nx-line);
+  background: rgba(10, 10, 13, .62); backdrop-filter: blur(14px);
+  transition: height .25s cubic-bezier(.2,.8,.2,1);
+}
+.nx-pane.is-max { height: min(72vh, 720px); }
+body.pane-hidden .nx-pane { height: 0; overflow: hidden; border-top-color: transparent; }
+
+.nx-pane-grab {
+  height: 5px; cursor: row-resize; flex: none; position: relative; z-index: 3;
+  background: linear-gradient(90deg, transparent, var(--nx-line), transparent);
+}
+.nx-pane-grab:hover { background: linear-gradient(90deg, transparent, var(--nx-accent), transparent); }
+body.is-resizing-pane { user-select: none; cursor: row-resize; }
+
+.nx-pane__tabs {
+  display: flex; align-items: center; gap: 2px; padding: 0 10px;
+  border-bottom: 1px solid var(--nx-line); flex: none;
+}
+.nx-pane__tab {
+  display: inline-flex; align-items: center; gap: 6px; background: none; border: 0;
+  color: var(--nx-txt-faint); font: 600 .68rem/1 var(--nx-font-ui); letter-spacing: .04em;
+  padding: 10px 12px; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.nx-pane__tab:hover { color: var(--nx-txt); }
+.nx-pane__tab.is-on { color: var(--nx-accent); border-bottom-color: var(--nx-accent); }
+.nx-pane__label {
+  margin-left: 10px; font: 400 .66rem/1 var(--nx-font-mono); color: var(--nx-txt-faint);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;
+}
+.nx-pane__tools { display: flex; gap: 4px; margin-left: auto; }
+
+.nx-pane__view { flex: 1; min-height: 0; display: flex; position: relative; }
+.nx-pane__view[hidden] { display: none; }
+
+/* preview frame */
+.nx-frame { flex: 1; width: 100%; height: 100%; border: 0; background: #fff; }
+.nx-frame__url {
+  position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px);
+  font: 400 .64rem/1 var(--nx-font-mono); color: #cfd4da;
+  background: rgba(8, 8, 10, .78); border: 1px solid var(--nx-line);
+  padding: 5px 9px; border-radius: 999px; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; pointer-events: none; opacity: .85;
+}
+[data-nx="pane-reload"]:active svg { animation: spin .5s linear; }
+@keyframes spin { to { transform: rotate(360deg); } }

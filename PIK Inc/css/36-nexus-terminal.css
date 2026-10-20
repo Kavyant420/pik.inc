@@ -1,0 +1,50 @@
+/* ============================================================================
+   PIK//NEXUS — 36-nexus-terminal.css
+   Bottom-pane terminal: ANSI palette, scanline glow, caret row, busy state.
+   ========================================================================= */
+.nx-term {
+  flex: 1; min-height: 0; overflow: auto; padding: 12px 14px 4px;
+  font-family: var(--nx-font-mono); font-size: .78rem; line-height: 1.55;
+  color: #d7dbe0; background: transparent; scrollbar-width: thin;
+}
+.nx-term__line { white-space: pre-wrap; word-break: break-word; animation: term-in .18s ease both; }
+@keyframes term-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+.nx-term__line.is-cmd { color: #eef1f4; }
+
+.nx-term__inputrow {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px 12px;
+  border-top: 1px solid var(--nx-line);
+}
+.nx-term__ps1 { color: var(--nx-accent); font-family: var(--nx-font-mono); font-size: .74rem; white-space: nowrap; }
+.nx-term__ps1-inline { color: var(--nx-accent); margin-right: 4px; }
+.nx-term__inputrow input {
+  flex: 1; background: transparent; border: 0; outline: none; color: #fff;
+  font-family: var(--nx-font-mono); font-size: .78rem; caret-color: var(--nx-accent);
+}
+.nx-term__inputrow input::placeholder { color: var(--nx-txt-faint); }
+
+/* ANSI token colors (rendered by terminal-ansi.js as <span class="ta-*">) */
+.ta-dim   { color: #7c838d; }
+.ta-acc   { color: var(--nx-accent); }
+.ta-warn  { color: #f2c94c; }
+.ta-err   { color: var(--nx-danger); }
+.ta-ok    { color: #6ee7b7; }
+.ta-info  { color: #7dd3fc; }
+.ta-head  { color: #c4b5fd; font-weight: 600; }
+.ta-em    { font-style: italic; color: #a5adba; }
+.ta-b     { font-weight: 700; }
+
+/* busy + focus feedback */
+.nx-term.is-busy { cursor: progress; }
+.nx-term.is-busy::after {
+  content: ""; display: inline-block; width: 7px; height: 14px; margin-left: 4px;
+  background: var(--nx-accent); vertical-align: -2px; animation: ta-blink 1s steps(2) infinite;
+}
+@keyframes ta-blink { 50% { opacity: 0; } }
+.nx-term:focus-visible { outline: 1px solid color-mix(in srgb, var(--nx-accent) 45%, transparent); outline-offset: -1px; }
+
+/* subtle CRT life without hurting readability */
+.nx-term::selection { background: rgba(79, 227, 193, .25); }
+@media (prefers-reduced-motion: no-preference) {
+  .nx-term { text-shadow: 0 0 12px rgba(79, 227, 193, .05); }
+}
