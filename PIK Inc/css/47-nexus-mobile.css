@@ -8,6 +8,21 @@
    ========================================================================= */
 
 /* one CSS var to rule the mobile chrome height (nav bar + safe areas) */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
+}
+
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent !important;
+}
 @media (pointer: coarse), (max-width: 860px) {
 
   .nx-root {
