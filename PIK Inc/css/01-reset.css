@@ -162,3 +162,15 @@
     translate: -50% 0;
   }
 }
+
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
+}
+
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
