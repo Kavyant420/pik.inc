@@ -1,0 +1,202 @@
+/* ── PIK VPN · public proxy control center ─────────────────────────────── */
+
+.vpn-hero {
+  display: grid;
+  gap: var(--sp-6);
+  place-items: center;
+  text-align: center;
+  padding: var(--sp-6) var(--sp-4);
+}
+
+.vpn-dial {
+  position: relative;
+  inline-size: min(240px, 70vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.vpn-dial__ring,
+.vpn-dial__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+}
+
+.vpn-dial__ring::after {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px dashed var(--line-soft);
+}
+
+.vpn-dial__pulse {
+  animation: vpn-pulse 2.6s var(--pik-ease-out, ease-out) infinite;
+  opacity: 0;
+}
+
+.vpn-hero[data-vpn-connected="true"] .vpn-dial__pulse { opacity: 1; }
+
+@keyframes vpn-pulse {
+  0%   { transform: scale(.92); box-shadow: 0 0 0 0 color-mix(in srgb, var(--pik-accent) 35%, transparent); }
+  70%  { transform: scale(1);   box-shadow: 0 0 0 26px transparent; }
+  100% { transform: scale(1);   box-shadow: 0 0 0 0 transparent; }
+}
+
+.vpn-dial__core {
+  display: grid;
+  gap: 2px;
+  place-items: center;
+  font-weight: 700;
+  font-size: var(--fs-xl, 1.5rem);
+  letter-spacing: .02em;
+}
+
+.vpn-dial__sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.vpn-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--sp-3);
+}
+
+.vpn-stat {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: rgb(255 255 255 / 3%);
+}
+
+.vpn-stat__label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+}
+
+.vpn-stat__value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+/* server list ------------------------------------------------------------- */
+
+.server-list {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.server-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-4);
+  align-items: center;
+  width: 100%;
+  text-align: start;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: rgb(255 255 255 / 3%);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--dur-2), transform var(--dur-2), background var(--dur-2);
+}
+
+.server-row:hover {
+  border-color: var(--line-strong);
+  transform: translateX(4px);
+  background: rgb(255 255 255 / 5%);
+}
+
+.server-row.is-selected {
+  border-color: var(--pik-accent);
+  background: color-mix(in srgb, var(--pik-accent) 10%, transparent);
+}
+
+.srv-flag { font-size: 1.4rem; line-height: 1; }
+
+.srv-meta { display: grid; gap: 2px; min-width: 0; }
+
+.srv-name { font-weight: 600; font-size: var(--fs-sm); }
+
+.srv-host {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.srv-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.srv-lat {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-mid);
+  min-inline-size: 4.2rem;
+  text-align: end;
+}
+
+.srv-load {
+  inline-size: 4.5rem;
+  block-size: 5px;
+  border-radius: 99px;
+  background: rgb(255 255 255 / 8%);
+  overflow: hidden;
+}
+
+.srv-load__bar {
+  display: block;
+  block-size: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--pik-accent), color-mix(in srgb, var(--pik-accent) 40%, #ff8fb8));
+}
+
+/* option rows -------------------------------------------------------------- */
+
+.vpn-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.vpn-opt:last-child { border-bottom: 0; }
+
+.vpn-opt__text { display: grid; gap: 2px; }
+.vpn-opt__text strong { font-size: var(--fs-sm); }
+.vpn-opt__text span { font-size: var(--fs-xs); color: var(--text-dim); }
+
+.route-hop.is-idle { opacity: .45; }
+
+@media (width <= 560px) {
+  .srv-load { display: none; }
+  .server-row { gap: var(--sp-3); }
+}
+
+/* Live transport panel */
+.tp-panel { padding: var(--sp-3) var(--sp-4); }
+.tp-row { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+.tp-row:last-of-type { border-bottom: 0; }
+.tp-label { color: var(--c-faint, #9aa); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+.tp-value { font-weight: 600; text-align: right; word-break: break-all; }
+.srv-measured { color: #4fe3c1; font-weight: 700; }
+.server-row.is-live { border-left: 3px solid #4fe3c1; }

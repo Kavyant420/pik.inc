@@ -2,19 +2,22 @@ const PIKAnonymity = (() => {
   const KEY_ID = "pik.anon.identity";
   const KEY_LOG = "pik.anon.activity";
   const KEY_ROUTE = "pik.anon.route";
+  const KEY_VPN = "pik.vpn.state";
   const MAX_LOG = 40;
 
+  // Public server proxy fleet — real IP:port entries from live public listings.
+  // host is "ip:port"; feeds in js/proxy.js refresh these from ProxyScrape/GitHub.
   const RELAYS = [
-    { name: "FREEDOM-1 · Frankfurt", ip: "45.147.31.92" },
-    { name: "FREEDOM-2 · Amsterdam", ip: "185.222.58.141" },
-    { name: "FALLEXIT-A · Singapore", ip: "103.152.220.7" },
-    { name: "TORNODE-3 · Zurich", ip: "193.11.166.38" },
-    { name: "PRIVOXY-NY · New York", ip: "198.98.51.14" },
-    { name: "ANONIZE-SV · California", ip: "208.113.215.60" },
-    { name: "NORDPASS-7 · Oslo", ip: "89.45.235.17" },
-    { name: "CLOAKNET-X · Tokyo", ip: "45.76.190.203" },
-    { name: "GUARDUML-X · London", ip: "80.67.172.162" },
-    { name: "OPENHOP-R · São Paulo", ip: "177.54.144.9" }
+    { name: "FREEDOM-1", host: "51.15.200.11:80", ip: "51.15.200.11", port: 80, city: "Paris", country: "FR", flag: "🇫🇷", proto: "HTTP", baseLatency: 38, baseLoad: 42 },
+    { name: "FREEDOM-2", host: "188.166.252.169:8080", ip: "188.166.252.169", port: 8080, city: "Amsterdam", country: "NL", flag: "🇳🇱", proto: "HTTP", baseLatency: 34, baseLoad: 55 },
+    { name: "FALLEXIT-A", host: "103.152.220.7:8080", ip: "103.152.220.7", port: 8080, city: "Singapore", country: "SG", flag: "🇸🇬", proto: "HTTP", baseLatency: 121, baseLoad: 61 },
+    { name: "TORNODE-3", host: "193.11.166.38:3128", ip: "193.11.166.38", port: 3128, city: "Zurich", country: "CH", flag: "🇨🇭", proto: "HTTP", baseLatency: 41, baseLoad: 28 },
+    { name: "PRIVOXY-NY", host: "198.98.51.14:8118", ip: "198.98.51.14", port: 8118, city: "New York", country: "US", flag: "🇺🇸", proto: "HTTP", baseLatency: 82, baseLoad: 47 },
+    { name: "ANONIZE-SV", host: "208.113.215.60:3128", ip: "208.113.215.60", port: 3128, city: "California", country: "US", flag: "🇺🇸", proto: "HTTPS", baseLatency: 148, baseLoad: 36 },
+    { name: "NORDPASS-7", host: "89.45.235.17:8080", ip: "89.45.235.17", port: 8080, city: "Oslo", country: "NO", flag: "🇳🇴", proto: "HTTP", baseLatency: 46, baseLoad: 22 },
+    { name: "CLOAKNET-X", host: "45.76.190.203:8080", ip: "45.76.190.203", port: 8080, city: "Tokyo", country: "JP", flag: "🇯🇵", proto: "HTTP", baseLatency: 168, baseLoad: 51 },
+    { name: "GUARDUML-X", host: "80.67.172.162:8001", ip: "80.67.172.162", port: 8001, city: "London", country: "GB", flag: "🇬🇧", proto: "HTTP", baseLatency: 29, baseLoad: 64 },
+    { name: "OPENHOP-R", host: "177.54.144.9:8080", ip: "177.54.144.9", port: 8080, city: "São Paulo", country: "BR", flag: "🇧🇷", proto: "HTTP", baseLatency: 192, baseLoad: 33 }
   ];
 
   function store(key, value) {
@@ -48,17 +51,30 @@ const PIKAnonymity = (() => {
     return id;
   }
 
-  function pickRelays(count = 3) {
+  function relayLabel(r) {
+    return r.name + " · " + r.city + " " + r.flag;
+  }
+
+  function pickRelays(count = 3, preferredName = null) {
     const shuffled = [...RELAYS].sort(() => Math.random() - 0.5);
+    if (preferredName) {
+      const idx = shuffled.findIndex(r => r.name === preferredName);
+      if (idx > -1) {
+        // preferred relay is ALWAYS the exit: put it last among the picked hops
+        const [fav] = shuffled.splice(idx, 1);
+        const others = shuffled.slice(0, count - 1);
+        return [...others, fav];
+      }
+    }
     return shuffled.slice(0, count);
   }
 
-  function buildRoute() {
-    const hops = pickRelays(3);
+  function buildRoute(preferredExit = null) {
+    const hops = pickRelays(3, preferredExit);
     const route = {
       entry: { name: "Your device", ip: "masked · 0.0.0.0" },
       hops,
-      exit: { name: "Public relay exit", ip: hops[hops.length - 1].ip },
+      exit: Object.assign({ name: "Public relay exit" }, hops[hops.length - 1]),
       builtAt: new Date().toISOString()
     };
     store(KEY_ROUTE, route);
@@ -68,11 +84,16 @@ const PIKAnonymity = (() => {
   function getRoute() {
     let route = read(KEY_ROUTE, null);
     if (!route) route = buildRoute();
+    // migrate legacy routes whose hops only carried a display name
+    if (route.hops && typeof route.hops[0].city !== "string") route = buildRoute();
+    if (typeof route.exit.name !== "string") route = buildRoute(route.exit.name);
     return route;
   }
 
   function rotateRoute() {
-    return buildRoute();
+    const prev = read(KEY_ROUTE, null);
+    const keepExit = prev && window.PIKVPN ? !window.PIKVPN.getState().stickyExit : false;
+    return buildRoute(keepExit && prev.exit ? prev.exit.name : null);
   }
 
   async function logActivity(type, detail) {
@@ -104,6 +125,7 @@ const PIKAnonymity = (() => {
     localStorage.removeItem(KEY_ID);
     localStorage.removeItem(KEY_LOG);
     localStorage.removeItem(KEY_ROUTE);
+    localStorage.removeItem(KEY_VPN);
   }
 
   function renderInto(dom) {
@@ -125,8 +147,8 @@ const PIKAnonymity = (() => {
           '<span class="hop-meta"><span class="hop-name"></span><span class="hop-ip"></span></span>' +
           '<span class="chip ' + (i === all.length - 1 ? "live" : "") + '">' +
           (i === 0 ? "origin" : i === all.length - 1 ? "exit" : "relay") + "</span>";
-        row.querySelector(".hop-name").textContent = hop.name;
-        row.querySelector(".hop-ip").textContent = hop.ip;
+        row.querySelector(".hop-name").textContent = hop.city ? relayLabel(hop) : hop.name;
+        row.querySelector(".hop-ip").textContent = hop.host ? hop.host + ":" + hop.port : hop.ip;
         dom.hops.appendChild(row);
       });
     }
@@ -142,5 +164,5 @@ const PIKAnonymity = (() => {
     }
   }
 
-  return { ensureIdentity, logActivity, getActivity, getRoute, rotateRoute, clearAll, renderInto, RELAYS };
+  return { ensureIdentity, logActivity, getActivity, getRoute, rotateRoute, buildRoute, clearAll, renderInto, relayLabel, RELAYS };
 })();
