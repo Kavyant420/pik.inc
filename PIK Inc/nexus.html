@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="./css/43-nexus-fitviewport.css">
 <link rel="stylesheet" href="./css/44-nexus-codegrid.css">
 <link rel="stylesheet" href="./css/45-nexus-thinkline.css">
+<link rel="stylesheet" href="./css/46-nexus-skills.css">
 </head>
 
 <body class="nx-root nx-page">
@@ -155,11 +156,34 @@
         <textarea data-nx="prompt" rows="2" spellcheck="false"
           placeholder="Ask NEXUS to build, fix, refactor or explain — it writes files straight into the workspace…"></textarea>
         <div class="nx-attlist" data-nx="attlist"></div>
+        <!-- agent skills: chosen skill chips + the picker popover -->
+        <div class="nx-skillchips" data-nx="skill-chips"></div>
         <div class="nx-well__foot">
           <button class="nx-ibtn nx-attach" id="nx-attach-btn" title="Attach any file" aria-label="Attach file" data-ripple>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.4 3.4 0 0 1 4.8 4.8l-8.4 8.5a1.8 1.8 0 0 1-2.6-2.6l8-8"/></svg>
           </button>
           <input type="file" data-nx="fileinput" multiple hidden accept="*/*">
+
+          <span class="nx-skills-wrap" data-nx="skills-wrap" style="position:relative">
+            <button class="nx-ibtn nx-skills-toggle" data-nx="skills-toggle" title="Agent skills — equip reasoning, visualization, research…" aria-label="Agent skills" data-ripple>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v6m0 6v6m9-9h-6M9 12H3m13.5-6.5-4 4m-3 3-4 4m0-11 4 4m3 3 4 4"/></svg>
+              <b data-nx="skills-count" hidden>0</b>
+            </button>
+            <div class="nx-skills-pop fx-glass nx-glass" data-nx="skills-pop" hidden>
+              <div class="nx-skills-pop__head">
+                <span>Agent skills</span>
+                <button class="nx-ibtn nx-ibtn--sm" data-nx="skills-reset" title="Clear all active skills">clear</button>
+              </div>
+              <div class="nx-skills-list" data-nx="skills-list"></div>
+              <div class="nx-skills-pop__foot">
+                <button class="nx-btn nx-btn--ghost nx-btn--sm" data-nx="skills-fetch" title="Surf the web and distil new skills into the library">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9S14.5 18.4 12 21c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z"/></svg>
+                  <span>Fetch skills</span>
+                </button>
+                <i class="nx-skills-pop__hint">up to 4 active · injected into every prompt</i>
+              </div>
+            </div>
+          </span>
 
           <span class="nx-modelchip" data-nx="modelchip" role="button" tabindex="0" title="Choose model (Ctrl/Cmd+K)"></span>
 
@@ -444,6 +468,8 @@
 <script src="./js/micro-engine.js"></script>
 <script src="./js/micro-worker.js"></script>
 <script src="./js/micro-bootstrap.js"></script>
+<script src="./js/web-surfer.js"></script>
+<script src="./js/skills.js"></script>
 <script src="./js/router.js"></script>
 <script src="./js/editor.js"></script>
 <script src="./js/livepreview.js"></script>

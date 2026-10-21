@@ -1,0 +1,206 @@
+/* ============================================================================
+   PIK//NEXUS — 46-nexus-skills.css
+   Agent skill picker in the prompt well (chips + popover + web fetch),
+   workspace-tree delete/new controls, GENERATING/SURFING overlays,
+   research messages, GitHub PAT save button fix and tighter title spacing.
+   ========================================================================= */
+
+/* ---------- tighter titles everywhere ------------------------------------ */
+body.nx-root .nx-rail__title { margin: 2px 2px 0; line-height: 1.25; }
+body.nx-root .nx-projcard h3 { margin: 0 0 1px; }
+body.nx-root .nx-hero h1 { margin: 12px 0 6px; }
+body.nx-root .nx-hero p { margin-top: 0; }
+body.nx-root .nx-hero__chips { margin-top: 14px; }
+body.nx-root .nx-msg__text.md h1, body.nx-root .nexus-md h1 { margin: 10px 0 5px; }
+body.nx-root .nx-msg__text.md h2, body.nx-root .nexus-md h2 { margin: 9px 0 4px; }
+body.nx-root .nx-msg__text.md h3, body.nx-root .nexus-md h3 { margin: 8px 0 3px; }
+body.nx-root .nx-msg__text.md h4, body.nx-root .nx-msg__text.md h5,
+body.nx-root .nx-msg__text.md h6 { margin: 7px 0 3px; }
+body.nx-root .nx-msg__text.md :is(h1,h2,h3,h4)+p,
+body.nx-root .nexus-md :is(h1,h2,h3,h4)+p { margin-top: 3px; }
+
+/* ---------- skills toggle button ------------------------------------------ */
+.nx-skills-toggle { position: relative; }
+.nx-skills-toggle.is-on { color: #fff; background: rgba(163,163,163,.22); border-radius: 10px; }
+.nx-skills-toggle > b {
+  position: absolute; top: -2px; right: -4px; min-width: 14px; height: 14px;
+  display: grid; place-items: center; border-radius: 99px; padding: 0 3px;
+  font: 700 .55rem/1 var(--nx-font-mono, monospace); color: #0c0c0e;
+  background: var(--nx-grad-text, linear-gradient(90deg,#e8e8ea,#a3a3a3));
+}
+
+/* active skill chips row above the foot bar */
+.nx-skillchips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 18px 8px; }
+.nx-skillchips:empty { display: none; padding: 0; }
+.nx-skill-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--nx-font-mono, monospace); font-size: .62rem; letter-spacing: .04em;
+  color: var(--nx-txt, #d8d8dc); background: rgba(163,163,163,.14);
+  border: 1px solid var(--nx-line, rgba(255,255,255,.12)); border-radius: 99px;
+  padding: 3px 6px 3px 9px; animation: nx-skill-pop .35s cubic-bezier(.2,1.4,.4,1) both;
+}
+.nx-skill-chip svg { width: 11px; height: 11px; opacity: .8; }
+.nx-skill-chip button {
+  all: unset; cursor: pointer; width: 15px; height: 15px; display: grid; place-items: center;
+  border-radius: 99px; font-size: .8rem; line-height: 1; color: var(--nx-txt-faint, #7a7a80);
+  background: rgba(255,255,255,.06);
+}
+.nx-skill-chip button:hover { color: #fff; background: rgba(255,80,80,.35); }
+@keyframes nx-skill-pop { from { opacity: 0; transform: translateY(4px) scale(.9); } to { opacity: 1; transform: none; } }
+
+/* ---------- skills popover ------------------------------------------------ */
+.nx-skills-pop {
+  position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 60;
+  width: min(340px, 78vw); display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border-radius: 16px;
+  background: rgba(18,18,22,.92); backdrop-filter: blur(18px);
+  border: 1px solid var(--nx-line, rgba(255,255,255,.12));
+  box-shadow: 0 18px 48px rgba(0,0,0,.55);
+  animation: nx-sk-pop-in .22s var(--nx-ease, ease) both;
+}
+.nx-skills-pop[hidden] { display: none; }
+@keyframes nx-sk-pop-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+.nx-skills-pop__head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--nx-font-mono, monospace); font-size: .64rem; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--nx-txt-faint, #8a8a90);
+}
+.nx-skills-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+.nx-skill {
+  all: unset; display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 7px 9px; border-radius: 10px; border: 1px solid transparent;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.nx-skill:hover { background: rgba(255,255,255,.05); border-color: var(--nx-line, rgba(255,255,255,.1)); transform: translateX(2px); }
+.nx-skill.is-on { background: rgba(163,163,163,.16); border-color: rgba(163,163,163,.45); }
+.nx-skill__icon { width: 26px; height: 26px; flex: none; display: grid; place-items: center;
+  border-radius: 8px; background: rgba(255,255,255,.06); color: var(--nx-txt, #d8d8dc); }
+.nx-skill__icon svg { width: 14px; height: 14px; }
+.nx-skill.is-on .nx-skill__icon { color: #fff; background: rgba(163,163,163,.35); }
+.nx-skill__meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nx-skill__meta b { font-size: .76rem; color: var(--nx-txt, #e2e2e6); font-weight: 600; }
+.nx-skill__meta i { font-style: normal; font-size: .62rem; color: var(--nx-txt-faint, #8a8a90);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nx-skill__src { margin-left: auto; flex: none; font-family: var(--nx-font-mono, monospace);
+  font-size: .54rem; letter-spacing: .08em; text-transform: uppercase; color: var(--nx-txt-faint, #6a6a70);
+  border: 1px solid var(--nx-line, rgba(255,255,255,.12)); border-radius: 99px; padding: 2px 7px; }
+.nx-skills-pop__foot { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--nx-line, rgba(255,255,255,.1)); padding-top: 9px; }
+.nx-skills-pop__foot .nx-btn { display: inline-flex; align-items: center; gap: 6px; }
+.nx-skills-pop__foot .nx-btn.is-busy svg { animation: nx-sk-spin 1s linear infinite; }
+.nx-skills-pop__foot .nx-btn.is-busy { opacity: .7; pointer-events: none; }
+@keyframes nx-sk-spin { to { transform: rotate(360deg); } }
+.nx-skills-pop__hint { font-style: normal; font-size: .58rem; color: var(--nx-txt-faint, #6a6a70); font-family: var(--nx-font-mono, monospace); }
+
+/* ---------- workspace tree: new-file toolbar + delete buttons ------------- */
+.nx-tree__tools { display: flex; gap: 6px; padding: 2px 4px 8px; }
+.nx-tree__tool {
+  all: unset; flex: 1; text-align: center; cursor: pointer;
+  font-family: var(--nx-font-mono, monospace); font-size: .6rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--nx-txt-dim, #a0a0a8);
+  border: 1px dashed var(--nx-line, rgba(255,255,255,.16)); border-radius: 9px; padding: 6px 4px;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.nx-tree__tool:hover { color: #fff; border-color: var(--nx-grey, #a3a3a3); background: rgba(255,255,255,.05); }
+.nx-tree__row { position: relative; }
+.nx-tree__del {
+  all: unset; cursor: pointer; display: grid; place-items: center; flex: none;
+  width: 17px; height: 17px; border-radius: 6px; color: var(--nx-txt-faint, #7a7a80);
+  background: rgba(255,255,255,.05); opacity: 0; transition: opacity .15s, color .15s, background .15s;
+}
+.nx-tree__del svg { width: 10px; height: 10px; }
+.nx-tree__row:hover .nx-tree__del, .nx-tree__del:focus-visible { opacity: 1; }
+.nx-tree__del:hover { color: #ff7b7b; background: rgba(255,80,80,.16); }
+.nx-tree__row.is-pending-del .nx-tree__del { opacity: 1; color: #ffb4b4; background: rgba(255,80,80,.3); }
+.nx-tree__row.is-pending-del { outline: 1px solid rgba(255,80,80,.5); outline-offset: -1px; }
+
+/* ---------- GENERATING / SURFING overlays (chat.js markup) ---------------- */
+.nx-msg__text.is-generating { display: block; }
+.nx-gen {
+  position: relative; overflow: hidden; display: flex; flex-direction: column;
+  align-items: center; gap: 12px; padding: 30px 20px 26px; border-radius: 16px;
+  border: 1px solid var(--nx-line, rgba(255,255,255,.12));
+  background: radial-gradient(120% 140% at 50% 0%, rgba(163,163,163,.12), rgba(12,12,14,.6));
+  cursor: pointer;
+}
+.nx-gen__mark { position: relative; width: 58px; height: 58px; display: grid; place-items: center; }
+.nx-gen__mark img { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; }
+.nx-gen__mark.is-fallback img { display: none; }
+.nx-gen__glyph {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--nx-font-display, sans-serif); font-weight: 800; font-size: 1.15rem; color: #fff;
+  text-shadow: 0 0 18px rgba(255,255,255,.35);
+}
+.nx-gen__mark.is-fallback .nx-gen__glyph, .nx-gen__mark:not(.has-img) .nx-gen__glyph { opacity: 1; }
+.nx-gen__ring {
+  position: absolute; inset: -6px; border-radius: 99px; border: 1px solid rgba(255,255,255,.25);
+  border-top-color: transparent; border-bottom-color: transparent;
+  animation: nx-gen-spin 2.4s linear infinite;
+}
+.nx-gen__ring--b { inset: -13px; border-left-color: transparent; border-right-color: transparent;
+  animation-duration: 3.6s; animation-direction: reverse; opacity: .55; }
+@keyframes nx-gen-spin { to { transform: rotate(360deg); } }
+.nx-gen__label {
+  font-family: var(--nx-font-mono, monospace); font-size: .72rem; letter-spacing: .34em;
+  background: linear-gradient(90deg, #6f6f76 25%, #ffffff 50%, #6f6f76 75%);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: nx-shimmer 2.2s linear infinite;
+}
+@keyframes nx-shimmer { to { background-position: -200% 0; } }
+.nx-gen__dots { display: flex; gap: 6px; }
+.nx-gen__dots i { width: 5px; height: 5px; border-radius: 99px; background: var(--nx-grey, #a3a3a3);
+  animation: nx-dot-bob 1.2s ease-in-out infinite; }
+.nx-gen__dots i:nth-child(2) { animation-delay: .15s; }
+.nx-gen__dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes nx-dot-bob { 0%,100% { transform: translateY(0); opacity: .4; } 50% { transform: translateY(-5px); opacity: 1; } }
+.nx-gen__scan {
+  position: absolute; left: 0; right: 0; height: 1px; top: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  animation: nx-scan 2.6s ease-in-out infinite;
+}
+@keyframes nx-scan { 0% { top: 4%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 96%; opacity: 0; } }
+
+/* surfing variant — globe glyph + live URL readout, cyan-tinted */
+.nx-gen--surf { border-color: rgba(90,170,255,.3);
+  background: radial-gradient(120% 140% at 50% 0%, rgba(90,170,255,.14), rgba(10,14,20,.6)); }
+.nx-gen__mark.is-surf .nx-gen__glyph { color: #9ccaff; text-shadow: 0 0 16px rgba(120,180,255,.5); }
+.nx-gen__mark.is-surf .nx-gen__ring { border-color: rgba(120,180,255,.35); border-top-color: transparent; border-bottom-color: transparent; }
+.nx-gen--surf .nx-gen__label {
+  background: linear-gradient(90deg, #5a7da3 25%, #dcecff 50%, #5a7da3 75%);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+}
+.nx-surf__url { font-family: var(--nx-font-mono, monospace); font-size: .62rem; color: #8fb6e8; letter-spacing: .06em; }
+
+/* research message injected after a surf round */
+.nx-msg--research .nx-msg__text {
+  border-left: 2px solid rgba(120,180,255,.5); padding-left: 12px;
+  color: var(--nx-txt-dim, #a8a8b0); font-size: .8rem;
+}
+.nx-research__srcs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.nx-research__src {
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+  font-family: var(--nx-font-mono, monospace); font-size: .6rem; color: #9ccaff;
+  border: 1px solid rgba(120,180,255,.3); border-radius: 99px; padding: 3px 9px;
+  background: rgba(90,170,255,.08); transition: background .15s, transform .15s;
+}
+.nx-research__src:hover { background: rgba(90,170,255,.2); transform: translateY(-1px); }
+.nx-research__src img { width: 12px; height: 12px; border-radius: 3px; }
+
+/* ---------- GitHub panel: PAT save button fix ------------------------------
+   The form used to be `hidden` yet still submitted with an empty value and
+   no visible feedback. Make it a proper modal-ish row with a working button:
+   disabled while empty, spinner while saving, success/failure states. */
+[data-nx="patform"] input { min-width: 0; }
+[data-nx="patform"] button[type="submit"] {
+  position: relative; flex: none; min-width: 62px;
+  transition: opacity .15s, transform .15s, background .15s;
+}
+[data-nx="patform"] button[type="submit"]:disabled { opacity: .45; cursor: not-allowed; }
+[data-nx="patform"] button[type="submit"].is-saving { pointer-events: none; color: transparent; }
+[data-nx="patform"] button[type="submit"].is-saving::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 13px; height: 13px;
+  border-radius: 99px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  animation: nx-sk-spin .7s linear infinite;
+}
+[data-nx="patform"] button[type="submit"].is-ok { background: rgba(60,200,120,.25); border-color: rgba(60,200,120,.5); }
+[data-nx="patform"] button[type="submit"].is-bad { background: rgba(255,90,90,.22); border-color: rgba(255,90,90,.5); }
+[data-nx="patform"] .nx-pat-err { font-size: .62rem; color: #ff9c9c; margin-top: 6px; }
