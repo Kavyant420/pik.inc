@@ -58,6 +58,18 @@
       });
       NexusSettings.get().then(function (s) { PIKChat.setEffort(s.thinking || "high"); });
 
+      /* ---------- agent skills (prompt well) ---------- */
+      if (global.PIKSkills) PIKSkills.mount({
+        wrap: document.querySelector("[data-nx='skills-wrap']"),
+        toggle: document.querySelector("[data-nx='skills-toggle']"),
+        count: document.querySelector("[data-nx='skills-count']"),
+        pop: document.querySelector("[data-nx='skills-pop']"),
+        list: document.querySelector("[data-nx='skills-list']"),
+        chips: document.querySelector("[data-nx='skill-chips']"),
+        fetch: document.querySelector("[data-nx='skills-fetch']"),
+        reset: document.querySelector("[data-nx='skills-reset']")
+      });
+
       /* quick-start chips seed the prompt */
       $$("[data-nx='chip']").forEach(function (c) {
         c.addEventListener("click", function () {
