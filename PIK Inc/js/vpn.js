@@ -14,12 +14,20 @@ const PIKVPN = (() => {
     exitName: null,       // preferred exit relay name (null = fastest auto)
     killSwitch: true,
     dnsLeakGuard: true,
+    webrtcGuard: true,    // mDNS-style local IP hiding while connected
+    obfuscation: true,    // Stunnel-style TLS masquerade in generated profiles
+    autoConnect: false,   // bring the tunnel up when the page opens
     autoRotate: false,
     stickyExit: false,    // keep the same exit when routes rotate elsewhere
+    splitRules: "",       // comma-separated hosts/IPs that bypass the tunnel
     since: null,          // ISO timestamp of last connect
     bytesUp: 0,
     bytesDown: 0
   }, read());
+  // never resume a "connected" session without a live tunnel — always offline
+  // on load; autoConnect (if enabled) re-establishes it explicitly.
+  state.connected = false;
+  state.connecting = false;
 
   function read() {
     try { return JSON.parse(localStorage.getItem(KEY_VPN) || "null") || {}; }
@@ -83,7 +91,7 @@ const PIKVPN = (() => {
   }
 
   async function connect(preferredName) {
-    if (state.connecting) return;
+    if (state.connecting || state.connected) return;
     state.connecting = true;
     emit();
     if (preferredName !== undefined) state.exitName = preferredName || null;
@@ -112,6 +120,8 @@ const PIKVPN = (() => {
       try { legs = await PIKProxy.routeRequest(); } catch (e) {}
     }
     if (!legs.length) await new Promise(r => setTimeout(r, 900 + Math.random() * 500));
+    // the user may have cancelled while we were handshaking
+    if (!state.connecting) return;
     state.connected = true;
     state.connecting = false;
     state.since = new Date().toISOString();
@@ -131,7 +141,7 @@ const PIKVPN = (() => {
     if (!state.connected && !state.connecting) return;
     const was = state.exitName || "";
     state.connected = false;
-    state.connecting = false;
+    state.connecting = false;   // also cancels an in-flight handshake
     state.since = null;
     persist();
     PIKAnonymity.logActivity("vpn-disconnect", reason || was || "manual");
@@ -162,12 +172,40 @@ const PIKVPN = (() => {
   }
 
   function setOpt(key, value) {
+    if (key === "splitRules") { state.splitRules = String(value || ""); persist(); emit(); return; }
     state[key] = !!value;
     persist();
     if (key === "killSwitch" && !value && state.connected) {
       PIKAnonymity.logActivity("vpn-opt", "kill-switch-off");
     }
+    if (key === "webrtcGuard" && value && state.connected) applyWebrtcGuard(true);
+    if (key === "webrtcGuard" && !value) applyWebrtcGuard(false);
     emit();
+  }
+
+  // ---- WebRTC leak protection -------------------------------------------------
+  // While connected with the guard on, throwaway RTCPeerConnections that would
+  // reveal local/private IPs via ICE candidates are blocked at the page level.
+  // (A system VPN does this in the kernel; from a page we can only neutralize
+  // this document's own leaks — stated honestly in the transport panel.)
+  const RealRTC = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection || null;
+  let guardInstalled = false;
+  function applyWebrtcGuard(on) {
+    if (!RealRTC) return;
+    if (on && state.connected && state.webrtcGuard) {
+      const Blocked = function () {
+        if (window.PIKToasts) PIKToasts.push("PIK VPN · WebRTC blocked to prevent a local-IP leak", "warn");
+        throw new Error("PIK VPN: WebRTC disabled by leak guard while connected");
+      };
+      Blocked.prototype = RealRTC.prototype;
+      window.RTCPeerConnection = window.webkitRTCPeerConnection = window.mozRTCPeerConnection = Blocked;
+      guardInstalled = true;
+    } else if (!on || !state.connected || !state.webrtcGuard) {
+      if (guardInstalled) {
+        window.RTCPeerConnection = window.webkitRTCPeerConnection = window.mozRTCPeerConnection = RealRTC;
+        guardInstalled = false;
+      }
+    }
   }
 
   function getState() { return Object.assign({}, state); }
@@ -192,6 +230,7 @@ const PIKVPN = (() => {
     if (!state.connected) return;
     lastHealthy = Date.now(); // tunnel heartbeat for the kill-switch guard
     const speed = 0.4 + Math.random() * 2.6; // MB/s-ish
+    lastSpeed = speed;
     state.bytesDown += speed * 1024 * 1024 * (TICK_MS / 1000) * 0.6;
     state.bytesUp += speed * 1024 * 1024 * (TICK_MS / 1000) * 0.18;
     if (state.autoRotate && Math.random() < 0.18) {
@@ -202,6 +241,8 @@ const PIKVPN = (() => {
     persist();
     emit();
   }
+
+  let lastSpeed = 0;
 
   let timer = null;
   function startTicker() {
@@ -228,6 +269,35 @@ const PIKVPN = (() => {
   document.addEventListener("pik:vpn-guard", (e) => {
     try { e.detail.check(guardCheck); } catch (err) {}
   });
+
+  // ---- Split tunneling --------------------------------------------------------
+  // Hostnames/IPs listed in state.splitRules bypass the circuit entirely —
+  // same semantics as a real VPN client's split-tunnel include list.
+  function splitList() {
+    return String(state.splitRules || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  }
+  function isSplitBypass(url) {
+    const rules = splitList();
+    if (!rules.length || !state.connected) return false;
+    let host = "";
+    try { host = new URL(url, location.href).hostname.toLowerCase(); } catch (e) { return false; }
+    return rules.some(rule =>
+      rule === host || host.endsWith("." + rule) ||
+      (rule.includes("/") && ipInCidr(host, rule)) ||
+      (/^\d/.test(rule) && host === rule));
+  }
+  function ipToNum(ip) {
+    const p = ip.split(".");
+    if (p.length !== 4 || p.some(x => isNaN(+x))) return null;
+    return (+p[0] << 24 | +p[1] << 16 | +p[2] << 8 | +p[3]) >>> 0;
+  }
+  function ipInCidr(ip, cidr) {
+    const [net, bits] = cidr.split("/");
+    const a = ipToNum(ip), b = ipToNum(net);
+    if (a === null || b === null) return false;
+    const mask = bits ? (~0 << (32 - (+bits || 0))) >>> 0 : 4294967295;
+    return (a & mask) === (b & mask);
+  }
 
   // ---- UI binding -----------------------------------------------------------
   function renderServerList(container) {

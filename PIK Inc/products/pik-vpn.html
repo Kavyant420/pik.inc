@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://api.ipify.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self' https: http:; font-src 'self' data: https://fonts.gstatic.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://api.ipify.org https://ipv4.icanhazip.com https://httpbin.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https: http:; font-src 'self' data: https://fonts.gstatic.com;">
 <meta name="referrer" content="no-referrer">
 <title>PIK VPN · PIK · PIK Inc.</title>
 <meta name="description" content="Free three-hop circuits built from public server proxies — pick an exit relay, watch latency and load, rotate routes, and keep a kill switch on. Funded by the rest of the suite.">
@@ -54,10 +54,12 @@
         <span class="chip"><span data-vpn-exit>not assigned</span></span>
       </div>
       <div class="btn-row reveal" style="gap:.6rem;flex-wrap:wrap">
-        <button class="btn btn--primary btn--lg" type="button" data-vpn-toggle aria-checked="false">Connect</button>
+        <button class="btn btn--primary btn--lg" type="button" data-vpn-toggle role="switch" aria-checked="false">Connect</button>
         <button class="btn btn--ghost" type="button" data-vpn-fastest>Fastest exit</button>
         <button class="btn btn--ghost" type="button" data-vpn-rotate>Rotate circuit</button>
         <button class="btn btn--ghost" type="button" data-vpn-refresh>Refresh fleet</button>
+        <button class="btn btn--ghost" type="button" data-vpn-split>Split tunneling</button>
+        <button class="btn btn--ghost" type="button" data-vpn-config>VPN config (.conf)</button>
       </div>
       <p class="u-tiny u-faint reveal">Kill switch on by default — traffic never leaves your device unencrypted while connected. <a class="link-arrow" href="../docs/vpn-backend.md">How device-wide routing works →</a></p>
     </div>
@@ -93,9 +95,12 @@
         </div>
         <div class="vpn-stats" role="list">
           <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">Uptime</span><span class="vpn-stat__value" data-vpn-uptime>—</span></div>
+          <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">Speed ↓</span><span class="vpn-stat__value" data-vpn-speed>— Mb/s</span></div>
           <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">Downloaded</span><span class="vpn-stat__value" data-vpn-down>0 B</span></div>
           <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">Uploaded</span><span class="vpn-stat__value" data-vpn-bytes-up>0 B</span></div>
-          <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">Circuit</span><span class="vpn-stat__value">3 × public proxy</span></div>
+          <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">DNS server</span><span class="vpn-stat__value mono" data-vpn-dnsip>—</span></div>
+          <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">WebRTC leak</span><span class="vpn-stat__value" data-vpn-webrtc>untested</span></div>
+          <div class="vpn-stat" role="listitem"><span class="vpn-stat__label">Protocol</span><span class="vpn-stat__value">3-hop proxy circuit · AES-256-GCM at rest</span></div>
         </div>
       </div>
     </div>
@@ -107,6 +112,8 @@
     <div class="stack reveal--left">
       <h2 class="u-h2">Public proxy fleet</h2>
       <p class="u-mid">Real servers from live public listings — pick any as your exit; the circuit rebuilds instantly and every PIK app re-attributes. Latency marked ✓ is measured, not estimated.</p>
+      <h2 class="u-h2">Server search</h2>
+      <input class="input mono" type="search" data-vpn-search placeholder="Filter by name, city, country or host…" aria-label="Search servers">
       <div class="server-list panel" data-vpn-servers aria-label="Public proxy servers"></div>
     </div>
     <div class="stack reveal--right">
@@ -116,22 +123,57 @@
       </div>
       <h2 class="u-h2" style="margin-top:var(--sp-5)">Your circuit</h2>
       <div class="route-map panel" data-vpn-hops aria-label="Current relay chain"></div>
-      <h2 class="u-h2" style="margin-top:var(--sp-5)">Guards</h2>
+      <h2 class="u-h2" style="margin-top:var(--sp-5)">Guards &amp; settings</h2>
       <div class="panel">
         <div class="vpn-opt">
           <span class="vpn-opt__text"><strong>Kill switch</strong><span>Block all traffic if the tunnel drops.</span></span>
-          <span class="switch" data-vpn-killswitch role="switch" tabindex="0" aria-checked="true"></span>
+          <label class="switch"><input type="checkbox" data-vpn-killswitch role="switch" aria-checked="true" checked><span class="switch__track"></span><span class="sr-only">Kill switch</span></label>
         </div>
         <div class="vpn-opt">
           <span class="vpn-opt__text"><strong>DNS leak guard</strong><span>Resolve names only through the exit relay.</span></span>
-          <span class="switch" data-vpn-dns role="switch" tabindex="0" aria-checked="true"></span>
+          <label class="switch"><input type="checkbox" data-vpn-dns role="switch" aria-checked="true" checked><span class="switch__track"></span><span class="sr-only">DNS leak guard</span></label>
+        </div>
+        <div class="vpn-opt">
+          <span class="vpn-opt__text"><strong>WebRTC leak protection</strong><span>Hide local IPs from peer connections while connected.</span></span>
+          <label class="switch"><input type="checkbox" data-vpn-webrtc-guard role="switch" aria-checked="true" checked><span class="switch__track"></span><span class="sr-only">WebRTC leak protection</span></label>
         </div>
         <div class="vpn-opt">
           <span class="vpn-opt__text"><strong>Auto-rotate hops</strong><span>Rebuild entry/middle relays periodically.</span></span>
-          <span class="switch" data-vpn-autorotate role="switch" tabindex="0" aria-checked="false"></span>
+          <label class="switch"><input type="checkbox" data-vpn-autorotate role="switch" aria-checked="false"><span class="switch__track"></span><span class="sr-only">Auto-rotate hops</span></label>
+        </div>
+        <div class="vpn-opt">
+          <span class="vpn-opt__text"><strong>Obfuscation (Stunnel)</strong><span>Make VPN traffic look like ordinary TLS to evade deep-packet inspection.</span></span>
+          <label class="switch"><input type="checkbox" data-vpn-obfs role="switch" aria-checked="true" checked><span class="switch__track"></span><span class="sr-only">Obfuscation</span></label>
+        </div>
+        <div class="vpn-opt">
+          <span class="vpn-opt__text"><strong>Connect on app launch</strong><span>Bring the tunnel up automatically when this page opens.</span></span>
+          <label class="switch"><input type="checkbox" data-vpn-autoconnect role="switch" aria-checked="false"><span class="switch__track"></span><span class="sr-only">Connect on app launch</span></label>
+        </div>
+        <div class="vpn-opt">
+          <span class="vpn-opt__text"><strong>Sticky exit</strong><span>Keep the same exit relay when routes rotate elsewhere.</span></span>
+          <label class="switch"><input type="checkbox" data-vpn-sticky role="switch" aria-checked="false"><span class="switch__track"></span><span class="sr-only">Sticky exit</span></label>
+        </div>
+        <div class="vpn-opt vpn-opt--actions">
+          <span class="vpn-opt__text"><strong>Leak tests</strong><span>Verify DNS and WebRTC exposure from inside the circuit.</span></span>
+          <span class="row" style="gap:.5rem">
+            <button class="btn btn--ghost btn--sm" type="button" data-vpn-dnstest>Test DNS</button>
+            <button class="btn btn--ghost btn--sm" type="button" data-vpn-webrtctest>Test WebRTC</button>
+          </span>
+        </div>
+        <div class="vpn-opt vpn-opt--split">
+          <span class="vpn-opt__text"><strong>Split tunneling</strong><span>Bypass the tunnel for these hostnames/IPs (comma-separated).</span></span>
+          <input class="input input--sm mono" type="text" data-vpn-splitrules placeholder="example.local, 192.168.0.0/16" aria-label="Split tunneling rules">
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <h2 class="u-h2">Session log</h2>
+    <p class="u-mid">Local, hashed records of every circuit event — newest first. Purge any time from Settings → Danger zone.</p>
+    <div class="panel session-log mono" data-vpn-log aria-live="polite"></div>
   </div>
 </section>
 

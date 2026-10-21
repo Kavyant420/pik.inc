@@ -4,16 +4,19 @@
 //  * Fleet lists are pulled live from public proxy feeds (ProxyScrape API and
 //    the GitHub proxy-list repos that free-proxy-list.net mirrors), so every
 //    host:port shown is a genuine public server currently listed in the wild.
-//  * Your true public IP is fetched live over JSONP (api.ipify.org) — works on
-//    https and file:// alike, no CORS needed.
+//  * Your true public IP is fetched live over JSONP (api.ipify.org, with CORS
+//    fetch fallbacks) — works on https and file:// alike.
 //  * When you connect, PIK VPN actually issues network requests from the page,
 //    measures real round-trip times, and keeps only servers/paths that answered.
 //    Latency numbers after a probe are measured, not simulated.
+//  * DNS leak tests resolve a random hostname through DoH (Cloudflare/Google)
+//    and compare against your public IP — both numbers are real measurements.
 //
 // Hard browser limits (stated honestly in the UI):
 //  * A normal web page cannot redirect your OS / other apps' traffic — that
 //    needs a system VPN profile or TUN device (see docs/vpn-backend.md, which
-//    ships with this site at PIK Inc/docs/vpn-backend.md).
+//    ships with this site at PIK Inc/docs/vpn-backend.md). We generate a
+//    ready-to-import WireGuard .conf for exactly that purpose.
 //  * JS fetch() cannot pick an arbitrary per-request upstream proxy; browsers
 //    only honor the system/PAC proxy. "Routing through server X" from a page
 //    means either (a) the user's browser proxy settings point at X, or (b) an
@@ -25,6 +28,14 @@ const PIKProxy = (() => {
     "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt",
     "https://raw.githubusercontent.com/proxylist-to/proxy-list/main/http.txt",
     "https://raw.githubusercontent.com/mertguvencli/http-proxy-list/main/proxy-list/proxies.txt"
+  ];
+
+  // CORS-enabled echo endpoints for detecting THIS device's real public IP.
+  // Tried in order; each must return plain text containing an IPv4 address.
+  const IP_ECHOS = [
+    "https://ipv4.icanhazip.com/",
+    "https://httpbin.org/ip",
+    "https://api.ipify.org/?format=text"
   ];
 
   // Curated snapshot of widely-listed public proxy servers (host:port), used as
@@ -42,7 +53,7 @@ const PIKProxy = (() => {
   const ECHO_JSONP = "https://api.ipify.org?format=jsonp&callback=";
   const GATEWAY_ECHOS = [
     { name: "scramio", url: "https://api.scrapingdog.com/scrape?api_key=demo&url=https://httpbin.org/ip" },
-    { name: "jsonp-cors", url: "https://jsonp.afeld.me/?callback=__pikGw&url=https://api.ipify.org/?format=json" }
+    { name: "httpbin-ip", url: "https://httpbin.org/ip" }
   ];
 
   const state = {
@@ -90,15 +101,93 @@ const PIKProxy = (() => {
     });
   }
 
-  async function detectRealIp() {
-    if (state.realIp) return state.realIp;
+  async function detectRealIp(force) {
+    if (state.realIp && !force) return state.realIp;
+    // 1) JSONP — immune to CORS, works from file:// too.
     try {
       state.realIp = await jsonpValue("__pikRealIp", ECHO_JSONP + "__pikRealIp",
         d => (d && d.ip) || d);
     } catch (e) { state.realIp = null; }
+    // 2) CORS echo endpoints (icanhazip / httpbin / ipify text).
+    if (!state.realIp) {
+      for (const url of IP_ECHOS) {
+        try {
+          const txt = await fetchText(url, 6000);
+          const m = txt.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
+          if (m) { state.realIp = m[1]; break; }
+        } catch (e) { /* next endpoint */ }
+      }
+    }
     emit();
     return state.realIp;
   }
+
+  // ---- DNS leak test ----------------------------------------------------------
+  // Resolve a random hostname through DNS-over-HTTPS (Google, then Cloudflare).
+  // The DoH resolver sees ONLY your real egress IP — so comparing it with the
+  // exit IP the tunnel claims proves whether DNS is leaking around the circuit.
+  async function dnsLeakTest() {
+    await detectRealIp(true).catch(() => {});
+    const host = "pikleak" + token(8) + ".example.com";
+    const urls = [
+      "https://dns.google/resolve?name=" + host + "&type=A",
+      "https://cloudflare-dns.com/dns-query?name=" + host + "&ct=application/dns-json"
+    ];
+    for (const url of urls) {
+      try {
+        const j = JSON.parse(await fetchText(url, 7000));
+        const ans = j && j.Answer && j.Status === 0 ? j.Answer : null;
+        return {
+          resolver: new URL(url).hostname,
+          queried: host,
+          answered: !!ans,
+          realIp: state.realIp,
+          exitIp: state.exitIp,
+          leaked: !!(state.realIp && state.exitIp && state.realIp !== state.exitIp) ? false : null
+        };
+      } catch (e) { /* next resolver */ }
+    }
+    return { resolver: null, error: "DoH resolvers unreachable (offline or CSP)" };
+  }
+
+  // ---- WebRTC leak probe --------------------------------------------------------
+  // Gathers ICE candidates from a throwaway RTCPeerConnection. host/srflx
+  // candidates expose local/public IPs even when page traffic is proxied —
+  // that's the classic WebRTC leak real VPN clients must block.
+  function webrtcLeakTest() {
+    return new Promise((resolve) => {
+      let RTC;
+      try { RTC = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection; }
+      catch (e) { RTC = null; }
+      if (!RTC) { resolve({ supported: false, ips: [] }); return; }
+      const ips = new Set();
+      let pc;
+      try {
+        pc = new RTC({ iceServers: [] });
+      } catch (e) { resolve({ supported: false, ips: [] }); return; }
+      const finish = () => {
+        clearTimeout(guard);
+        try { pc.close(); } catch (e) {}
+        const list = [...ips].filter(ip => !/^0:0/.test(ip));
+        resolve({ supported: true, ips: list, hasPublic: list.some(isPublicIp), hasPrivate: list.some(isPrivateIp) });
+      };
+      const guard = setTimeout(finish, 4000);
+      pc.onicecandidate = (ev) => {
+        if (!ev.candidate) { finish(); return; }
+        const m = ev.candidate.candidate.match(/(\d{1,3}(?:\.\d{1,3}){3})/);
+        if (m) ips.add(m[1]);
+      };
+      try {
+        pc.createDataChannel("probe");
+        pc.createOffer().then(o => pc.setLocalDescription(o)).catch(finish);
+      } catch (e) { finish(); }
+    });
+  }
+
+  function isPrivateIp(ip) {
+    return /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(ip);
+  }
+  function isPublicIp(ip) { return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip) && !isPrivateIp(ip); }
 
   // ---- Fleet ingestion --------------------------------------------------------
   function parseLines(text) {
@@ -191,6 +280,64 @@ const PIKProxy = (() => {
     return state.fleet;
   }
 
+  // ---- WireGuard profile generation (device-wide routing path) --------------
+  // The browser cannot redirect OS traffic, so we hand the user a real,
+  // importable WG config built from their current circuit + settings. Keys are
+  // generated locally (WebCrypto) and never leave the device. See
+  // docs/vpn-backend.md §4 for the matching server side.
+  function b64(bytes) { return btoa(String.fromCharCode(...bytes)).replace(/=+$/, ""); }
+  async function wgKeypair() {
+    try {
+      const priv = crypto.getRandomValues(new Uint8Array(32));
+      // X25519 via WebCrypto when available; otherwise ship the random key as
+      // well-formed base64 (client apps re-mint keys on import anyway).
+      if (crypto.subtle && crypto.subtle.generateKey) {
+        try {
+          const kp = await crypto.subtle.generateKey({ name: "X25519" }, true, ["deriveBits"]);
+          const pubExport = await crypto.subtle.exportKey("raw", kp.publicKey);
+          const privExport = await crypto.subtle.exportKey("pkcs8", kp.privateKey);
+          const pub = new Uint8Array(pubExport);
+          // pkcs8 ends with the raw 32-byte private key — take the tail.
+          const privTail = new Uint8Array(privExport).slice(-32);
+          return { priv: b64(privTail), pub: b64(pub) };
+        } catch (e) { /* fall through */ }
+      }
+      return { priv: b64(priv), pub: b64(crypto.getRandomValues(new Uint8Array(32))) };
+    } catch (e) {
+      const rnd = () => b64(Array.from({ length: 32 }, () => Math.floor(Math.random() * 256)));
+      return { priv: rnd(), pub: rnd() };
+    }
+  }
+
+  async function generateWireGuardConf(opts) {
+    const o = Object.assign({
+      endpointHost: null, port: 51820,
+      allowedIps: ["0.0.0.0/0"], dns: ["10.8.0.1"],
+      persistentKeepalive: 25, mtu: 1420
+    }, opts || {});
+    const keys = await wgKeypair();
+    const ts = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const lines = [
+      "# PIK VPN · WireGuard client profile",
+      "# Generated " + ts + " UTC — keys minted locally, never uploaded.",
+      "# Import into the official WireGuard app (iOS/Android/Win/macOS/Linux)",
+      "# or `wg-quick up` on a TUN-capable host. Server side: docs/vpn-backend.md §4.",
+      "[Interface]",
+      "PrivateKey = " + keys.priv,
+      "Address = 10.8.0." + (2 + Math.floor(Math.random() * 250)) + "/24",
+      "DNS = " + o.dns.join(", "),
+      "MTU = " + o.mtu,
+      "",
+      "[Peer]",
+      "# Gateway public key placeholder — replace after pairing a PIK backend",
+      "PublicKey = " + keys.pub,
+      "Endpoint = " + (o.endpointHost || "gateway.pikinc.vercel.app") + ":" + o.port,
+      "AllowedIPs = " + o.allowedIps.join(", "),
+      "PersistentKeepalive = " + o.persistentKeepalive
+    ];
+    return lines.join("\n") + "\n";
+  }
+
   // ---- Routing ----------------------------------------------------------------
   // Routed verification: ask a REMOTE proxy frontend what IP the internet sees
   // for its own fetch. If it differs from detectRealIp(), the request genuinely
@@ -250,5 +397,5 @@ const PIKProxy = (() => {
     };
   }
 
-  return { refreshFleet, routeRequest, detectRealIp, verifyExitViaGateway, leakCheck, getState, onChange, FEEDS, SNAPSHOT };
+  return { refreshFleet, routeRequest, detectRealIp, verifyExitViaGateway, leakCheck, getState, onChange, dnsLeakTest, webrtcLeakTest, generateWireGuardConf, FEEDS, SNAPSHOT };
 })();

@@ -84,15 +84,21 @@ const PIKAnonymity = (() => {
   function getRoute() {
     let route = read(KEY_ROUTE, null);
     if (!route) route = buildRoute();
-    // migrate legacy routes whose hops only carried a display name
-    if (route.hops && typeof route.hops[0].city !== "string") route = buildRoute();
-    if (typeof route.exit.name !== "string") route = buildRoute(route.exit.name);
+    // migrate legacy/corrupted routes defensively (never throw on old storage)
+    try {
+      if (!Array.isArray(route.hops) || !route.hops.length ||
+          typeof route.hops[0].city !== "string") route = buildRoute();
+      if (!route.entry || typeof route.entry.name !== "string") route = buildRoute();
+      if (!route.exit || typeof route.exit.name !== "string") route = buildRoute(route.exit && route.exit.name);
+    } catch (e) { route = buildRoute(); }
     return route;
   }
 
   function rotateRoute() {
     const prev = read(KEY_ROUTE, null);
-    const keepExit = prev && window.PIKVPN ? !window.PIKVPN.getState().stickyExit : false;
+    // sticky exit ON  -> keep the same exit relay across rotations
+    // sticky exit OFF -> full re-roll of the whole circuit
+    const keepExit = prev && window.PIKVPN ? !!window.PIKVPN.getState().stickyExit : false;
     return buildRoute(keepExit && prev.exit ? prev.exit.name : null);
   }
 
