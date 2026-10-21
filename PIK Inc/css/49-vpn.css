@@ -1,5 +1,10 @@
 /* ── PIK VPN · public proxy control center ─────────────────────────────── */
 
+/* Utility aliases used by the VPN page/scripts (defined here so every other
+   stylesheet stays untouched): .u-tiny ≈ extra-small text, .mono ≈ monospace. */
+.u-tiny { font-size: var(--fs-xs, .75rem); }
+.mono { font-family: var(--font-mono, ui-monospace, monospace); }
+
 .vpn-hero {
   display: grid;
   gap: var(--sp-6);
