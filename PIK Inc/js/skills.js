@@ -103,11 +103,48 @@
         if (e.key === "Escape" && self._open) self._toggle(false);
       });
 
-      refs.fetch.addEventListener("click", function () { self.fetchFromWeb(); });
-      refs.reset.addEventListener("click", function () { self.setActive([]); });
+      /* Fetch-skills button — guard against overlapping runs. */
+      refs.fetch.addEventListener("click", function (e) {
+        e.stopPropagation(); // never let the click bubble to the doc close-listener
+        self.fetchFromWeb();
+      });
+
+      /* Clear button — robustly wired:
+         - bound directly on the element AND via delegation on the popover, so
+           it works even if the button is re-rendered or covered by a ripple
+           overlay that swallows the direct target;
+         - stopPropagation keeps the document-level outside-click closer from
+           racing with it;
+         - actually empties `active`, chips, list highlights and the count
+           badge, dispatches pik:skills, and confirms with a transient
+           "cleared ✓" state + toast when there was something to clear. */
+      var doClear = function (e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        var had = self.active.length > 0;
+        /* Belt & braces: also empty the chips DOM row directly, so even a
+           stale render can never leave ghost chips after pressing clear. */
+        try { if (self.els.chips) self.els.chips.innerHTML = ""; } catch (_) {}
+        self.setActive([]); // re-renders chips/list/count + dispatches pik:skills
+        if (had && global.PIKToasts) { try { PIKToasts.show({ type: "success", title: "Skills", text: "All skills cleared" }); } catch (_) {} }
+        var btn = refs.reset;
+        if (btn) {
+          btn.textContent = "cleared ✓";
+          btn.classList.add("is-done");
+          clearTimeout(self._clearT);
+          self._clearT = setTimeout(function () {
+            btn.textContent = "clear";
+            btn.classList.remove("is-done");
+          }, 1200);
+        }
+      };
+      refs.reset.addEventListener("click", doClear);
+      refs.pop.addEventListener("click", function (e) {
+        if (e.target.closest("[data-nx='skills-reset']")) doClear(e);
+      });
 
       this.renderChips();
       this.renderList();
+      this.renderCount();
     },
 
     byId: function (id) {
@@ -134,6 +171,7 @@
       }
       this.renderChips();
       this.renderList();
+      this.renderCount();
       document.dispatchEvent(new CustomEvent("pik:skills", { detail: this.active.slice() }));
     },
 
@@ -141,6 +179,7 @@
       this.active = (ids || []).filter(function (id) { return true; }).slice(0, MAX_ACTIVE);
       this.renderChips();
       this.renderList();
+      this.renderCount();
       document.dispatchEvent(new CustomEvent("pik:skills", { detail: this.active.slice() }));
     },
 
@@ -154,6 +193,15 @@
       }).filter(Boolean);
       if (!parts.length) return "";
       return "\nACTIVE AGENT SKILLS (apply each one rigorously in this turn):\n- " + parts.join("\n- ");
+    },
+
+    /* count badge on the skills toggle button */
+    renderCount: function () {
+      var c = this.els && this.els.count;
+      if (!c) return;
+      var n = this.active.length;
+      c.textContent = String(n);
+      c.hidden = n === 0;
     },
 
     renderChips: function () {
