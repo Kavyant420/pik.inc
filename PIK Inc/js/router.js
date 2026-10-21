@@ -80,6 +80,18 @@
     async chat(opts) {
       var settings = await NexusSettings.get();
 
+      /* ---------- agent skills: equip the turn ----------------------------
+         Active skill chips from the prompt well append their instruction
+         blocks to the system prompt of EVERY engine hop (OpenRouter,
+         pollinations, puter, deepinfra, local micro core) — one injection
+         point covers the whole transport chain. */
+      if (global.PIKSkills && PIKSkills.promptBlock().length) {
+        var skillBlock = PIKSkills.promptBlock();
+        opts.messages = (opts.messages || []).map(function (m) {
+          return m.role === "system" ? { role: "system", content: m.content + skillBlock } : m;
+        });
+      }
+
       /* ---------- on-device route: PIK MicroEngine (unmetered, offline) ---------- */
       if (global.PIKMicro && PIKMicro.isLocalModel(opts.model)) {
         if (!global.MicroEngine || !MicroEngine.ready) {
@@ -266,9 +278,16 @@
     },
 
     /* ---------- Pollinations (keyless) — streamed w/ non-stream fallback --- */
+    /* unified system prompt getter — `DEFAULTS` is module-private to
+       nexus-settings.js, so referencing it here used to throw a ReferenceError
+       on every keyless hop whenever settings.systemPrompt was empty. */
+    _sysPrompt(settings) {
+      return (settings && settings.systemPrompt) || global.NexusSettings.systemPrompt || "";
+    },
+
     async _viaPollinations(opts, settings, endpoint, engineName) {
       endpoint = endpoint || CFG.POLLINATIONS_URL;
-      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
+      var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         // flatten multimodal parts to text for keyless endpoints
         if (typeof m.content === "string") return m;
@@ -352,7 +371,7 @@
         return (m.role === "user" ? "User: " : "Assistant: ") + c.slice(0, 2000);
       }).join("\n");
       var full = ctx ? ctx + "\nUser: " + prompt : prompt;
-      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
+      var sys = this._sysPrompt(settings);
       var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
       var u = CFG.POLLINATIONS_GET_URL + encodeURIComponent(full.slice(0, 24000)) +
         "?model=" + encodeURIComponent(model) + "&system=" + encodeURIComponent(sys.slice(0, 2000)) + "&json=false";
@@ -372,7 +391,7 @@
     /* ---------- DeepInfra public inference API (no key needed) -------------
        Keyless OpenAI-compatible endpoint with SSE streaming support. */
     async _viaDeepInfra(opts, settings) {
-      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
+      var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         if (typeof m.content === "string") return m;
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
@@ -437,7 +456,7 @@
 
     async _viaPuter(opts, settings) {
       var pt = await this.ensurePuter();
-      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
+      var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         if (typeof m.content === "string") return m;
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
