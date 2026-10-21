@@ -174,3 +174,26 @@
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* ==========================================================================
+      Global Tap Highlight & Focus Reset
+      ========================================================================== */
+   *,
+   *::before,
+   *::after {
+     -webkit-tap-highlight-color: transparent !important;
+     tap-highlight-color: transparent !important;
+   }
+
+   *:focus {
+     outline: none !important;
+     box-shadow: none !important;
+   }
+
+    
+   *:focus-visible {
+     outline: 2px solid var(--pik-accent) !important;
+     outline-offset: 3px;
+     border-radius: 4px;
+     box-shadow: 0 0 0 4px rgba(79, 227, 193, 0.2) !important;
+   }
