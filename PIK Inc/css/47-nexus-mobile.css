@@ -1,13 +1,80 @@
-/* ============================================================================
-   PIK//NEXUS — 47-nexus-mobile.css   (NEW file — mobile layout layer)
-   Touch layout for the NEXUS workbench. This sheet is loaded AFTER every
-   desktop stylesheet and only ever applies inside coarse-pointer / narrow
-   viewports, so the desktop UI is byte-for-byte untouched.
-   It re-flows the SAME markup of nexus.html: same classes, same tokens,
-   same surfaces — just stacked for thumbs.
-   ========================================================================= */
+/* NEXUS — mobile horizontal overflow + centering fix */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-/* one CSS var to rule the mobile chrome height (nav bar + safe areas) */
+html,
+body,
+#root,
+#__next {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (max-width: 768px) {
+  /* Keep the main application inside the viewport */
+  main,
+  .app,
+  .app-container,
+  .chat-container,
+  .chat-layout {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: auto;
+  }
+
+  /* Allow flex/grid children to shrink instead of pushing right */
+  main *,
+  .app *,
+  .app-container *,
+  .chat-container *,
+  .chat-layout * {
+    min-width: 0;
+  }
+
+  /* Center the chat input/composer */
+  .chat-input,
+  .chat-composer,
+  .input-container,
+  .prompt-container {
+    width: calc(100% - 28px);
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  /* Prevent long text, model names and metadata overflowing */
+  pre,
+  code,
+  img,
+  video,
+  textarea,
+  input {
+    max-width: 100%;
+  }
+
+  pre,
+  .message,
+  .message-content,
+  .response-content,
+  .model-selector {
+    overflow-wrap: anywhere;
+  }
+}
 *,
 *::before,
 *::after {
