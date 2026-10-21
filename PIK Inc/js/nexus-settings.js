@@ -142,5 +142,10 @@
     }
   };
 
+  /* expose the built-in top-tier system prompt so router.js can fall back to
+     it when a user cleared settings.systemPrompt (DEFAULTS itself is
+     module-private — referencing it from other files throws ReferenceError) */
+  Settings.systemPrompt = DEFAULTS.systemPrompt;
+
   global.NexusSettings = Settings;
 })(window);

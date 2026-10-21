@@ -508,6 +508,38 @@
       this._scrollThread();
     },
 
+    /* ---------- full-turn web surfer (chat.js) -----------------------------
+       Renders a compact assistant message into the thread summarising which
+       pages NEXUS actually read for this turn, so the user can see the raw
+       research context that was injected before the model answered. */
+    _addResearchMsg: function (results) {
+      try {
+        if (!this.els || !this.els.thread || !Array.isArray(results) || !results.length) return;
+        var esc = function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
+        var lines = results.map(function (r) {
+          var host = "web";
+          try { host = new URL(r.url).host; } catch (e) {}
+          if (r.ok) {
+            var chars = String((r.text || "").length);
+            return '<li><span class="nx-research__ok">✓</span> <code>' + esc(host) + '</code> <span class="meta">' + esc(chars) + ' chars via ' + esc(r.relay || "relay") + '</span></li>';
+          }
+          return '<li><span class="nx-research__fail">✕</span> <code>' + esc(host) + '</code> <span class="meta">' + esc(String(r.error || "unreachable")) + '</span></li>';
+        }).join("");
+        var div = document.createElement("div");
+        div.className = "nx-msg nx-msg--ai nx-msg--research";
+        div.innerHTML =
+          '<div class="nx-msg__avatar">◉</div>' +
+          '<div class="nx-msg__body">' +
+            '<div class="nx-msg__head"><span class="nx-msg__who">Nexus Surfer</span>' +
+            '<span class="nx-msg__tag">live web</span></div>' +
+            '<div class="nx-msg__text"><strong>Surfed ' + results.length + ' page(s) — injected as live context:</strong>' +
+            '<ul class="nx-research__list">' + lines + '</ul></div>' +
+          '</div>';
+        this.els.thread.appendChild(div);
+        this._scrollThread();
+      } catch (e) { /* cosmetic only — never break the chat loop */ }
+    },
+
     _addAssistantShell: function () {
       var m = PIKModels.get(this.modelId()) || { name: "NEXUS", logo: null };
       var div = document.createElement("div");

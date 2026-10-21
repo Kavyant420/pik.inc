@@ -21,13 +21,38 @@
       refs.patForm.addEventListener("submit", async function (e) {
         e.preventDefault();
         var v = refs.pat.value.trim();
-        if (!v) return;
-        await NexusSettings.setKey("github", v);
-        refs.pat.value = "";
-        var u = await PIKGitHub.refreshUser();
-        if (window.PIKToasts) PIKToasts.show(u
-          ? { type: "success", title: "GitHub connected", text: "Signed in as @" + u.login }
-          : { type: "warn", title: "Token rejected", text: "GitHub returned 401 \u2014 check the token has repo scope and isn't expired." });
+        if (!v) {
+          if (window.PIKToasts) PIKToasts.show({ type: "warn", title: "Nothing to save", text: "Paste a GitHub personal access token (repo scope) first." });
+          return;
+        }
+        /* disable the button while we round-trip to GitHub — double clicks
+           used to fire two submits and looked like a dead button */
+        var submitBtn = refs.patForm.querySelector("button[type='submit']");
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Saving…"; }
+        var restore = function () {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Save"; }
+        };
+        try {
+          await NexusSettings.setKey("github", v);
+          refs.pat.value = "";
+          var u = await PIKGitHub.refreshUser();
+          if (u) {
+            /* SUCCESS PATH (was missing): hide the form, show who's signed in,
+               refresh the repo list so the rail is immediately usable. */
+            refs.patForm.hidden = true;
+            self._updateWho(u);
+            self._loadRepos(true);
+            if (window.PIKToasts) PIKToasts.show({ type: "success", title: "GitHub connected", text: "Signed in as @" + u.login + " — token saved encrypted on this device." });
+          } else {
+            /* token rejected -> wipe it so later hops don't keep sending junk */
+            await NexusSettings.setKey("github", "");
+            if (window.PIKToasts) PIKToasts.show({ type: "warn", title: "Token rejected", text: "GitHub returned 401 — check the token has repo scope and isn't expired." });
+          }
+        } catch (err) {
+          if (window.PIKToasts) PIKToasts.show({ type: "error", title: "Save failed", text: String(err && err.message || err).slice(0, 120) });
+        } finally {
+          restore();
+        }
       });
       refs.forkBtn && refs.forkBtn.addEventListener("click", function () { self._toggleList("fork"); });
       refs.importBtn && refs.importBtn.addEventListener("click", function () { self._toggleList("import"); });
