@@ -190,6 +190,7 @@ const PIKVPN = (() => {
 
   function tick() {
     if (!state.connected) return;
+    lastHealthy = Date.now(); // tunnel heartbeat for the kill-switch guard
     const speed = 0.4 + Math.random() * 2.6; // MB/s-ish
     state.bytesDown += speed * 1024 * 1024 * (TICK_MS / 1000) * 0.6;
     state.bytesUp += speed * 1024 * 1024 * (TICK_MS / 1000) * 0.18;
@@ -211,6 +212,22 @@ const PIKVPN = (() => {
   function emit() {
     document.dispatchEvent(new CustomEvent("pik:vpn"));
   }
+
+  // ---- Kill-switch contract (see docs/vpn-backend.md §3) --------------------
+  // While connected with the kill switch on, every PIK app network call should
+  // first await guardCheck(): resolves true while the tunnel is healthy, false
+  // once the session goes stale (>60 s without a tick) — at which point we
+  // auto-disconnect and hold traffic behind the kill switch.
+  let lastHealthy = Date.now();
+  function guardCheck() {
+    if (!state.connected || !state.killSwitch) return Promise.resolve(true);
+    const stale = Date.now() - lastHealthy > 60000;
+    if (stale) disconnect("kill-switch");
+    return Promise.resolve(!stale);
+  }
+  document.addEventListener("pik:vpn-guard", (e) => {
+    try { e.detail.check(guardCheck); } catch (err) {}
+  });
 
   // ---- UI binding -----------------------------------------------------------
   function renderServerList(container) {
@@ -271,9 +288,22 @@ const PIKVPN = (() => {
     }
   }
 
+  // Bind the main connect/disconnect button. Guard switches are bound to their
+  // own state key separately (see initPage) — never route them through toggle().
   function bindSwitch(btn) {
     btn.setAttribute("role", "switch");
     btn.addEventListener("click", () => toggle());
+  }
+
+  function bindGuardSwitch(el, key) {
+    if (!el) return;
+    el.setAttribute("role", "switch");
+    el.setAttribute("aria-checked", String(!!state[key]));
+    const flip = () => setOpt(key, !state[key]);
+    el.addEventListener("click", flip);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
+    });
   }
 
   function syncPage(root) {
@@ -366,12 +396,7 @@ const PIKVPN = (() => {
     if (toggleBtn) bindSwitch(toggleBtn);
 
     [["[data-vpn-killswitch]", "killSwitch"], ["[data-vpn-dns]", "dnsLeakGuard"], ["[data-vpn-autorotate]", "autoRotate"]]
-      .forEach(([sel, key]) => {
-        const el = root.querySelector(sel);
-        if (!el) return;
-        el.setAttribute("role", "switch");
-        el.addEventListener("click", () => setOpt(key, !(state[key])));
-      });
+      .forEach(([sel, key]) => bindGuardSwitch(root.querySelector(sel), key));
 
     const fastBtn = root.querySelector("[data-vpn-fastest]");
     if (fastBtn) fastBtn.addEventListener("click", () => {
@@ -407,5 +432,5 @@ const PIKVPN = (() => {
     }
   }
 
-  return { initPage, bindPill, connect, disconnect, toggle, setExit, setOpt, getState, circuit, metricsFor, liveFleet, refreshFleet, fmtBytes, fmtUptime };
+  return { initPage, bindPill, connect, disconnect, toggle, setExit, setOpt, getState, circuit, metricsFor, liveFleet, refreshFleet, guardCheck, fmtBytes, fmtUptime };
 })();

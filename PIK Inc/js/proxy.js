@@ -12,7 +12,8 @@
 //
 // Hard browser limits (stated honestly in the UI):
 //  * A normal web page cannot redirect your OS / other apps' traffic — that
-//    needs a system VPN profile or TUN device (see docs/vpn-backend.md).
+//    needs a system VPN profile or TUN device (see docs/vpn-backend.md, which
+//    ships with this site at PIK Inc/docs/vpn-backend.md).
 //  * JS fetch() cannot pick an arbitrary per-request upstream proxy; browsers
 //    only honor the system/PAC proxy. "Routing through server X" from a page
 //    means either (a) the user's browser proxy settings point at X, or (b) an
