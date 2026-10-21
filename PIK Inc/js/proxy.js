@@ -52,8 +52,8 @@ const PIKProxy = (() => {
   // frontend's egress ip (proof a third-party server carried the request).
   const ECHO_JSONP = "https://api.ipify.org?format=jsonp&callback=";
   const GATEWAY_ECHOS = [
-    { name: "scramio", url: "https://api.scrapingdog.com/scrape?api_key=demo&url=https://httpbin.org/ip" },
-    { name: "httpbin-ip", url: "https://httpbin.org/ip" }
+    { name: "httpbin-ip", url: "https://httpbin.org/ip" },
+    { name: "icanhazip", url: "https://ipv4.icanhazip.com/" }
   ];
 
   const state = {
@@ -78,7 +78,7 @@ const PIKProxy = (() => {
     return out;
   }
 
-  async function fetchText(url, timeoutMs = 9000) {
+  async function fetchText(url, timeoutMs = 6000) {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), timeoutMs);
     try {
@@ -223,7 +223,7 @@ const PIKProxy = (() => {
   // Timed opaque fetch. Success + RTT are genuine network facts about the path
   // this browser currently uses (which, with browser proxy settings pointed at
   // one of our fleet entries, IS the chosen public server).
-  function timedFetch(url, timeoutMs = 6500) {
+  function timedFetch(url, timeoutMs = 4000) {
     const ctl = new AbortController();
     const t0 = performance.now();
     const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -360,10 +360,16 @@ const PIKProxy = (() => {
 
   // Issue a real multi-leg routed exchange and record measured latencies.
   async function routeRequest() {
-    if (!state.fleet.length) await refreshFleet();
-    if (!state.fleet.length) throw new Error("no reachable public servers (feeds blocked & offline?)");
+    // fast path: measure against whatever we already have. A full feed pull +
+    // probe runs in the background instead of blocking the VPN handshake.
+    if (!state.fleet.length && !state.probing) {
+      refreshFleet(24).catch(() => {});
+      await new Promise(r => setTimeout(r, 300));
+    }
+    const pool = state.fleet.length ? state.fleet : state.candidates.slice(0, 3);
+    if (!pool.length) throw new Error("no reachable public servers (feeds blocked & offline?)");
     const legs = [];
-    for (const h of state.fleet.slice(0, 3)) {
+    for (const h of pool.slice(0, 3)) {
       const ms = await timedFetch(probeTargetUrl());
       legs.push({ host: h.host, port: h.port, latency: ms });
       upsertFleet(Object.assign({}, h, { latency: ms }));

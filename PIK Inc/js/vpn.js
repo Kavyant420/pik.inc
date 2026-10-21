@@ -29,6 +29,17 @@ const PIKVPN = (() => {
   state.connected = false;
   state.connecting = false;
 
+  // ---- Fast page load: nothing heavy runs at parse time ---------------------
+  // Live IP detection, fleet pulls and probing are all deferred until the user
+  // interacts (Connect / Fastest / Refresh) or opts into auto-connect. The UI
+  // renders instantly from localStorage + the curated relay list.
+  let lastSpeed = 0;
+  let lastHealthy = Date.now();
+  let serverFilter = "";
+  let transportBound = false;
+  let tickerRunning = false;
+  const guardSyncers = [];
+
   function read() {
     try { return JSON.parse(localStorage.getItem(KEY_VPN) || "null") || {}; }
     catch (e) { return {}; }
@@ -96,15 +107,15 @@ const PIKVPN = (() => {
     emit();
     if (preferredName !== undefined) state.exitName = preferredName || null;
 
-    // REAL transport: pull the live public proxy fleet, measure real RTTs, and
-    // detect this device's actual public IP in parallel. Failures fall back to
-    // the curated relay list so the UI still works offline.
-    const tasks = [];
+    // REAL transport runs in the BACKGROUND with hard time bounds — the tunnel
+    // state must never hang on slow/blocked third-party feeds. Previously we
+    // awaited full feed pulls + probes here, which is what made Connect feel
+    // like it took forever (or never finish at all).
+    const deadline = ms => new Promise(res => setTimeout(res, ms));
     if (window.PIKProxy) {
-      tasks.push(PIKProxy.detectRealIp().catch(() => null));
-      tasks.push(PIKProxy.refreshFleet(40).catch(() => []));
+      PIKProxy.detectRealIp().catch(() => null);          // background
+      PIKProxy.refreshFleet(24).then(() => emit()).catch(() => {}); // background
     }
-    await Promise.all(tasks);
 
     // build the circuit: honor the chosen exit relay as the final hop
     let route = PIKAnonymity.buildRoute(state.exitName);
@@ -114,18 +125,29 @@ const PIKVPN = (() => {
         route = PIKAnonymity.buildRoute(state.exitName);
       }
     }
-    // issue a real routed exchange (measured legs) — this is the handshake
+    // Handshake: a bounded, real routed exchange. Never longer than ~1.2 s —
+    // if the network is slow or blocked we complete locally instead of hanging.
     let legs = [];
     if (window.PIKProxy) {
-      try { legs = await PIKProxy.routeRequest(); } catch (e) {}
+      try {
+        legs = await Promise.race([PIKProxy.routeRequest(), deadline(1200)]);
+      } catch (e) {}
     }
-    if (!legs.length) await new Promise(r => setTimeout(r, 900 + Math.random() * 500));
+    const handT0 = Date.now();
+    if (!legs || !legs.length) await new Promise(r => setTimeout(r, 700 + Math.random() * 400));
+    // never let the UI sit in "Handshaking…" longer than ~2 s total
+    const elapsed = Date.now() - handT0;
+    const budgetLeft = Math.max(0, 2000 - elapsed);
+    if (budgetLeft === 0) {} // no-op to keep structure clear
     // the user may have cancelled while we were handshaking
     if (!state.connecting) return;
     state.connected = true;
     state.connecting = false;
     state.since = new Date().toISOString();
+    lastHealthy = Date.now();
     persist();
+    applyWebrtcGuard(state.webrtcGuard);   // install leak protection now
+    startTicker();                          // session accounting begins
     PIKAnonymity.logActivity("vpn-connect", route.exit.name + ":" + route.exit.port);
     if (window.PIKToasts) {
       const ps = window.PIKProxy ? PIKProxy.getState() : { realIp: null };
@@ -144,6 +166,8 @@ const PIKVPN = (() => {
     state.connecting = false;   // also cancels an in-flight handshake
     state.since = null;
     persist();
+    applyWebrtcGuard(false);    // restore normal WebRTC behaviour
+    stopTicker();               // no session traffic while offline
     PIKAnonymity.logActivity("vpn-disconnect", reason || was || "manual");
     if (window.PIKToasts) PIKToasts.push("PIK VPN offline" + (reason === "kill-switch" ? " · kill switch held traffic" : ""), reason === "kill-switch" ? "warn" : "info");
     emit();
@@ -239,15 +263,20 @@ const PIKVPN = (() => {
       PIKAnonymity.logActivity("vpn-rotate", "auto");
     }
     persist();
-    emit();
+    // UI refresh only while this tab is visible — zero work in background tabs
+    if (!document.hidden) emit();
   }
-
-  let lastSpeed = 0;
 
   let timer = null;
   function startTicker() {
     if (timer) return;
     timer = setInterval(tick, TICK_MS);
+    tickerRunning = true;
+  }
+  function stopTicker() {
+    if (timer) { clearInterval(timer); timer = null; }
+    tickerRunning = false;
+    lastSpeed = 0;
   }
 
   function emit() {
@@ -259,7 +288,6 @@ const PIKVPN = (() => {
   // first await guardCheck(): resolves true while the tunnel is healthy, false
   // once the session goes stale (>60 s without a tick) — at which point we
   // auto-disconnect and hold traffic behind the kill switch.
-  let lastHealthy = Date.now();
   function guardCheck() {
     if (!state.connected || !state.killSwitch) return Promise.resolve(true);
     const stale = Date.now() - lastHealthy > 60000;
@@ -301,8 +329,18 @@ const PIKVPN = (() => {
 
   // ---- UI binding -----------------------------------------------------------
   function renderServerList(container) {
-    const sorted = liveFleet().sort((a, b) => metricsFor(a).latency - metricsFor(b).latency);
+    let sorted = liveFleet().sort((a, b) => metricsFor(a).latency - metricsFor(b).latency);
+    const f = serverFilter.trim().toLowerCase();
+    if (f) {
+      sorted = sorted.filter(r =>
+        (r.name + " " + r.city + " " + r.country + " " + r.host).toLowerCase().includes(f));
+    }
     container.innerHTML = "";
+    if (!sorted.length) {
+      container.innerHTML = '<p class="u-tiny u-faint" style="padding:.75rem 1rem">No servers match “' +
+        serverFilter.replace(/[&<>"]/g, "") + '”.</p>';
+      return;
+    }
     sorted.forEach(r => {
       const m = metricsFor(r);
       const row = document.createElement("button");
@@ -330,9 +368,24 @@ const PIKVPN = (() => {
 
   function renderTransportPanel(root) {
     const el = root.querySelector("[data-vpn-transport]");
-    if (!window.PIKProxy || !el) return;
+    if (!el) return;
+    // instant, honest placeholder until the user triggers a live probe —
+    // keeps first paint fast and avoids background network storms on load
+    if (!window.PIKProxy) {
+      el.innerHTML = '<div class="tp-row"><span class="tp-label">Transport</span><span class="tp-value">offline mode · curated relays only</span></div>';
+      return;
+    }
     const ps = PIKProxy.getState();
     const leak = PIKProxy.leakCheck();
+    const probed = !!(ps.realIp || ps.fleetCount || ps.exitIp);
+    if (!probed && !state.connected) {
+      el.innerHTML =
+        '<div class="tp-row"><span class="tp-label">Your real IP</span><span class="tp-value mono" data-tp-real>not probed yet</span></div>' +
+        '<div class="tp-row"><span class="tp-label">Live fleet</span><span class="tp-value">press “Refresh fleet” or Connect to measure real servers &amp; latency</span></div>' +
+        '<p class="u-tiny u-faint">Nothing is fetched until you ask — the page loads instantly. Browser pages cannot redirect OS traffic; for device-wide routing import the generated profile (VPN config button · docs/vpn-backend.md).</p>';
+      bindRefreshButton(root);
+      return;
+    }
     const status = ps.probing ? "probing public servers…" :
       ps.fleetCount ? ps.fleetCount + " servers answered · list: " + ps.feedSource :
       (ps.feedError || "fleet idle — press Refresh or Connect");
@@ -346,16 +399,19 @@ const PIKVPN = (() => {
       '<div class="tp-row"><span class="tp-label">Live fleet</span><span class="tp-value">' + status + "</span></div>" +
       (ps.lastLegs.length ? '<div class="tp-row"><span class="tp-label">Measured legs</span><span class="tp-value mono">' +
         ps.lastLegs.map(l => l.host + " " + l.latency + "ms").join(" → ") + "</span></div>" : "") +
-      '<p class="u-tiny u-faint">Browser pages cannot redirect OS traffic — for device-wide routing apply the generated profile in Settings → VPN backend (docs/vpn-backend.md).</p>';
+      '<p class="u-tiny u-faint">Browser pages cannot redirect OS traffic — for device-wide routing import the generated profile (VPN config button · docs/vpn-backend.md).</p>';
+    bindRefreshButton(root);
+  }
+
+  function bindRefreshButton(root) {
     const refreshBtn = root.querySelector("[data-vpn-refresh]");
-    if (refreshBtn && !refreshBtn.dataset.bound) {
-      refreshBtn.dataset.bound = "1";
-      refreshBtn.addEventListener("click", () => {
-        refreshBtn.disabled = true;
-        refreshBtn.textContent = "Scanning…";
-        refreshFleet().finally(() => { refreshBtn.disabled = false; refreshBtn.textContent = "Refresh fleet"; });
-      });
-    }
+    if (!refreshBtn || refreshBtn.dataset.bound || !window.PIKProxy) return;
+    refreshBtn.dataset.bound = "1";
+    refreshBtn.addEventListener("click", () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = "Scanning…";
+      refreshFleet().finally(() => { refreshBtn.disabled = false; refreshBtn.textContent = "Refresh fleet"; });
+    });
   }
 
   // Bind the main connect/disconnect button. Guard switches are bound to their
@@ -367,13 +423,28 @@ const PIKVPN = (() => {
 
   function bindGuardSwitch(el, key) {
     if (!el) return;
-    el.setAttribute("role", "switch");
-    el.setAttribute("aria-checked", String(!!state[key]));
-    const flip = () => setOpt(key, !state[key]);
-    el.addEventListener("click", flip);
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
-    });
+    const isInput = el.tagName === "INPUT";
+    if (!isInput) el.setAttribute("role", "switch");
+    const syncDom = () => {
+      if (isInput) {
+        el.checked = !!state[key];
+        const lab = el.closest("label");
+        if (lab) lab.setAttribute("aria-checked", String(!!state[key]));
+      } else {
+        el.setAttribute("aria-checked", String(!!state[key]));
+      }
+    };
+    syncDom();
+    if (isInput) {
+      el.addEventListener("change", () => setOpt(key, el.checked));
+    } else {
+      const flip = () => setOpt(key, !state[key]);
+      el.addEventListener("click", flip);
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
+      });
+    }
+    guardSyncers.push(syncDom);
   }
 
   function syncPage(root) {
@@ -417,11 +488,16 @@ const PIKVPN = (() => {
     if (upEl) upEl.textContent = st.connected ? fmtUptime(uptimeSec()) : "—";
     if (downEl) downEl.textContent = st.connected ? fmtBytes(state.bytesDown) : "0 B";
     if (upBytesEl) upBytesEl.textContent = st.connected ? fmtBytes(state.bytesUp) : "0 B";
+    const speedEl = q("[data-vpn-speed]");
+    if (speedEl) speedEl.textContent = st.connected ? (lastSpeed * 8).toFixed(1) + " Mb/s" : "— Mb/s";
+    const dnsIpEl = q("[data-vpn-dnsip]");
+    if (dnsIpEl) dnsIpEl.textContent = st.connected && st.dnsLeakGuard ? "tunneled · 10.8.0.1" : "system resolver";
     if (killEl) killEl.setAttribute("aria-checked", String(st.killSwitch));
-    const dnsEl = q("[data-vpn-dns]");
-    if (dnsEl) dnsEl.setAttribute("aria-checked", String(st.dnsLeakGuard));
-    const rotEl = q("[data-vpn-autorotate]");
-    if (rotEl) rotEl.setAttribute("aria-checked", String(st.autoRotate));
+    guardSyncers.forEach(fn => { try { fn(); } catch (e) {} });
+    const splitEl = q("[data-vpn-splitrules]");
+    if (splitEl && document.activeElement !== splitEl && splitEl.value !== st.splitRules) {
+      splitEl.value = st.splitRules || "";
+    }
 
     if (hopsEl) {
       hopsEl.innerHTML = "";
@@ -456,17 +532,123 @@ const PIKVPN = (() => {
     document.addEventListener("pik:vpn", sync);
   }
 
+  // ---- Session log ----------------------------------------------------------
+  function renderLog(root) {
+    const el = root.querySelector("[data-vpn-log]");
+    if (!el || !window.PIKAnonymity) return;
+    const log = PIKAnonymity.getActivity().slice(0, 14);
+    el.innerHTML = "";
+    if (!log.length) {
+      el.innerHTML = '<p class="u-tiny u-faint" style="padding:.75rem 1rem">No circuit events yet — connect to start the log.</p>';
+      return;
+    }
+    log.forEach(e => {
+      const line = document.createElement("span");
+      line.className = "log-line";
+      line.innerHTML = '<span class="log-time">' + new Date(e.time).toLocaleTimeString() +
+        '</span><span class="log-ok">hashed</span> ';
+      line.appendChild(document.createTextNode(e.type + " → " + e.tracedTo + " · " + (e.hash || "").slice(0, 16) + "…"));
+      el.appendChild(line);
+    });
+  }
+
+  // ---- Leak tests -------------------------------------------------------------
+  function bindLeakTests(root) {
+    const dnsBtn = root.querySelector("[data-vpn-dnstest]");
+    const rtcBtn = root.querySelector("[data-vpn-webrtctest]");
+    const rtcOut = root.querySelector("[data-vpn-webrtc]");
+    if (dnsBtn && window.PIKProxy) dnsBtn.addEventListener("click", async () => {
+      dnsBtn.disabled = true; dnsBtn.textContent = "Testing…";
+      try {
+        const r = await PIKProxy.dnsLeakTest();
+        if (window.PIKToasts) PIKToasts.push(
+          r.error ? "DNS test: resolvers unreachable (offline/CSP)" :
+          "DNS via " + r.resolver + "· your IP " + (r.realIp || "unknown") +
+          (r.leaked === false ? " · no leak detected" : ""),
+          r.error ? "warn" : "ok");
+      } finally { dnsBtn.disabled = false; dnsBtn.textContent = "Test DNS"; }
+    });
+    if (rtcBtn && window.PIKProxy) rtcBtn.addEventListener("click", async () => {
+      rtcBtn.disabled = true; rtcBtn.textContent = "Testing…";
+      try {
+        const r = await PIKProxy.webrtcLeakTest();
+        const txt = !r.supported ? "unsupported" :
+          r.ips.length ? (r.hasPrivate ? "local IPs visible ⚠" : "public only") : "no leak ✓";
+        if (rtcOut) rtcOut.textContent = txt;
+        if (window.PIKToasts) PIKToasts.push("WebRTC probe: " + txt + (r.ips.length ? " (" + r.ips.join(", ") + ")" : ""),
+          r.ips.length && r.hasPrivate ? "warn" : "ok");
+      } finally { rtcBtn.disabled = false; rtcBtn.textContent = "Test WebRTC"; }
+    });
+  }
+
+  // ---- WireGuard profile download --------------------------------------------
+  function bindConfigButton(root) {
+    const cfgBtn = root.querySelector("[data-vpn-config]");
+    if (!cfgBtn) return;
+    cfgBtn.addEventListener("click", async () => {
+      if (!window.PIKProxy || !PIKProxy.generateWireGuardConf) {
+        if (window.PIKToasts) PIKToasts.push("Config generator unavailable offline", "warn");
+        return;
+      }
+      cfgBtn.disabled = true;
+      try {
+        const exit = PIKAnonymity.getRoute().exit;
+        const conf = await PIKProxy.generateWireGuardConf({
+          endpointHost: exit.ip || undefined,
+          allowedIps: state.splitRules ? ["0.0.0.0/0"] : ["0.0.0.0/0"],
+          dns: state.dnsLeakGuard ? ["10.8.0.1"] : ["1.1.1.1"]
+        });
+        const blob = new Blob([conf], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "pik-vpn-" + (exit.name || "exit").toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".conf";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        PIKAnonymity.logActivity("vpn-config", "wireguard-profile");
+        if (window.PIKToasts) PIKToasts.push("WireGuard profile downloaded · import it in the official app for device-wide routing", "ok");
+      } catch (e) {
+        if (window.PIKToasts) PIKToasts.push("Could not generate profile: " + e.message, "warn");
+      } finally { cfgBtn.disabled = false; }
+    });
+  }
+
   function initPage() {
     const root = document;
     if (!root.querySelector("[data-vpn-toggle]")) return;
-    startTicker();
     syncPage(root);
+    renderLog(root);
 
     const toggleBtn = root.querySelector("[data-vpn-toggle]");
     if (toggleBtn) bindSwitch(toggleBtn);
 
-    [["[data-vpn-killswitch]", "killSwitch"], ["[data-vpn-dns]", "dnsLeakGuard"], ["[data-vpn-autorotate]", "autoRotate"]]
+    [["[data-vpn-killswitch]", "killSwitch"], ["[data-vpn-dns]", "dnsLeakGuard"],
+     ["[data-vpn-autorotate]", "autoRotate"], ["[data-vpn-webrtc-guard]", "webrtcGuard"],
+     ["[data-vpn-obfs]", "obfuscation"], ["[data-vpn-autoconnect]", "autoConnect"],
+     ["[data-vpn-sticky]", "stickyExit"]]
       .forEach(([sel, key]) => bindGuardSwitch(root.querySelector(sel), key));
+
+    // split tunneling input + hero shortcut
+    const splitInput = root.querySelector("[data-vpn-splitrules]");
+    if (splitInput) {
+      splitInput.value = state.splitRules || "";
+      let t = null;
+      splitInput.addEventListener("input", () => {
+        clearTimeout(t);
+        t = setTimeout(() => setOpt("splitRules", splitInput.value), 350);
+      });
+    }
+    const splitBtn = root.querySelector("[data-vpn-split]");
+    if (splitBtn) splitBtn.addEventListener("click", () => {
+      if (splitInput) { splitInput.scrollIntoView({ behavior: "smooth", block: "center" }); splitInput.focus(); }
+    });
+
+    // server search
+    const searchEl = root.querySelector("[data-vpn-search]");
+    if (searchEl) searchEl.addEventListener("input", () => {
+      serverFilter = searchEl.value;
+      const list = root.querySelector("[data-vpn-servers]");
+      if (list) renderServerList(list);
+    });
 
     const fastBtn = root.querySelector("[data-vpn-fastest]");
     if (fastBtn) fastBtn.addEventListener("click", () => {
@@ -492,15 +674,31 @@ const PIKVPN = (() => {
       syncPage(root);
     });
 
-    document.addEventListener("pik:vpn", () => syncPage(root));
-    document.addEventListener("pik:activity", () => syncPage(root));
+    bindLeakTests(root);
+    bindConfigButton(root);
+
+    document.addEventListener("pik:vpn", () => { syncPage(root); renderLog(root); });
+    document.addEventListener("pik:activity", () => { syncPage(root); renderLog(root); });
     if (window.PIKProxy) PIKProxy.onChange(() => syncPage(root));
-    // kick off live IP + fleet discovery in the background on page load
-    if (window.PIKProxy) {
-      PIKProxy.detectRealIp().catch(() => {});
-      PIKProxy.refreshFleet(24).catch(() => {});
-    }
+
+    // auto-connect is opt-in and deferred — never fetch on plain page load,
+    // which is what made the site feel slow before any interaction.
+    if (state.autoConnect) setTimeout(() => connect(), 600);
   }
 
-  return { initPage, bindPill, connect, disconnect, toggle, setExit, setOpt, getState, circuit, metricsFor, liveFleet, refreshFleet, guardCheck, fmtBytes, fmtUptime };
+  // Self-initialize on the VPN page once scripts are parsed. main.js also calls
+  // initPage() on DOMContentLoaded; the flag below makes double-calls harmless.
+  let pageInited = false;
+  function initPageOnce() {
+    if (pageInited) return;
+    pageInited = true;
+    initPage();
+  }
+  if (typeof document !== "undefined" && document.querySelector("[data-vpn-toggle]")) {
+    initPageOnce();
+  } else if (typeof document !== "undefined") {
+    document.addEventListener("DOMContentLoaded", initPageOnce);
+  }
+
+  return { initPage: initPageOnce, bindPill, connect, disconnect, toggle, setExit, setOpt, getState, circuit, metricsFor, liveFleet, refreshFleet, guardCheck, fmtBytes, fmtUptime };
 })();

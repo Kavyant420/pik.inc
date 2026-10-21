@@ -205,3 +205,35 @@
 .tp-value { font-weight: 600; text-align: right; word-break: break-all; }
 .srv-measured { color: #4fe3c1; font-weight: 700; }
 .server-row.is-live { border-left: 3px solid #4fe3c1; }
+
+/* ── VPN page additions: session log, split tunneling, switch inputs ─────── */
+.session-log {
+  display: grid;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: var(--fs-xs);
+}
+.session-log .log-line { display: block; padding: .3rem .5rem; border-bottom: 1px dashed rgba(255,255,255,.06); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.session-log .log-time { color: var(--text-dim); margin-right: .6rem; }
+.session-log .log-ok { color: #4fe3c1; font-weight: 700; margin-right: .6rem; }
+
+.vpn-opt--split { flex-wrap: wrap; }
+.vpn-opt--split .input { flex: 1 1 14rem; min-width: 0; }
+.input--sm { padding-block: .4rem; font-size: var(--fs-sm); }
+
+/* real checkbox switches (label.switch wrapping input[type=checkbox]) */
+.switch input[type="checkbox"] { position: absolute; inline-size: 0; block-size: 0; opacity: 0; }
+.switch .switch__track {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+}
+.switch input[type="checkbox"]:checked ~ .switch__track {
+  background: color-mix(in srgb, var(--pik-accent) 40%, transparent);
+}
+.switch input[type="checkbox"]:focus-visible ~ .switch__track {
+  outline: 2px solid var(--pik-accent);
+  outline-offset: 2px;
+}
