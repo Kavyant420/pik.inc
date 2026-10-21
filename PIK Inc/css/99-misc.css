@@ -69,3 +69,44 @@ html { scrollbar-color: rgb(255 255 255 / 14%) transparent; }
   .glass, .card, .panel { background: #fff; border: 1px solid #ccc; backdrop-filter: none; }
   a { color: #000; text-decoration: underline; }
 }
+
+/* ==========================================================================
+   Chat Message Text Overflow Fix
+   Prevents long model names/tags from breaking out of the message bubble
+   ========================================================================== */
+
+/* Target the main message content area */
+.chat-message__content,
+.message-bubble__text,
+.nx-chat-msg {
+  min-width: 0;       /* Critical for flex children to shrink below content size */
+  max-width: 100%;    /* Never exceed parent width */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;      /* Optional: adds hyphens when breaking long words */
+}
+
+/* Target inline badges/tags like "(free)", "minimax", "engine" */
+.chat-badge,
+.model-tag,
+.msg-chip,
+span[data-model],
+span[class*="tag"] {
+  display: inline-flex;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  flex-shrink: 1;     /* Allows badge to shrink if space is tight */
+  min-width: 0;
+}
+
+/* Ensure the parent message wrapper doesn't force expansion */
+.chat-message,
+.msg-row,
+.nx-msg-wrapper {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;   /* Clips any rogue overflow */
+}
