@@ -65,6 +65,20 @@ body.nx-root .nexus-md :is(h1,h2,h3,h4)+p { margin-top: 3px; }
   font-family: var(--nx-font-mono, monospace); font-size: .64rem; letter-spacing: .2em;
   text-transform: uppercase; color: var(--nx-txt-faint, #8a8a90);
 }
+/* clear button in the popover head — make it look & feel clickable */
+.nx-skills-pop__head [data-nx='skills-reset'] {
+  all: unset; cursor: pointer; font: inherit; letter-spacing: .12em;
+  padding: 3px 10px; border-radius: 99px; color: var(--nx-txt, #d8d8dc);
+  border: 1px solid var(--nx-line, rgba(255,255,255,.16));
+  transition: background .15s, color .15s, border-color .15s, transform .12s;
+}
+.nx-skills-pop__head [data-nx='skills-reset']:hover {
+  background: rgba(255,255,255,.09); color: #fff; border-color: rgba(255,255,255,.34);
+}
+.nx-skills-pop__head [data-nx='skills-reset']:active { transform: scale(.94); }
+.nx-skills-pop__head [data-nx='skills-reset'].is-done {
+  color: #7bd88f; border-color: rgba(123,216,143,.5); background: rgba(123,216,143,.1);
+}
 .nx-skills-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
 .nx-skill {
   all: unset; display: flex; align-items: center; gap: 10px; cursor: pointer;
