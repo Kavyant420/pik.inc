@@ -32,6 +32,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (page === "account" || page === "login" || page === "signup") initAccount(page);
   if (page === "security") initSecurity();
+  // PIK VPN widgets: full control center on the product page, live pill elsewhere
+  if (window.PIKVPN) {
+    if (page === "vpn" || document.querySelector("[data-vpn-toggle]")) PIKVPN.initPage();
+    else if (document.querySelector("[data-vpn-pill]")) PIKVPN.bindPill();
+  }
   if (page === "wireless") initWireless();
   if (page === "products") initProducts();
 
