@@ -1,0 +1,196 @@
+/* ============================================================================
+   PIK//NEXUS — 47-nexus-mobile.css   (NEW file — mobile layout layer)
+   Touch layout for the NEXUS workbench. This sheet is loaded AFTER every
+   desktop stylesheet and only ever applies inside coarse-pointer / narrow
+   viewports, so the desktop UI is byte-for-byte untouched.
+   It re-flows the SAME markup of nexus.html: same classes, same tokens,
+   same surfaces — just stacked for thumbs.
+   ========================================================================= */
+
+/* one CSS var to rule the mobile chrome height (nav bar + safe areas) */
+@media (pointer: coarse), (max-width: 860px) {
+
+  .nx-root {
+    --nx-mobile-nav-h: 62px;
+    --nx-mobile-chrome: calc(var(--nx-mobile-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---------- shell: single column, bounded rows ---------- */
+  .nx-root .nx-shell {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "top"
+      "main"
+      "status" !important;
+  }
+
+  /* brand corner stays hidden exactly like the desktop <=860px behaviour */
+  .nx-root .nx-brand { display: none; }
+
+  /* ---------- topbar: compact, no dead labels ---------- */
+  .nx-root .nx-top {
+    padding-inline: max(10px, env(safe-area-inset-left));
+    gap: 6px;
+  }
+  .nx-root .nx-top__budget { display: none; }
+  .nx-root .nx-engine span { display: none; }        /* keep the status dot only */
+  .nx-root .nx-engine { padding: 4px 6px; }
+  .nx-root .nx-orbwrap { display: none !important; } /* orb FX is desktop eye-candy */
+
+  /* touch targets: never below ~40px on a phone */
+  .nx-root .nx-ibtn { min-width: 40px; min-height: 40px; }
+  .nx-root .nx-ibtn--sm { min-width: 36px; min-height: 36px; }
+
+  /* ---------- main column keeps its chat-first anatomy ---------- */
+  .nx-root .nx-main { min-height: 0; }
+  .nx-root .nx-thread { -webkit-overflow-scrolling: touch; }
+  .nx-root .nx-hero h1 { font-size: clamp(1.5rem, 7vw, 2.1rem); }
+  .nx-root .nx-hero p { font-size: .82rem; }
+
+  /* hero chips scroll horizontally instead of stacking into a wall */
+  .nx-root .nx-hero__chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nx-root .nx-hero__chips::-webkit-scrollbar { display: none; }
+  .nx-root .nx-hero__chips .nx-chip { flex: 0 0 auto; }
+
+  /* ---------- prompt well: thumb-sized, keyboard-friendly ---------- */
+  .nx-root .nx-wellwrap {
+    padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
+    padding-bottom: calc(var(--nx-mobile-chrome) + 8px);
+  }
+  .nx-root .nx-well { border-radius: var(--nx-r-lg); }
+  .nx-root .nx-well textarea { font-size: 16px; }   /* >=16px stops iOS zoom-on-focus */
+  .nx-root .nx-well__hint { display: none; }         /* Enter/Esc hints are keyboard lore */
+  .nx-root .nx-well__foot { gap: 8px; flex-wrap: wrap; }
+  .nx-root .nx-modelchip { max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* effort ladder stays usable at small size */
+  .nx-root .nx-ladder button { min-height: 30px; padding-inline: 9px; }
+
+  /* skill popover: pin it above the well, full width */
+  .nx-root .nx-skills-pop {
+    position: fixed !important;
+    left: 12px !important; right: 12px !important;
+    bottom: calc(var(--nx-mobile-chrome) + 120px) !important;
+    top: auto !important;
+    width: auto !important;
+    max-height: 52vh;
+    z-index: 95;
+  }
+
+  /* ---------- status bar: two lines of tiny telemetry ---------- */
+  .nx-root .nx-status {
+    padding-inline: max(10px, env(safe-area-inset-left));
+    padding-bottom: env(safe-area-inset-bottom);
+    height: auto; min-height: 26px;
+    flex-wrap: wrap; row-gap: 2px;
+    font-size: .58rem;
+  }
+
+  /* ---------- rail becomes a left drawer over the content ---------- */
+  .nx-root .nx-rail {
+    position: fixed;
+    left: 0; top: var(--nx-topbar-h); bottom: 0;
+    width: min(320px, 88vw);
+    z-index: 96;
+    transform: translateX(-104%);
+    transition: transform .38s var(--nx-ease);
+    background: var(--nx-glass-solid);
+    backdrop-filter: blur(var(--nx-blur));
+    -webkit-backdrop-filter: blur(var(--nx-blur));
+    border-right: 1px solid var(--nx-line);
+    padding-bottom: calc(var(--nx-mobile-chrome) + 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .nx-root .nx-rail.is-open { transform: none; box-shadow: var(--nx-shadow-deep); }
+
+  /* ---------- IDE dock becomes a right/bottom sheet ---------- */
+  .nx-root .nx-dock {
+    position: fixed;
+    inset: auto 0 0 0;
+    top: var(--nx-topbar-h);
+    width: 100% !important;
+    max-width: 100vw;
+    z-index: 96;
+    transform: translateY(104%);
+    transition: transform .42s var(--nx-ease);
+    border-top: 1px solid var(--nx-line);
+    border-left: 0;
+    box-shadow: var(--nx-shadow-deep);
+    background: var(--nx-glass-solid);
+    backdrop-filter: blur(var(--nx-blur));
+    -webkit-backdrop-filter: blur(var(--nx-blur));
+    padding-bottom: var(--nx-mobile-chrome);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .nx-root .nx-dock.is-open { transform: none; }
+  .nx-root .nx-resizer { display: none; }            /* drag-resize is mouse furniture */
+  .nx-root .nx-pane-grab { display: none; }
+  .nx-root .nx-editor__minimap { display: none; }    /* no room for a minimap on a phone */
+  .nx-root .nx-dock__title { font-size: .62rem; letter-spacing: .18em; }
+
+  /* editor + terminal get real touch scrolling */
+  .nx-root .nx-editor { min-height: 220px; }
+  .nx-root .nx-editor .nx-editor__ta,
+  .nx-root .nx-editor .nx-editor__hl { font-size: 12px; }
+  .nx-root .nx-term { -webkit-overflow-scrolling: touch; }
+  .nx-root .nx-term__inputrow input { font-size: 16px; }
+
+  /* pane tabs scroll sideways if they overflow */
+  .nx-root .nx-pane__tabs { overflow-x: auto; scrollbar-width: none; }
+  .nx-root .nx-pane__tabs::-webkit-scrollbar { display: none; }
+  .nx-root .nx-pane__label { display: none; }
+
+  /* pushbar wraps under the actions */
+  .nx-root .nx-pushbar { flex-wrap: wrap; }
+  .nx-root .nx-pushbar input { flex: 1 1 100%; }
+  .nx-root .nx-pushbar .nx-btn { flex: 1 1 auto; min-height: 40px; }
+
+  /* reopen-IDE floating tab sits above the nav bar */
+  .nx-root .nx-dockreopen {
+    bottom: calc(var(--nx-mobile-chrome) + 14px);
+    right: max(14px, env(safe-area-inset-right));
+  }
+
+  /* ---------- overlays & drawers respect the notch era ---------- */
+  .nx-root .nx-overlay { padding: calc(var(--nx-topbar-h) + 10px) 10px calc(var(--nx-mobile-chrome) + 10px); place-items: stretch center; }
+  .nx-root .nx-picker { width: 100%; max-width: 560px; max-height: 100%; margin-inline: auto; border-radius: var(--nx-r-lg); }
+  .nx-root .nx-picker__foot kbd { display: none; }   /* keyboard shortcuts are moot here */
+
+  .nx-root .nx-drawer {
+    width: min(430px, 100vw);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nx-root .nx-drawer input[type="password"],
+  .nx-root .nx-drawer input[type="text"],
+  .nx-root .nx-drawer textarea { font-size: 16px; }
+
+  .nx-root .nx-thinkmodal__panel { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+
+  /* ---------- mobile scrim (new element — invisible unless a drawer opens) */
+  .nx-mobile-scrim {
+    position: fixed; inset: 0; z-index: 95;
+    background: rgba(0, 0, 0, .62);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity var(--nx-med) var(--nx-ease), visibility var(--nx-med);
+  }
+  .nx-mobile-scrim.is-shown { opacity: 1; visibility: visible; pointer-events: auto; }
+
+  /* ripple/hover artefacts feel sticky on touch — soften hover-only states */
+  .nx-root .nx-tree__row:hover { padding-left: 8px; }
+}
+
+/* extra-tall phones get a slightly roomier composer; small ones tighten up */
+@media (pointer: coarse) and (max-height: 680px) {
+  .nx-root .nx-hero { padding-block: 14px; }
+  .nx-root .nx-well textarea { min-height: 40px; }
+}

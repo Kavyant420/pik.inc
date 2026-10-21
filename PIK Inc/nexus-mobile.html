@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>PIK//NEXUS — agentic workbench · PIK Inc.</title>
+<meta name="description" content="NEXUS Mobile: the same free-budget agentic coding workbench, re-served for touch devices. OpenRouter :free models with automatic pollinations.ai failover, an on-device micro-LLM core, a hashed local IDE, integrated terminal, live preview and Nexus Pages hosting.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; frame-src 'self' blob:; worker-src 'self' blob:; child-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self' https://github.com;">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%239ea4ad' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%239ea4ad'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- ============ desktop interface — byte-for-byte the same files ============ -->
+<link rel="stylesheet" href="./css/30-nexus-tokens.css">
+<link rel="stylesheet" href="./css/31-nexus-shell.css">
+<link rel="stylesheet" href="./css/32-nexus-orb.css">
+<link rel="stylesheet" href="./css/33-nexus-ide.css">
+<link rel="stylesheet" href="./css/34-nexus-models.css">
+<link rel="stylesheet" href="./css/35-nexus-animations.css">
+<link rel="stylesheet" href="./css/36-nexus-terminal.css">
+<link rel="stylesheet" href="./css/37-nexus-preview.css">
+<link rel="stylesheet" href="./css/38-nexus-hosting.css">
+<link rel="stylesheet" href="./css/39-nexus-thinkpanel.css">
+<link rel="stylesheet" href="./css/40-nexus-output.css">
+<link rel="stylesheet" href="./css/41-nexus-microcore.css">
+<link rel="stylesheet" href="./css/42-nexus-motion-plus.css">
+<link rel="stylesheet" href="./css/43-nexus-fitviewport.css">
+<link rel="stylesheet" href="./css/44-nexus-codegrid.css">
+<link rel="stylesheet" href="./css/45-nexus-thinkline.css">
+<link rel="stylesheet" href="./css/46-nexus-skills.css">
+
+<!-- ============ mobile layer — NEW files only, loaded last so it wins ====== -->
+<link rel="stylesheet" href="./css/47-nexus-mobile.css">
+<link rel="stylesheet" href="./css/48-nexus-mobile-chrome.css">
+</head>
+
+<body class="nx-root nx-page">
+
+<!-- boot curtain -->
+<div class="nx-boot" data-nx="boot">
+  <div class="nx-boot__word">NEXUS</div>
+  <div class="nx-boot__bar"><i></i></div>
+</div>
+
+<!-- ambient layers -->
+<div class="nx-aurora" aria-hidden="true"></div>
+<div class="nx-noise" aria-hidden="true"></div>
+<div class="nx-shards" aria-hidden="true">
+  <span class="nx-shard" style="left:6%;top:22%;--sw:120px;--sh:120px;--sd:30s;--rx:24deg;--rz:10deg"></span>
+  <span class="nx-shard" style="right:12%;top:58%;--sw:80px;--sh:80px;--sd:22s;--rx:-18deg;--rz:-6deg"></span>
+  <span class="nx-shard" style="left:44%;bottom:6%;--sw:60px;--sh:60px;--sd:26s;--rx:30deg;--rz:14deg"></span>
+</div>
+
+<!-- mobile scrim: tap to dismiss any open drawer (inert on desktop) -->
+<div class="nx-mobile-scrim" data-nxmobile="scrim" aria-hidden="true"></div>
+
+<div class="nx-shell">
+
+  <!-- ============ brand corner ============ -->
+  <div class="nx-brand">
+    <div class="nx-brand__mark">NX</div>
+    <div class="nx-brand__name"><b>PIK</b>//NEXUS</div>
+  </div>
+
+  <!-- ============ topbar ============ -->
+  <header class="nx-top">
+    <button class="nx-ibtn" data-nx="dock-toggle" title="Toggle IDE dock (Ctrl/Cmd+I)" aria-label="Toggle editor dock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
+    </button>
+    <span class="nx-engine" data-nx="engine" data-engine="openrouter" title="Active inference engine">
+      <i></i><span>OPENROUTER</span>
+    </span>
+    <span class="nx-top__budget" data-nx="budget">openrouter free tier · key optional</span>
+    <div class="nx-top__spacer"></div>
+
+    <div class="nx-orbwrap" style="display:flex;align-items:center;gap:12px" aria-hidden="true">
+      <div class="orb is-idle" data-fx="orb" data-level="high"><span class="orb__core"></span></div>
+    </div>
+
+    <button class="nx-ibtn" data-nx="open-settings" title="Settings" aria-label="Open settings" data-ripple>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+    <a class="nx-ibtn" href="./index.html" title="Back to pik.inc" aria-label="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+    </a>
+  </header>
+
+  <!-- ============ left rail ============ -->
+  <aside class="nx-rail">
+    <div class="nx-projcard fx-spot nx-clay">
+      <h3 data-nx="projname">nexus-field</h3>
+      <p data-nx="projmeta">0 files · local</p>
+      <span class="nx-projcard__src" data-nx="projsrc"></span>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="nx-btn nx-btn--ghost nx-btn--sm" data-nx="newproj">New project</button>
+      </div>
+    </div>
+
+    <div class="nx-rail__title">Workspace tree</div>
+    <div class="nx-tree fx-glass nx-glass fx-spot" data-nx="tree" style="border-radius:14px;padding:6px"></div>
+
+    <div class="nx-rail__title">GitHub</div>
+    <div class="nx-gh nx-glass fx-spot" data-nx="ghpanel">
+      <div class="nx-gh__row" data-nx="gh-who"><span class="nx-gh__who" style="color:var(--nx-txt-faint)">not connected</span></div>
+      <button class="nx-btn" data-nx="gh-connect" data-ripple>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.5 4.9 18.5 5.2 18.5 5.2c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .4.2.7.8.6A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/></svg>
+        Connect GitHub
+      </button>
+      <div data-nx="gh-device" hidden></div>
+      <form data-nx="patform" hidden style="display:flex;gap:8px">
+        <input data-nx="pat" type="password" placeholder="paste PAT (repo scope)" autocomplete="off"
+          style="flex:1;background:rgba(0,0,0,.5);border:1px solid var(--nx-line);color:var(--nx-txt);border-radius:10px;padding:8px 10px;font-family:var(--nx-font-mono);font-size:.7rem;outline:none">
+        <button class="nx-btn nx-btn--sm" type="submit">Save</button>
+      </form>
+      <div style="display:flex;gap:8px">
+        <button class="nx-btn nx-btn--ghost nx-btn--sm is-on" data-nx="mode-fork" style="flex:1">Fork</button>
+        <button class="nx-btn nx-btn--ghost nx-btn--sm" data-nx="mode-import" style="flex:1">Import</button>
+        <button class="nx-btn nx-btn--ghost nx-btn--sm" data-nx="gh-logout" title="Disconnect">Disconnect</button>
+      </div>
+      <div class="nx-rail__title" data-nx="repotitle">pick a repo to FORK</div>
+      <div class="nx-repos" data-nx="repos" hidden></div>
+    </div>
+
+    <div class="nx-marquee" aria-hidden="true">
+      <div class="nx-marquee__track">
+        <img src="https://www.google.com/s2/favicons?domain=openrouter.ai&sz=64" alt="OpenRouter">
+        <img src="https://www.google.com/s2/favicons?domain=pollinations.ai&sz=64" alt="Pollinations">
+        <img src="https://www.google.com/s2/favicons?domain=github.com&sz=64" alt="GitHub">
+        <img src="https://www.google.com/s2/favicons?domain=minimax.io&sz=64" alt="MiniMax">
+        <img src="https://www.google.com/s2/favicons?domain=nvidia.com&sz=64" alt="NVIDIA">
+        <img src="https://www.google.com/s2/favicons?domain=deepmind.google&sz=64" alt="DeepMind">
+        <img src="https://www.google.com/s2/favicons?domain=mistral.ai&sz=64" alt="Mistral">
+        <img src="https://www.google.com/s2/favicons?domain=poolside.ai&sz=64" alt="Poolside">
+        <img src="https://www.google.com/s2/favicons?domain=openrouter.ai&sz=64" alt="">
+        <img src="https://www.google.com/s2/favicons?domain=pollinations.ai&sz=64" alt="">
+        <img src="https://www.google.com/s2/favicons?domain=github.com&sz=64" alt="">
+        <img src="https://www.google.com/s2/favicons?domain=minimax.io&sz=64" alt="">
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ main column ============ -->
+  <main class="nx-main">
+    <section class="nx-thread" data-nx="thread" aria-live="polite">
+      <div class="nx-hero">
+        <div class="orb" data-fx="hero-orb" data-level="medium" style="margin-inline:auto">
+          <span class="orb__core"></span>
+        </div>
+        <h1 class="nx-glitch" data-text="Think in the field.">Think in the field.</h1>
+        <p>NEXUS plans, reasons and writes real files into your workspace.<br>
+           Free budget first — OpenRouter :free, then pollinations.ai failover with your own system prompt.</p>
+        <div class="nx-hero__chips">
+          <button class="nx-chip" data-nx="chip" data-chip="Build a small vanilla-JS pomodoro app. Write every file as ```path blocks.">build me a pomodoro app</button>
+          <button class="nx-chip" data-nx="chip" data-chip="Refactor the open file for readability, keep behavior identical, emit the full updated file.">refactor open file</button>
+          <button class="nx-chip" data-nx="chip" data-chip="Write tests for the current workspace files and add them under tests/.">add tests</button>
+          <button class="nx-chip" data-nx="chip" data-chip="Explain what you would do step by step before writing any code for: a static site generator in Python.">plan a static site generator</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- prompt well -->
+    <div class="nx-wellwrap">
+      <div class="nx-well fx-spot">
+        <textarea data-nx="prompt" rows="2" spellcheck="false" enterkeyhint="send"
+          placeholder="Ask NEXUS to build, fix, refactor or explain — it writes files straight into the workspace…"></textarea>
+        <div class="nx-attlist" data-nx="attlist"></div>
+        <!-- agent skills: chosen skill chips + the picker popover -->
+        <div class="nx-skillchips" data-nx="skill-chips"></div>
+        <div class="nx-well__foot">
+          <button class="nx-ibtn nx-attach" id="nx-attach-btn" title="Attach any file" aria-label="Attach file" data-ripple>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.4 3.4 0 0 1 4.8 4.8l-8.4 8.5a1.8 1.8 0 0 1-2.6-2.6l8-8"/></svg>
+          </button>
+          <input type="file" data-nx="fileinput" multiple hidden accept="*/*">
+
+          <span class="nx-skills-wrap" data-nx="skills-wrap" style="position:relative">
+            <button class="nx-ibtn nx-skills-toggle" data-nx="skills-toggle" title="Agent skills — equip reasoning, visualization, research…" aria-label="Agent skills" data-ripple>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v6m0 6v6m9-9h-6M9 12H3m13.5-6.5-4 4m-3 3-4 4m0-11 4 4m3 3 4 4"/></svg>
+              <b data-nx="skills-count" hidden>0</b>
+            </button>
+            <div class="nx-skills-pop fx-glass nx-glass" data-nx="skills-pop" hidden>
+              <div class="nx-skills-pop__head">
+                <span>Agent skills</span>
+                <button class="nx-ibtn nx-ibtn--sm" data-nx="skills-reset" title="Clear all active skills">clear</button>
+              </div>
+              <div class="nx-skills-list" data-nx="skills-list"></div>
+              <div class="nx-skills-pop__foot">
+                <button class="nx-btn nx-btn--ghost nx-btn--sm" data-nx="skills-fetch" title="Surf the web and distil new skills into the library">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9S14.5 18.4 12 21c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z"/></svg>
+                  <span>Fetch skills</span>
+                </button>
+                <i class="nx-skills-pop__hint">up to 4 active · injected into every prompt</i>
+              </div>
+            </div>
+          </span>
+
+          <span class="nx-modelchip" data-nx="modelchip" role="button" tabindex="0" title="Choose model (Ctrl/Cmd+K)"></span>
+
+          <div class="nx-ladder" data-nx="ladder" role="group" aria-label="Thinking effort">
+            <button data-level="low">low</button>
+            <button data-level="medium">med</button>
+            <button data-level="high" class="is-on">high</button>
+            <button data-level="max">max</button>
+          </div>
+
+          <span class="nx-well__hint">Enter send · Shift+Enter newline · Esc stop</span>
+          <button class="nx-send" data-nx="send" title="Send" aria-label="Send message"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 8 6 8z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ right IDE dock (resizable / expandable / closable) ==== -->
+  <aside class="nx-dock is-open" data-nx="dock">
+    <div class="nx-resizer" data-nx="dock-resizer" title="Drag to resize the IDE" role="separator" aria-orientation="vertical"></div>
+    <div class="nx-dock__head">
+      <span class="nx-dock__title">IDE · workspace environment</span>
+      <div class="nx-dock__actions">
+        <button class="nx-ibtn nx-ibtn--sm" data-nx="dock-min" title="Collapse dock" aria-label="Collapse editor dock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+        </button>
+        <button class="nx-ibtn nx-ibtn--sm" data-nx="dock-max" title="Expand IDE to full width" aria-label="Expand editor dock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>
+        </button>
+        <button class="nx-ibtn nx-ibtn--sm" data-nx="dock-close" title="Close dock" aria-label="Hide editor dock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="nx-tabs" data-nx="tabs"></div>
+
+    <div class="nx-editor" data-nx="editor">
+      <div class="nx-editor__gutter" data-ed="gutter">1</div>
+      <div class="nx-editor__code">
+        <pre class="nx-editor__hl" data-ed="hl" aria-hidden="true"></pre>
+        <textarea class="nx-editor__ta" data-ed="ta" spellcheck="false" wrap="off" aria-label="Code editor"></textarea>
+      </div>
+      <div class="nx-editor__minimap" data-ed="minimap"></div>
+    </div>
+
+    <div class="nx-editor__status" data-ed="status">ready</div>
+
+    <!-- ==== bottom pane: TERMINAL · PREVIEW · HOST (tabbed, resizable) ==== -->
+    <div class="nx-pane-grab" data-nx="pane-grabber" role="separator" aria-orientation="horizontal" title="Drag to resize the bottom pane"></div>
+    <div class="nx-pane" data-nx="pane">
+      <div class="nx-pane__tabs">
+        <button class="nx-pane__tab is-on" data-pane="term" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5m8 10h6"/></svg>
+          Terminal
+        </button>
+        <button class="nx-pane__tab" data-pane="preview" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg>
+          Preview
+        </button>
+        <button class="nx-pane__tab" data-pane="host" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+          Host
+        </button>
+        <span class="nx-pane__label" data-nx="pane-label">nexus-shell — workspace root</span>
+        <div class="nx-pane__tools">
+          <button class="nx-ibtn nx-ibtn--sm" data-nx="pane-reload" title="Reload / re-run" aria-label="Reload pane">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
+          </button>
+          <button class="nx-ibtn nx-ibtn--sm" data-nx="pane-dl" title="Download bundle" aria-label="Download project bundle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          </button>
+          <button class="nx-ibtn nx-ibtn--sm" data-nx="pane-max" title="Expand pane" aria-label="Expand pane">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>
+          </button>
+          <button class="nx-ibtn nx-ibtn--sm" data-nx="pane-close" title="Hide pane (Ctrl/Cmd+B)" aria-label="Hide pane">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- terminal view -->
+      <div class="nx-pane__view" data-pane-view="term">
+        <div class="nx-term" data-nx="term" tabindex="0" aria-label="NEXUS terminal"></div>
+        <form class="nx-term__inputrow" data-nx="term-form" autocomplete="off">
+          <span class="nx-term__ps1" data-nx="term-ps1">nexus@field:~$</span>
+          <input data-nx="term-input" spellcheck="false" autocapitalize="off" autocorrect="off"
+                 enterkeyhint="send" inputmode="text"
+                 aria-label="Terminal command input" placeholder="type a command — `help` lists them">
+        </form>
+      </div>
+
+      <!-- live preview view -->
+      <div class="nx-pane__view" data-pane-view="preview" hidden>
+        <iframe class="nx-frame" data-nx="preview-frame" title="Live site preview"
+                sandbox="allow-scripts allow-modals allow-forms allow-popups" loading="lazy"></iframe>
+        <span class="nx-frame__url" data-nx="preview-url">about:blank</span>
+      </div>
+
+      <!-- hosting view -->
+      <div class="nx-pane__view nx-host" data-pane-view="host" hidden>
+        <div class="nx-host__head">
+          <div>
+            <b>Nexus Pages</b>
+            <small>pikinc.vercel.app/nexus.html/&lt;project&gt; · multi-tenant static backend · edge-cached</small>
+          </div>
+          <button class="nx-btn nx-btn--sm" data-nx="host-deploy" data-ripple>Deploy current project</button>
+        </div>
+        <div class="nx-host__list" data-nx="host-list"></div>
+        <div class="nx-host__foot">
+          <span class="nx-host__sec"><i></i>edge WAF · bot filter · rate limit — keyless protection</span>
+          <span data-nx="host-count">0 deployments</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nx-pushbar">
+      <input data-nx="branch" value="pik-nexus/agent" placeholder="branch" aria-label="Target branch">
+      <button class="nx-btn nx-btn--sm" data-nx="deploy" data-ripple>Deploy to Nexus Pages</button>
+      <button class="nx-btn nx-btn--sm" data-nx="push" data-ripple>Push all to GitHub</button>
+    </div>
+    <div class="nx-log" data-nx="log" aria-label="Action log"></div>
+  </aside>
+
+  <!-- floating tab to bring the IDE back after closing it -->
+  <button class="nx-dockreopen" data-nx="dock-reopen" title="Reopen IDE (Ctrl/Cmd+I)" aria-label="Reopen editor dock">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
+    <span>IDE</span>
+  </button>
+
+  <!-- ============ status bar ============ -->
+  <footer class="nx-status">
+    <span><span class="dot"></span>local-first · AES-GCM at rest</span>
+    <span data-nx="status-model">—</span>
+    <span data-nx="status-ctx"></span>
+    <div class="nx-status__right">
+      <a href="./privacy-policy.html">Privacy</a>
+      <a href="./terms-of-service.html">Terms</a>
+      <span data-nx="clock">--:--:--</span>
+    </div>
+  </footer>
+</div>
+
+<!-- ============ mobile-only chrome — NEW elements, hidden on desktop ====== -->
+<nav class="nx-mobile-nav fx-glass nx-glass" data-nxmobile="nav" aria-label="NEXUS mobile navigation">
+  <button class="nx-mobile-nav__btn is-on" data-nxmobile="view" data-view="chat" type="button" aria-label="Chat view">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></svg>
+    <span>Chat</span>
+  </button>
+  <button class="nx-mobile-nav__btn" data-nxmobile="view" data-view="files" type="button" aria-label="Files view">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+    <span>Files</span>
+  </button>
+  <button class="nx-mobile-nav__btn" data-nxmobile="view" data-view="ide" type="button" aria-label="Editor view">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3l5 5-5 5M8 21l-5-5 5-5M14 4l-4 16"/></svg>
+    <span>IDE</span>
+  </button>
+  <button class="nx-mobile-nav__btn" data-nxmobile="view" data-view="terminal" type="button" aria-label="Terminal view">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3m6 0h4"/></svg>
+    <span>Term</span>
+  </button>
+  <button class="nx-mobile-nav__btn" data-nxmobile="view" data-view="preview" type="button" aria-label="Preview view">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg>
+    <span>View</span>
+  </button>
+  <button class="nx-mobile-nav__btn" data-nxmobile="view" data-view="host" type="button" aria-label="Hosting view">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+    <span>Host</span>
+  </button>
+</nav>
+
+<!-- ============ model picker overlay ============ -->
+<div class="nx-overlay" data-nx="overlay" role="dialog" aria-modal="true" aria-label="Select model">
+  <div class="nx-picker nx-glass">
+    <div class="nx-picker__head">
+      <h2>Select a model</h2>
+      <p>live catalog · :free only · ordered by context size (high → low)</p>
+      <input class="nx-search" data-nx="search" placeholder="search provider or model…" autocomplete="off">
+    </div>
+    <div class="nx-picker__list" data-nx="pickerlist"></div>
+    <div class="nx-picker__foot">
+      <span><kbd>↑↓</kbd> navigate</span><span><kbd>Enter</kbd> select</span><span><kbd>Esc</kbd> close</span>
+      <span style="margin-left:auto">suggested: MiniMax M3.1 Flash · 1M ctx · multimodal</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ settings drawer ============ -->
+<div class="nx-drawer" data-nx="drawer" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="nx-drawer__head">
+    <h2>NEXUS settings</h2>
+    <div style="flex:1"></div>
+    <button class="nx-ibtn" data-nx="close-settings" aria-label="Close settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="nx-drawer__body">
+
+    <div class="nx-field">
+      <label>OpenRouter API key (optional)</label>
+      <div class="nx-keyrow">
+        <input type="password" data-key="openrouter" placeholder="stored — fingerprint none" autocomplete="off">
+      </div>
+      <small>Free models work without a key. Stored encrypted with AES-256-GCM derived from a device secret; only the SHA-256 fingerprint is ever displayed.</small>
+    </div>
+
+    <div class="nx-field">
+      <label>GitHub token (repo scope)</label>
+      <input type="password" data-key="github" placeholder="stored — fingerprint none" autocomplete="off">
+      <small>Used for forks & pushes. Same encrypted-at-rest treatment.</small>
+    </div>
+
+    <div class="nx-field">
+      <label>Pollinations fallback — custom system prompt</label>
+      <textarea data-set="systemPrompt" spellcheck="false"></textarea>
+      <small>Applied whenever NEXUS fails over past the free OpenRouter budget.</small>
+    </div>
+
+    <div class="nx-field">
+      <label>Fallback model (pollinations)</label>
+      <input type="text" data-set="polliModel" spellcheck="false">
+    </div>
+
+    <div class="nx-field">
+      <label>Temperature — <output data-out="tempval">0.70</output></label>
+      <input type="range" class="nx-range" min="0" max="2" step="0.05" data-set="temperature">
+    </div>
+
+    <div class="nx-field" style="display:flex;align-items:center;gap:12px">
+      <label class="nx-toggle"><input type="checkbox" data-set="showReasoning"><i></i></label>
+      <span style="font-size:.8rem">Show thinking panel by default</span>
+    </div>
+
+    <div class="nx-rail__title" style="margin:18px 0 10px">Local inference core — PIK MicroEngine</div>
+    <div class="nx-field">
+      <label class="nx-toggle"><input type="checkbox" data-set="localEnabled"><i></i></label>
+      <span style="font-size:.8rem" >Enable the on-device micro-LLM (runs entirely in this browser tab, no server, no API key)</span>
+    </div>
+    <div class="nx-field">
+      <label>Micro-core size — <output data-out="microsizeval">small</output></label>
+      <div class="nx-ladder" data-nx="microsize" role="group" style="width:max-content">
+        <button data-size="tiny">tiny</button>
+        <button data-size="small" class="is-on">small</button>
+        <button data-size="mid">mid</button>
+      </div>
+      <small>tiny ≈ 500 MB · small ≈ 550 MB · mid ≈ 600 MB of resident compute budget. The engine self-trims its working set to stay inside the cap.</small>
+    </div>
+    <div class="nx-field">
+      <button class="nx-btn nx-btn--sm" data-nx="micro-load" data-ripple>Boot local core</button>
+      <span class="nx-micro-status" data-nx="micro-status">idle</span>
+      <progress class="nx-micro-bar" data-nx="micro-bar" max="100" value="0" hidden></progress>
+      <small>Fully sandboxed: weights never leave the device and nothing is uploaded. Select <b>PIK MicroEngine</b> in the model picker to route NEXUS through it.</small>
+    </div>
+
+    <div class="nx-field" style="display:flex;align-items:center;gap:12px">
+      <label class="nx-toggle"><input type="checkbox" data-set="audit"><i></i></label>
+      <span style="font-size:.8rem">Keep SHA-256 version ledger for every file</span>
+    </div>
+
+    <div class="nx-danger-zone">
+      <div class="nx-rail__title" style="margin-bottom:10px">Danger zone</div>
+      <button class="nx-btn nx-btn--danger nx-btn--sm" data-action="wipe-keys">Wipe all secrets from this device</button>
+    </div>
+
+    <div class="nx-legal">
+      <a href="./privacy-policy.html">Privacy Policy</a>
+      <a href="./terms-of-service.html">Terms of Service</a>
+      <a href="./index.html">pik.inc home</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ thinking expand overlay (full reasoning view) ============ -->
+<div class="nx-thinkmodal" data-nx="thinkmodal" role="dialog" aria-modal="true" aria-label="Full thinking process" hidden>
+  <div class="nx-thinkmodal__panel nx-glass">
+    <div class="nx-thinkmodal__head">
+      <span class="nx-thinkmodal__title">THINKING PROCESS</span>
+      <span class="nx-thinkmodal__meta" data-nx="thinkmodal-meta"></span>
+      <div style="flex:1"></div>
+      <button class="nx-ibtn nx-ibtn--sm" data-nx="thinkmodal-copy" title="Copy the full reasoning trace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      </button>
+      <button class="nx-ibtn nx-ibtn--sm" data-nx="thinkmodal-close" aria-label="Close thinking view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nx-thinkmodal__body md" data-nx="thinkmodal-body"></div>
+    <div class="nx-thinkmodal__foot">
+      <span>raw chain-of-thought · streamed live · stored only on this device</span>
+      <span data-nx="thinkmodal-count"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ scripts (load order matters) ============ -->
+<script src="./js/config.js"></script>
+<script src="./js/perf-guard.js"></script>
+<script src="./js/crypto.js"></script>
+<script src="./js/toasts.js"></script>
+<script src="./js/models.js"></script>
+<script src="./js/nexus-settings.js"></script>
+<script src="./js/markdown.js"></script>
+<script src="./js/md-codeenhance.js"></script>
+<script src="./js/stream-renderer.js"></script>
+<script src="./js/usage-cap.js"></script>
+<script src="./js/workspace.js"></script>
+<script src="./js/github.js"></script>
+<script src="./js/micro-tokenizer.js"></script>
+<script src="./js/micro-weights.js"></script>
+<script src="./js/micro-math.js"></script>
+<script src="./js/micro-sampler.js"></script>
+<script src="./js/micro-engine.js"></script>
+<script src="./js/micro-worker.js"></script>
+<script src="./js/micro-bootstrap.js"></script>
+<script src="./js/web-surfer.js"></script>
+<script src="./js/skills.js"></script>
+<script src="./js/router.js"></script>
+<script src="./js/editor.js"></script>
+<script src="./js/livepreview.js"></script>
+<script src="./js/terminal-kernel.js"></script>
+<script src="./js/terminal-commands.js"></script>
+<script src="./js/terminal-ansi.js"></script>
+<script src="./js/terminal.js"></script>
+<script src="./js/hosting-backend.js"></script>
+<script src="./js/hosting-security.js"></script>
+<script src="./js/hosting-router.js"></script>
+<script src="./js/hosting-ui.js"></script>
+<script src="./js/think-panel.js"></script>
+<script src="./js/fx.js"></script>
+<script src="./js/fx-particles-lite.js"></script>
+<script src="./js/chat.js"></script>
+<script src="./js/nexus-picker.js"></script>
+<script src="./js/nexus-github-ui.js"></script>
+<script src="./js/error-net.js"></script>
+<script src="./js/idle-tasks.js"></script>
+<script src="./js/nexus.js"></script>
+
+<!-- ============ mobile layer scripts — NEW files, appended after the core == -->
+<script src="./js/nexus-mobile-adapt.js"></script>
+<script src="./js/nexus-mobile-nav.js"></script>
+<script src="./js/nexus-mobile-sw.js"></script>
+</body>
+</html>
