@@ -34,6 +34,27 @@
   var SVG_FILE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
   var SVG_DL = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
   var SVG_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+  var SVG_GLOBE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9S14.5 18.4 12 21c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z"/></svg>';
+
+  /* ---------- web research helpers ----------------------------------------
+     The model is told it can call WEBGET[https://…] inside its answer; we
+     intercept those calls, fetch the pages through PIKSurfer's keyless text
+     relays, and feed the readable text back as a '[web research]' turn so the
+     NEXT answer is grounded in live data. Users can also drop WEBGET[…]
+     tokens straight into the prompt to force research before any answer. */
+  function surfMarkup() {
+    return '' +
+      '<div class="nx-gen nx-gen--surf">' +
+        '<div class="nx-gen__mark is-surf">' +
+          '<span class="nx-gen__glyph">' + SVG_GLOBE + '</span>' +
+          '<i class="nx-gen__ring"></i><i class="nx-gen__ring nx-gen__ring--b"></i>' +
+        '</div>' +
+        '<div class="nx-gen__label">S U R F I N G&nbsp;&nbsp;T H E&nbsp;&nbsp;W E B</div>' +
+        '<div class="nx-surf__url">opening relay…</div>' +
+        '<div class="nx-gen__dots"><i></i><i></i><i></i></div>' +
+        '<div class="nx-gen__scan"></div>' +
+      '</div>';
+  }
 
   /* ---------- fancy "generating" overlay (logo + shimmering label) ----------
      Replaces the old live writing process: while the agent works we show a
@@ -202,6 +223,34 @@
          works; clicking it opens the full reasoning modal. */
       var node = this._addAssistantShell();
       var bodyEl = node.body, thinkWrap = node.think, thinkBody = node.thinkBody;
+      var rawStream = ""; // untouched model output — WEBGET[...] calls live here
+
+      /* ---------- proactive web research -------------------------------
+         WEBGET[...] tokens in the USER prompt are fetched up-front and
+         injected as a '[web research]' turn before the model ever answers,
+         so its first reply is already grounded in live pages. The shining
+         "Surfing the web…" overlay mirrors the GENERATING one. */
+      if (global.PIKSurfer) {
+        var userUrls = PIKSurfer.extractUrls(typeof content === "string" ? content : text);
+        if (userUrls.length) {
+          bodyEl.innerHTML = surfMarkup();
+          bodyEl.classList.add("is-generating");
+          node.genShown = true;
+          var surfUrlEl = bodyEl.querySelector(".nx-surf__url");
+          try {
+            var ures = await PIKSurfer.surf(userUrls, (this.controller = new AbortController()).signal, function (st) {
+              if (surfUrlEl && st.url) {
+                try { surfUrlEl.textContent = "reading " + new URL(st.url).host + " (" + (st.index + 1) + "/" + st.total + ")"; } catch (e) {}
+              }
+            });
+            var ctxBlock = PIKSurfer.toContext(ures);
+            this.history.push({ role: "user", content: ctxBlock });
+            this._addResearchMsg(ures);
+          } catch (e) { /* aborted -> handled by outer catch below */ }
+          if (bodyEl.classList.contains("is-generating")) { bodyEl.classList.remove("is-generating"); bodyEl.innerHTML = ""; }
+        }
+      }
+
       var genLogo = (global.PIKModels && PIKModels.logoFor) ? PIKModels.logoFor(this.modelId().split("/")[0]) : null;
       bodyEl.innerHTML = genMarkup(genLogo);
       bodyEl.classList.add("is-generating");
@@ -253,6 +302,7 @@
               /* keep the full-trace modal live only if the user opened it */
               if (global.PIKThinkPanel) { try { PIKThinkPanel.tick(); } catch (e) {} }
             } else {
+              rawStream += d;
               /* first answer token -> retire the GENERATING overlay and stream
                  the markdown straight into the response section. Fences are
                  closed virtually per frame (stream-renderer/markdown.js), so a
@@ -273,6 +323,17 @@
           if (!res.text) bodyEl.innerHTML = '<em style="color:var(--nx-txt-faint)">(empty response)</em>';
         } else {
           bodyEl.innerHTML = mdLite(res.text || "(empty response)");
+        }
+        /* WEBGET[...] tokens are tool calls, not prose — tidy them into
+           "[surfing host]" citations before anything else touches the DOM.
+           res.rawText keeps the untouched stream for the research detector. */
+        res.rawText = rawStream || res.text || "";
+        if (global.PIKSurfer && res.text) {
+          var cleaned = PIKSurfer.scrubCalls(res.text);
+          if (cleaned !== res.text) {
+            res.text = cleaned;
+            bodyEl.innerHTML = mdLite(cleaned);
+          }
         }
         if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
         if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
@@ -328,7 +389,71 @@
         }
 
         this.history.push({ role: "assistant", content: res.text || "" });
+
+        /* ---------- reactive web research (agent tool call) --------------
+           If the model emitted WEBGET[...] calls inside its answer, NEXUS
+           surfs them right now — with the same shining overlay UX as
+           "Thinking…" — then auto-continues so the follow-up answer is
+           grounded in the freshly fetched pages. */
+        if (global.PIKSurfer && !this._surfGuard) {
+          var calledUrls = PIKSurfer.extractUrls(res.rawText || "");
+          if (calledUrls.length) {
+            this._surfGuard = true; // one research hop per user turn — no loops
+            bodyEl.innerHTML = surfMarkup();
+            bodyEl.classList.add("is-generating");
+            node.genShown = true;
+            var rUrlEl = bodyEl.querySelector(".nx-surf__url");
+            var sres = await PIKSurfer.surf(calledUrls, (this.controller = new AbortController()).signal, function (st) {
+              if (rUrlEl && st.url) {
+                try { rUrlEl.textContent = "reading " + new URL(st.url).host + " (" + (st.index + 1) + "/" + st.total + ")"; } catch (e) {}
+              }
+            });
+            bodyEl.classList.remove("is-generating");
+            this._addResearchMsg(sres);
+            this.history.push({ role: "user", content: PIKSurfer.toContext(sres) });
+            bodyEl.innerHTML = genMarkup(genLogo);
+            bodyEl.classList.add("is-generating");
+            node.genShown = true;
+            var sr2 = null;
+            try { sr2 = PIKStream.create(bodyEl); } catch (e) { sr2 = null; }
+            var res2 = await PIKRouter.chat({
+              model: this.modelId(),
+              messages: this.history.slice(-24),
+              thinking: this.lastEffort,
+              signal: (this.controller = new AbortController()).signal,
+              onDelta: function (d, isReasoning) {
+                if (isReasoning) {
+                  thinkWrap.hidden = false;
+                  thinkBody.textContent += d;
+                  node.think.classList.add("is-shining", "is-closed");
+                  node.thinkLabel.textContent = "Thinking\u2026";
+                } else {
+                  if (node.genShown) { node.genShown = false; bodyEl.classList.remove("is-generating"); bodyEl.innerHTML = ""; }
+                  if (!bodyEl.classList.contains("md")) bodyEl.classList.add("md");
+                  if (sr2) { sr2.push(d); } else { bodyEl.textContent += d; }
+                }
+              }
+            });
+            bodyEl.classList.add("md");
+            if (sr2) sr2.finish();
+            var finalTxt = PIKSurfer.scrubCalls(res2.text || "");
+            bodyEl.innerHTML = mdLite(finalTxt || "(empty response)"); // re-render clean
+            if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
+            if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
+            scrubEmoji(bodyEl);
+            this.history.push({ role: "assistant", content: finalTxt });
+            var wrote2 = PIKWorkspace.ingestAgentText(finalTxt);
+            if (wrote2.length) {
+              document.dispatchEvent(new CustomEvent("pik:agentfiles", { detail: wrote2.map(function (w) { return w.path; }) }));
+            }
+            if (res2.digest) node.digest.innerHTML = "<b>sha256</b> " + esc(String(res2.digest).slice(0, 20)) +
+              " <b>engine</b> " + esc(res2.engine) + " <b>model</b> " + esc(String(res2.model || "")) +
+              " <b>web</b> " + calledUrls.length + " page(s) surfaced";
+          }
+          this._surfGuard = false;
+        }
       } catch (e) {
+        this._surfGuard = false;
         if (String(e.message || e).indexOf("aborted") !== -1 || e.name === "AbortError") {
           bodyEl.innerHTML = '<em style="color:var(--nx-txt-faint)">— stream stopped by user —</em>';
         } else {

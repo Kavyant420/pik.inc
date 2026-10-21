@@ -268,8 +268,7 @@
     /* ---------- Pollinations (keyless) — streamed w/ non-stream fallback --- */
     async _viaPollinations(opts, settings, endpoint, engineName) {
       endpoint = endpoint || CFG.POLLINATIONS_URL;
-      var sys = settings.systemPrompt ||
-        "You are PIK NEXUS, an autonomous coding agent. Be precise, show reasoning when asked, and emit file edits as fenced code blocks with the path on the info string.";
+      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         // flatten multimodal parts to text for keyless endpoints
         if (typeof m.content === "string") return m;
@@ -353,7 +352,7 @@
         return (m.role === "user" ? "User: " : "Assistant: ") + c.slice(0, 2000);
       }).join("\n");
       var full = ctx ? ctx + "\nUser: " + prompt : prompt;
-      var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
+      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
       var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
       var u = CFG.POLLINATIONS_GET_URL + encodeURIComponent(full.slice(0, 24000)) +
         "?model=" + encodeURIComponent(model) + "&system=" + encodeURIComponent(sys.slice(0, 2000)) + "&json=false";
@@ -373,7 +372,7 @@
     /* ---------- DeepInfra public inference API (no key needed) -------------
        Keyless OpenAI-compatible endpoint with SSE streaming support. */
     async _viaDeepInfra(opts, settings) {
-      var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
+      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         if (typeof m.content === "string") return m;
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
@@ -438,7 +437,7 @@
 
     async _viaPuter(opts, settings) {
       var pt = await this.ensurePuter();
-      var sys = settings.systemPrompt || "You are PIK NEXUS, an autonomous coding agent.";
+      var sys = settings.systemPrompt || DEFAULTS.systemPrompt;
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         if (typeof m.content === "string") return m;
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
