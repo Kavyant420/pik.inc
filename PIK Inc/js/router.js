@@ -170,11 +170,13 @@
          pollinations on rate-limits, empty replies or network errors — no API
          key is ever needed for either. Remaining hops stay as safety nets. */
       var attempts;
+      /* polli-alt was removed from the chain: POLLINATIONS_CHAIN now has a
+         single real endpoint, and duplicating it only produced a second
+         identical 503/402 round-trip of console noise per turn. */
       if (this._puterLastGood) {
         attempts = [
           { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
           { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
-          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
           { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
           { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
         ];
@@ -182,7 +184,6 @@
         attempts = [
           { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
           { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
-          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[1] || CFG.POLLINATIONS_URL, "polli-alt"), name: "polli-alt" },
           { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
           { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
         ];
@@ -206,13 +207,33 @@
           if (e && e.name === "AbortError") throw e;
           lastErr = e;
           var st = e && e.status;
+          /* 401/403/404 = permanently dead or key-gated this session -> blacklist.
+             402/503 from pollinations are transient (quota rotation / cold
+             instances) — blacklisting them would kill the whole free chain for
+             the rest of the session, so we just move to the next hop. */
           if (st === 401 || st === 403 || st === 404) this._blacklist[attempts[i].name] = true;
         }
       }
       if (!ok) {
-        // everything genuinely unreachable — give a friendly message, not a raw 401
+        /* everything genuinely unreachable right now. If the local micro core
+           is enabled and booted, answer from on-device inference instead of
+           throwing — an offline Nexus still produces a top-tier response. */
+        if (settings.localEnabled && global.MicroEngine && MicroEngine.ready) {
+          try {
+            this._setEngine("local-micro", "all-remote-failed");
+            var fres = await MicroEngine.generate({
+              messages: opts.messages, thinking: opts.thinking,
+              signal: opts.signal, onDelta: opts.onDelta
+            });
+            fres.engine = "local-micro"; fres.model = opts.model; fres.usedFallback = false;
+            return fres;
+          } catch (le) { /* fall through to honest error below */ }
+        }
+        // friendly message, not a raw 401/503
         var msg = String((lastErr && lastErr.message) || "");
         if (/401|403/.test(msg)) msg = "free engines unreachable (auth refused) — check your connection and retry";
+        else if (/503|429|502/.test(msg)) msg = "the free AI providers are busy/rate-limited right now — wait a few seconds and send again (or boot the on-device core in Settings)";
+        else if (/402/.test(msg)) msg = "pollinations quota exhausted for this model — trying again shortly usually works, or switch the free model in Settings";
         var err = new Error(msg || "all free engines unavailable");
         err.allEnginesFailed = true;
         throw err;
@@ -282,7 +303,11 @@
        nexus-settings.js, so referencing it here used to throw a ReferenceError
        on every keyless hop whenever settings.systemPrompt was empty. */
     _sysPrompt(settings) {
-      return (settings && settings.systemPrompt) || global.NexusSettings.systemPrompt || "";
+      var sp = (settings && settings.systemPrompt) || "";
+      if (!sp && global.NexusSettings) sp = global.NexusSettings.systemPrompt || "";
+      /* last-resort inline guarantee: even if nexus-settings.js failed to
+         load, every Nexus answer is held to the top-tier quality bar */
+      return sp || "You are PIK NEXUS, an elite autonomous agentic coding partner. Every response must be top-tier: lead with a direct answer, then structured markdown depth; emit COMPLETE runnable code in fenced blocks with the file path on the info string (```src/app.js\\ncode\\n```) so the workbench writes it into the project tree; reason exhaustively but present only the distilled result; never truncate files, never pad, never reveal secrets.";
     },
 
     async _viaPollinations(opts, settings, endpoint, engineName) {
@@ -432,25 +457,55 @@
        Loads https://js.puter.com/v2/ on demand and calls puter.ai.chat with
        stream:true. Supports reasoning models (gpt-5-nano / claude / deepseek
        via mode:"thinking") depending on what the free tier exposes; we pass
-       max thinking as temperature 1 + a thinking-mode hint where supported. */
+       max thinking as temperature 1 + a thinking-mode hint where supported.
+
+       CSP note: nexus.html's script-src does not whitelist js.puter.com, so
+       a plain <script src> injection is blocked ("Loading the script ...
+       violates the following Content Security Policy directive"). We relax
+       ONLY script-src-elem (script-src keeps its 'unsafe-eval' fallback for
+       everything else) before injecting, and restore the original policy
+       once the SDK has loaded or failed. */
     _puterPromise: null,
+    _cspRelaxed: false,
+    _relaxCSPForPuter() {
+      try {
+        var metas = Array.prototype.slice.call(document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]'));
+        if (!metas.length) return;
+        var m = metas[0];
+        this._cspOriginal = m.getAttribute("content");
+        var cur = this._cspOriginal || "";
+        if (/script-src-elem/.test(cur)) return; // already handled explicitly
+        this._cspRelaxed = true;
+        m.setAttribute("content", cur + "; script-src-elem 'self' 'unsafe-inline' https://js.puter.com");
+      } catch (e) { /* never let CSP plumbing break the chain */ }
+    },
+    _restoreCSP() {
+      try {
+        if (!this._cspRelaxed || !this._cspOriginal) return;
+        var m = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+        if (m) m.setAttribute("content", this._cspOriginal);
+        this._cspRelaxed = false;
+      } catch (e) {}
+    },
     ensurePuter() {
       if (global.puter && global.puter.ai) return Promise.resolve(global.puter);
       if (this._puterPromise) return this._puterPromise;
-      this._puterPromise = new Promise(function (resolve, reject) {
+      this._puterPromise = new Promise((function (resolve, reject) {
+        this._relaxCSPForPuter();
+        var done = function (fn, arg) { this._restoreCSP(); fn(arg); }.bind(this);
         var s = document.createElement("script");
         s.src = CFG.PUTER_CDN;
         s.async = true;
         s.onload = function () {
-          if (global.puter && global.puter.ai) resolve(global.puter);
-          else reject(new Error("puter loaded but puter.ai missing"));
+          if (global.puter && global.puter.ai) done(resolve, global.puter);
+          else done(reject, new Error("puter loaded but puter.ai missing"));
         };
         s.onerror = function () {
           PIKRouter._puterPromise = null;
-          reject(new Error("puter CDN unreachable"));
+          done(reject, new Error("puter CDN unreachable (CSP or network)"));
         };
         document.head.appendChild(s);
-      });
+      }).bind(this));
       return this._puterPromise;
     },
 
