@@ -1,0 +1,55 @@
+.px-suggest {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + .55rem);
+  z-index: 30;
+  border-radius: var(--px-r-lg);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px) scale(.985);
+  pointer-events: none;
+  transition: opacity var(--px-fast) ease, transform var(--px-med) var(--px-ease-out);
+}
+
+.px-suggest.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.px-suggest__row {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+  padding: .72rem 1.1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--px-fast) ease;
+}
+
+.px-suggest__row:hover,
+.px-suggest__row.is-active { background: rgba(255,255,255,.07); }
+
+.px-suggest__row svg { width: 16px; height: 16px; color: var(--px-grey); flex: none; }
+
+.px-suggest__text { flex: 1; min-width: 0; }
+
+.px-suggest__title {
+  font-size: .9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.px-suggest__meta {
+  font-family: var(--px-font-mono);
+  font-size: .66rem;
+  color: var(--px-faint);
+}
+
+.px-suggest__divider {
+  height: 1px;
+  margin-inline: 1rem;
+  background: var(--px-line);
+}

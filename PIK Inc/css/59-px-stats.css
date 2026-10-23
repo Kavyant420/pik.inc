@@ -1,0 +1,42 @@
+.px-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .8rem;
+  inline-size: 100%;
+}
+
+.px-metric {
+  padding: 1rem 1.15rem;
+  border-radius: var(--px-r-md);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--px-line);
+  box-shadow: var(--px-inset);
+  transition: transform var(--px-med) var(--px-ease-out), border-color var(--px-med) ease;
+}
+
+.px-metric:hover { transform: translateY(-3px); border-color: var(--px-line-hi); }
+
+.px-metric__label {
+  font-family: var(--px-font-mono);
+  font-size: .62rem;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--px-faint);
+}
+
+.px-metric__value {
+  margin-top: .35rem;
+  font-family: var(--px-font-display);
+  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+  font-weight: 650;
+  letter-spacing: -.02em;
+  background-image: var(--px-grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.px-metric__sub {
+  font-size: .72rem;
+  color: var(--px-faint);
+}

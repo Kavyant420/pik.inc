@@ -1,0 +1,59 @@
+html:not(.light-content-detected),
+html[data-theme="dark"],
+html[data-bs-theme="dark"],
+html.pikx-immune,
+.px-root {
+  color-scheme: dark only !important;
+  -ms-high-contrast-adjust: none !important;
+  forced-color-adjust: none !important;
+}
+
+html.pikx-immune body,
+.px-root body,
+body.pikx-body {
+  background-color: #05060a !important;
+}
+
+html.pikx-immune *::selection,
+.px-root *::selection {
+  background: rgba(163,163,163,.35) !important;
+  color: #ffffff !important;
+}
+
+input:-internal-autofill-selected,
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  background-color: #14141a !important;
+  background-image: none !important;
+  color: #f1f2f4 !important;
+  -webkit-box-shadow: 0 0 0 1000px #14141a inset !important;
+  box-shadow: 0 0 0 1000px #14141a inset !important;
+  -webkit-text-fill-color: #f1f2f4 !important;
+  caret-color: #d9dade !important;
+  transition: background-color 99999s ease-in-out 0s !important;
+}
+
+.pikx-nohighlight,
+.px-omni__go,
+.px-btn,
+.px-chip,
+.px-tile,
+.px-dock__item,
+.px-iconbtn,
+.px-tabitem,
+.px-key {
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+}
+
+.px-root mark { background: rgba(163,163,163,.28); color: #f1f2f4; border-radius: 4px; padding: 0 .2em; }
+
+.px-root hr { border: 0; height: 1px; background: rgba(255,255,255,.08); }
+
+.px-root progress { appearance: none; -webkit-appearance: none; height: 4px; border-radius: 999px; background: rgba(255,255,255,.08); border: none; }
+.px-root progress::-webkit-progress-bar { background: rgba(255,255,255,.08); border-radius: 999px; }
+.px-root progress::-webkit-progress-value { background: linear-gradient(90deg, #515151, #a3a3a3); border-radius: 999px; }
+.px-root progress::-moz-progress-bar { background: #a3a3a3; border-radius: 999px; }
+
+.px-root meter { appearance: none; -webkit-appearance: none; height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); }

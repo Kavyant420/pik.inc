@@ -1,0 +1,11 @@
+.px-ghost { position: absolute; inset-inline-start: 1.35rem; top: 50%; transform: translateY(-50%); font-size: clamp(1.05rem, 1.7vw, 1.25rem); color: var(--px-faint); pointer-events: none; transition: opacity var(--px-fast) ease, transform var(--px-fast) ease; white-space: nowrap; }
+
+.px-ghost.is-hidden { opacity: 0; transform: translateY(-50%) translateX(6px); }
+
+.px-omni__input--ghosted { padding-inline-start: 0; }
+
+.px-watermark { position: fixed; inset-inline-end: -0.06em; bottom: 4vh; z-index: -1; font-family: var(--px-font-display); font-weight: 700; font-size: clamp(9rem, 26vw, 22rem); letter-spacing: -.05em; line-height: 1; color: rgba(255,255,255,.028); pointer-events: none; user-select: none; }
+
+.px-mono-label { font-family: var(--px-font-mono); font-size: .64rem; letter-spacing: .28em; text-transform: uppercase; color: var(--px-faint); }
+
+.px-hairline { inline-size: min(520px, 80%); height: 1px; margin-inline: auto; background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent); border: 0; }

@@ -1,0 +1,39 @@
+.px-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .6rem;
+}
+
+.px-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem 1rem;
+  border-radius: var(--px-r-pill);
+  border: 1px solid var(--px-line);
+  background: rgba(255,255,255,.045);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--px-dim);
+  font-size: .84rem;
+  cursor: pointer;
+  transition: transform var(--px-fast) var(--px-ease-spring),
+              background var(--px-fast) ease,
+              color var(--px-fast) ease,
+              border-color var(--px-fast) ease;
+}
+
+.px-chip:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,.09);
+  color: var(--px-ink);
+  border-color: var(--px-line-hi);
+}
+
+.px-chip svg { width: 15px; height: 15px; opacity: .8; }
+
+.px-chip--ghost {
+  border-style: dashed;
+  color: var(--px-faint);
+}

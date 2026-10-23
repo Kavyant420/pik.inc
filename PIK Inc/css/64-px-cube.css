@@ -1,0 +1,50 @@
+.px-cube-scene {
+  position: fixed;
+  top: 18%;
+  right: clamp(-40px, 2vw, 60px);
+  width: 170px;
+  height: 170px;
+  perspective: 700px;
+  z-index: -1;
+  opacity: .8;
+  pointer-events: none;
+}
+
+.px-cube {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: px-cube-tumble 26s linear infinite;
+}
+
+@keyframes px-cube-tumble {
+  from { transform: rotateX(-18deg) rotateY(0deg); }
+  to   { transform: rotateX(-18deg) rotateY(360deg); }
+}
+
+.px-cube__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--px-font-mono);
+  font-size: .6rem;
+  letter-spacing: .3em;
+  color: rgba(217,218,222,.65);
+  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.015));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 0 30px rgba(255,255,255,.05);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.px-cube__face--f { transform: translateZ(85px); }
+.px-cube__face--b { transform: rotateY(180deg) translateZ(85px); }
+.px-cube__face--r { transform: rotateY(90deg) translateZ(85px); }
+.px-cube__face--l { transform: rotateY(-90deg) translateZ(85px); }
+.px-cube__face--t { transform: rotateX(90deg) translateZ(85px); }
+.px-cube__face--d { transform: rotateX(-90deg) translateZ(85px); }
+
+@media (max-width: 900px) {
+  .px-cube-scene { display: none; }
+}

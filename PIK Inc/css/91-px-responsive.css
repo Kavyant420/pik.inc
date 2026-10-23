@@ -1,0 +1,18 @@
+.px-root { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+@media print {
+  .px-bg, .px-bg__aurora, .px-aurora-orb, .px-particlefield, .px-dock, .px-ticker, .px-cube-scene, .px-watermark, .px-panel, .px-scrim { display: none !important; }
+  .px-root, .px-shell { background: #fff !important; color: #000 !important; }
+}
+
+@media (max-width: 480px) {
+  .px-stage { padding-inline: .8rem; }
+  .px-omni__hint { display: none; }
+  .px-metrics { grid-template-columns: 1fr 1fr; }
+  .px-nexus__feed { max-height: 220px; }
+}
+
+@supports not (inset-inline-start: 0) {
+  .px-panel--left { left: 0; }
+  .px-panel--right { right: 0; }
+}

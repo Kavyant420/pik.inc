@@ -1,0 +1,28 @@
+.px-reveal { opacity: 0; transform: translateY(26px); transition: opacity var(--px-slow) var(--px-ease-out), transform var(--px-slow) var(--px-ease-out); }
+.px-reveal.is-in { opacity: 1; transform: none; }
+
+.px-reveal--scale { transform: scale(.94); }
+.px-reveal--left { transform: translateX(-30px); }
+.px-reveal--right { transform: translateX(30px); }
+
+.px-stagger > * { opacity: 0; transform: translateY(18px); animation: px-rise var(--px-slow) var(--px-ease-out) forwards; }
+.px-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.px-stagger > *:nth-child(2) { animation-delay: 110ms; }
+.px-stagger > *:nth-child(3) { animation-delay: 180ms; }
+.px-stagger > *:nth-child(4) { animation-delay: 250ms; }
+.px-stagger > *:nth-child(5) { animation-delay: 320ms; }
+.px-stagger > *:nth-child(6) { animation-delay: 390ms; }
+.px-stagger > *:nth-child(7) { animation-delay: 460ms; }
+.px-stagger > *:nth-child(8) { animation-delay: 530ms; }
+
+@keyframes px-rise { to { opacity: 1; transform: none; } }
+
+.px-shimmer { position: relative; overflow: hidden; }
+.px-shimmer::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.09) 45%, transparent 70%); transform: translateX(-120%); animation: px-shim 5.5s ease-in-out infinite; }
+
+@keyframes px-shim { 0%, 55% { transform: translateX(-120%); } 80%, 100% { transform: translateX(120%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .px-reveal, .px-stagger > * { opacity: 1; transform: none; transition: none; animation: none; }
+  .px-bg__aurora, .px-cube, .px-orbit__ring, .px-wire::after, .px-ipstream__track, .px-shield__sweep, .px-shimmer::before { animation: none !important; }
+}

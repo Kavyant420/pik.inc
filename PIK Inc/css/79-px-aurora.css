@@ -1,0 +1,18 @@
+.px-aurora-orb { position: fixed; border-radius: 50%; filter: blur(70px); z-index: -2; pointer-events: none; opacity: .35; }
+
+.px-aurora-orb--a { top: -12%; left: -8%; width: 46vw; height: 46vw; background: radial-gradient(circle, rgba(163,163,163,.5), transparent 65%); animation: px-float-a 26s ease-in-out infinite alternate; }
+.px-aurora-orb--b { bottom: -18%; right: -10%; width: 52vw; height: 52vw; background: radial-gradient(circle, rgba(81,81,81,.65), transparent 62%); animation: px-float-b 32s ease-in-out infinite alternate; }
+
+@keyframes px-float-a { to { transform: translate(6vw, 8vh) scale(1.15); } }
+@keyframes px-float-b { to { transform: translate(-5vw, -6vh) scale(.92); } }
+
+.px-particlefield { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+
+.px-particle { position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; background: rgba(217,218,222,.5); box-shadow: 0 0 10px rgba(217,218,222,.35); animation: px-drift linear infinite; }
+
+@keyframes px-drift {
+  from { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: .8; }
+  90%  { opacity: .5; }
+  to   { transform: translateY(-108vh) translateX(40px); opacity: 0; }
+}
