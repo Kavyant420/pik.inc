@@ -1,0 +1,46 @@
+.px-glass {
+  position: relative;
+  background-color: var(--px-glass);
+  border: 1px solid var(--px-line);
+  border-radius: var(--px-r-lg);
+  backdrop-filter: blur(var(--px-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--px-blur)) saturate(150%);
+  box-shadow: var(--px-shadow-flat), var(--px-inset);
+  isolation: isolate;
+}
+
+.px-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--px-grad-edge);
+  opacity: .6;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.px-glass--strong {
+  background-color: var(--px-glass-strong);
+  border-color: var(--px-line-hi);
+}
+
+.px-glass--solid {
+  background-color: var(--px-glass-solid);
+}
+
+.px-glass--pill { border-radius: var(--px-r-pill); }
+
+.px-glass--deep { box-shadow: var(--px-shadow-deep), var(--px-inset); }
+
+.px-bezel {
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(150deg, rgba(255,255,255,.28), rgba(255,255,255,.04) 38%, rgba(255,255,255,.14));
+}
+
+.px-bezel > * { border-radius: inherit; }
+
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .px-glass { background-color: rgba(14,14,18,.92); }
+}

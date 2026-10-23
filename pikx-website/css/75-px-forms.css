@@ -1,0 +1,17 @@
+.px-tabs { display: flex; gap: .3rem; padding: .35rem; border-radius: var(--px-r-pill); background: rgba(255,255,255,.04); border: 1px solid var(--px-line); }
+
+.px-tab { padding: .42rem 1rem; border-radius: var(--px-r-pill); font-size: .78rem; color: var(--px-dim); transition: background var(--px-fast) ease, color var(--px-fast) ease; }
+.px-tab:hover { color: var(--px-ink); }
+.px-tab.is-active { background: linear-gradient(150deg, rgba(255,255,255,.16), rgba(255,255,255,.05)); color: var(--px-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+
+.px-select { position: relative; }
+.px-select__field { width: 100%; padding: .7rem 2.4rem .7rem 1rem; border-radius: var(--px-r-md); background: rgba(255,255,255,.045); border: 1px solid var(--px-line); color: var(--px-ink); font-size: .85rem; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.px-select__chev { position: absolute; inset-inline-end: .9rem; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--px-grey); pointer-events: none; }
+.px-select__field option { background: #101013; color: var(--px-ink); }
+
+.px-search { display: flex; align-items: center; gap: .6rem; padding: .55rem .95rem; border-radius: var(--px-r-md); background: rgba(255,255,255,.045); border: 1px solid var(--px-line); transition: border-color var(--px-fast) ease; }
+.px-search:focus-within { border-color: rgba(217,218,222,.3); }
+.px-search svg { width: 15px; height: 15px; color: var(--px-faint); flex: none; }
+.px-search input { flex: 1; min-width: 0; font-size: .85rem; }
+
+.px-segmented-label { font-family: var(--px-font-mono); font-size: .6rem; letter-spacing: .24em; text-transform: uppercase; color: var(--px-faint); margin-bottom: .45rem; }

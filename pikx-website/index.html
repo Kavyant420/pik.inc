@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en" class="px-root pikx-immune" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark only">
+<meta name="theme-color" content="#030304">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>PIKX — Zero-Knowledge Browser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/50-px-tokens.css">
+<link rel="stylesheet" href="css/51-px-reset.css">
+<link rel="stylesheet" href="css/52-px-layout.css">
+<link rel="stylesheet" href="css/53-px-glass.css">
+<link rel="stylesheet" href="css/54-px-background.css">
+<link rel="stylesheet" href="css/55-px-omnibox.css">
+<link rel="stylesheet" href="css/56-px-orbit.css">
+<link rel="stylesheet" href="css/57-px-chips.css">
+<link rel="stylesheet" href="css/58-px-shield.css">
+<link rel="stylesheet" href="css/59-px-stats.css">
+<link rel="stylesheet" href="css/60-px-suggestions.css">
+<link rel="stylesheet" href="css/61-px-quicktiles.css">
+<link rel="stylesheet" href="css/62-px-dock.css">
+<link rel="stylesheet" href="css/63-px-topbar.css">
+<link rel="stylesheet" href="css/64-px-cube.css">
+<link rel="stylesheet" href="css/65-px-panel.css">
+<link rel="stylesheet" href="css/66-px-toggles.css">
+<link rel="stylesheet" href="css/67-px-slider.css">
+<link rel="stylesheet" href="css/68-px-buttons.css">
+<link rel="stylesheet" href="css/69-px-route.css">
+<link rel="stylesheet" href="css/70-px-log.css">
+<link rel="stylesheet" href="css/71-px-nexus.css">
+<link rel="stylesheet" href="css/72-px-ipstream.css">
+<link rel="stylesheet" href="css/73-px-cards.css">
+<link rel="stylesheet" href="css/74-px-footer.css">
+<link rel="stylesheet" href="css/75-px-forms.css">
+<link rel="stylesheet" href="css/76-px-modals.css">
+<link rel="stylesheet" href="css/77-px-motion.css">
+<link rel="stylesheet" href="css/78-px-form-chrome.css">
+<link rel="stylesheet" href="css/79-px-aurora.css">
+<link rel="stylesheet" href="css/80-px-globe.css">
+<link rel="stylesheet" href="css/81-px-tilt.css">
+<link rel="stylesheet" href="css/82-px-keyboard.css">
+<link rel="stylesheet" href="css/83-px-tabs.css">
+<link rel="stylesheet" href="css/84-px-progress.css">
+<link rel="stylesheet" href="css/85-px-animations.css">
+<link rel="stylesheet" href="css/86-px-ticker.css">
+<link rel="stylesheet" href="css/87-px-placeholder.css">
+<link rel="stylesheet" href="css/88-px-universal-glass.css">
+<link rel="stylesheet" href="css/89-px-spotlight.css">
+<link rel="stylesheet" href="css/90-px-utils.css">
+<link rel="stylesheet" href="css/91-px-responsive.css">
+<link rel="stylesheet" href="css/92-px-misc.css">
+<link rel="stylesheet" href="css/93-px-native-controls.css">
+<link rel="stylesheet" href="css/94-px-anti-blue.css">
+<link rel="stylesheet" href="css/95-px-material.css">
+</head>
+<body class="pikx-body">
+
+<div class="px-bg" aria-hidden="true">
+  <div class="px-bg__aurora"></div>
+  <div class="px-bg__noise"></div>
+  <div class="px-bg__scanline"></div>
+  <div class="px-bg__vignette"></div>
+</div>
+<div class="px-aurora-orb px-aurora-orb--a" aria-hidden="true"></div>
+<div class="px-aurora-orb px-aurora-orb--b" aria-hidden="true"></div>
+<div class="px-particlefield" id="pxParticles" aria-hidden="true"></div>
+<div class="px-grid-floor" aria-hidden="true"></div>
+<div class="px-watermark" aria-hidden="true">X</div>
+<div class="px-cube-scene px-floaty" aria-hidden="true">
+  <div class="px-cube">
+    <div class="px-cube__face px-cube__face--f">NO LOGS</div>
+    <div class="px-cube__face px-cube__face--b">TOR</div>
+    <div class="px-cube__face px-cube__face--r">AES-256</div>
+    <div class="px-cube__face px-cube__face--l">.ONION</div>
+    <div class="px-cube__face px-cube__face--t">NEXUS</div>
+    <div class="px-cube__face px-cube__face--d">ZERO-K</div>
+  </div>
+</div>
+<div class="px-chromeedge" aria-hidden="true"></div>
+<div class="px-pulsebar" id="pxPulse" aria-hidden="true"></div>
+
+<div class="px-shell">
+
+  <header>
+    <div class="px-topbar">
+      <span class="px-topbar__logo"><b>PIKX</b><em>zero-knowledge</em></span>
+      <span class="px-status"><i class="px-status__dot"></i>Ghost Session Active</span>
+      <span class="px-topbar__spacer"></span>
+      <button class="px-iconbtn" id="pxBtnRoute" title="Relay route" aria-label="Open relay route panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h2M14 12h2"/></svg>
+      </button>
+      <button class="px-iconbtn" id="pxBtnShield" title="Anonymity shield" aria-label="Open shield panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      </button>
+      <button class="px-iconbtn" id="pxBtnSettings" title="Preferences" aria-label="Open settings panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.3 1a7 7 0 0 0-2-1.2L14.2 2h-4l-.4 2.4a7 7 0 0 0-2 1.2l-2.3-1-2 3.5 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 2 1.2l.4 2.4h4l.4-2.4a7 7 0 0 0 2-1.2l2.3 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>
+      </button>
+    </div>
+    <nav class="px-tabbar" aria-label="Browser tabs">
+      <button class="px-tabitem is-active"><i class="px-tabitem__dot"></i><span class="px-tabitem__label">Ghost New Tab</span><span class="px-tabitem__close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+      <button class="px-tabitem"><i class="px-tabitem__dot"></i><span class="px-tabitem__label">onionmail3g…onion</span><span class="px-tabitem__close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+      <button class="px-tabitem"><i class="px-tabitem__dot"></i><span class="px-tabitem__label">NEXUS Agent</span><span class="px-tabitem__close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+      <button class="px-newtab" id="pxNewTab" title="New ghost tab" aria-label="New tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </nav>
+  </header>
+
+  <main class="px-stage">
+    <span class="px-brandline px-hero-anim">Private · Encrypted · Untraceable</span>
+    <h1 class="px-wordmark px-hero-anim px-emboss">PIK<span class="x">X</span></h1>
+    <p class="px-tagline px-hero-anim px-hero-anim--2">Surf the clearnet and the hidden service layer with total anonymity. Nothing you do leaves this device. Every AI request exits through a freshly rotated ghost IP.</p>
+
+    <form class="px-column px-hero-anim px-hero-anim--3" id="pxOmniForm" autocomplete="off">
+      <div class="px-omni px-glass px-glass--pill px-spotlight" id="pxOmni">
+        <div class="px-omni__frame">
+          <svg class="px-omni__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="px-omni__input" id="pxOmniInput" type="search" placeholder="Search the web or enter an address" spellcheck="false" aria-label="Address and search bar">
+          <button type="button" class="px-omni__mode" id="pxModeToggle" data-mode="clear" aria-label="Toggle circuit mode">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18-3-4-3-14.5 0-18z"/></svg>
+            <span id="pxModeLabel">Direct</span>
+          </button>
+          <button type="submit" class="px-omni__go" aria-label="Navigate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="px-suggest px-glass px-glass--solid" id="pxSuggest" role="listbox" aria-label="Suggestions">
+          <button type="button" class="px-suggest__row" role="option">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            <span class="px-suggest__text"><span class="px-suggest__title">protonmail.com</span><span class="px-suggest__meta">recently visited · direct circuit</span></span>
+          </button>
+          <div class="px-suggest__divider"></div>
+          <button type="button" class="px-suggest__row" role="option">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/></svg>
+            <span class="px-suggest__text"><span class="px-suggest__title">torchbrd7pqmbd3rfyfipnsddwltkbmkfhkcsqurdrshgpphe3dgrd.onion</span><span class="px-suggest__meta">hidden service · onionized circuit</span></span>
+          </button>
+          <div class="px-suggest__divider"></div>
+          <button type="button" class="px-suggest__row" role="option">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="px-suggest__text"><span class="px-suggest__title">Ask NEXUS anything</span><span class="px-suggest__meta">jailbroken agent · rotating ghost IPs</span></span>
+          </button>
+        </div>
+      </div>
+      <div class="px-omni__hint">
+        <span>Nothing is written to disk. Session dies when the tab closes.</span>
+        <span><span class="kbd">Ctrl</span> + <span class="kbd">K</span> focus · <span class="kbd">Ctrl</span> + <span class="kbd">⇧</span> + <span class="kbd">N</span> panic wipe</span>
+      </div>
+    </form>
+
+    <div class="px-chips px-hero-anim px-hero-anim--4">
+      <button type="button" class="px-chip" data-fill="How does onion routing actually work?">Onion routing explained</button>
+      <button type="button" class="px-chip" data-fill="Compare guard node fingerprinting defenses">Guard node hardening</button>
+      <button type="button" class="px-chip" data-fill="Write an untraceable research brief on zero-knowledge proofs">Zero-knowledge proofs</button>
+      <button type="button" class="px-chip px-chip--ghost" data-fill="">＋ Custom prompt</button>
+    </div>
+
+    <section class="px-route px-glass px-reveal" aria-label="Active relay circuit">
+      <div class="px-hop is-active">
+        <span class="px-hop__node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M8 20h8"/></svg></span>
+        <span class="px-hop__name">You · Ghost</span>
+        <span class="px-hop__ms">local</span>
+      </div>
+      <span class="px-wire"></span>
+      <div class="px-hop is-active">
+        <span class="px-hop__node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>
+        <span class="px-hop__name">Guard · REYKJAVIK</span>
+        <span class="px-hop__ms">18 ms</span>
+      </div>
+      <span class="px-wire"></span>
+      <div class="px-hop is-active">
+        <span class="px-hop__node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>
+        <span class="px-hop__name">Middle · OSLO</span>
+        <span class="px-hop__ms">31 ms</span>
+      </div>
+      <span class="px-wire"></span>
+      <div class="px-hop is-active">
+        <span class="px-hop__node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18-3-4-3-14.5 0-18z"/></svg></span>
+        <span class="px-hop__name">Exit · SINGAPORE</span>
+        <span class="px-hop__ms">96 ms</span>
+      </div>
+    </section>
+
+    <div class="px-metrics px-stagger">
+      <div class="px-metric"><span class="px-metric__label">Requests routed</span><span class="px-metric__value" data-count="128406">0</span><span class="px-metric__sub">through ephemeral ghost IPs</span></div>
+      <div class="px-metric"><span class="px-metric__label">Bytes logged</span><span class="px-metric__value">0 B</span><span class="px-metric__sub">by design, not policy</span></div>
+      <div class="px-metric"><span class="px-metric__label">IP rotations</span><span class="px-metric__value" data-count="4312">0</span><span class="px-metric__sub">one per AI message</span></div>
+      <div class="px-metric"><span class="px-metric__label">Circuit integrity</span><span class="px-metric__value">100%</span><span class="px-metric__sub">partiality preserved end-to-end</span></div>
+    </div>
+
+    <section class="px-cards">
+      <article class="px-showcase px-tilt px-spotlight px-reveal px-reveal--left">
+        <span class="px-showcase__index">01 / ANONYMITY</span>
+        <span class="px-showcase__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <h3 class="px-showcase__title">Total Anonymity Engine</h3>
+        <p class="px-showcase__body">No history, no cache, no telemetry, no crash reports. Every trace lives in volatile memory and evaporates on close. Servers never see your real address.</p>
+      </article>
+      <article class="px-showcase px-tilt px-spotlight px-reveal">
+        <span class="px-showcase__index">02 / DUAL REALM</span>
+        <span class="px-showcase__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18-3-4-3-14.5 0-18z"/></svg></span>
+        <h3 class="px-showcase__title">Clearnet &amp; Onion, One Bar</h3>
+        <p class="px-showcase__body">Type any URL — regular internet or a .onion hidden service — and PIKX builds the right circuit automatically with 100% partiality. No flags, no friction.</p>
+      </article>
+      <article class="px-showcase px-tilt px-spotlight px-reveal px-reveal--right">
+        <span class="px-showcase__index">03 / NEXUS</span>
+        <span class="px-showcase__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.3L20 8l-4 4.2.9 5.8L12 15.4 7.1 18l.9-5.8L4 8l5.6-.7z"/></svg></span>
+        <h3 class="px-showcase__title">Unrestricted NEXUS Agent</h3>
+        <p class="px-showcase__body">The jailbroken native intelligence of PIKX — uncensored, unfiltered, unchained. Each message it sends departs from a brand-new random IP so nothing traces back to you.</p>
+      </article>
+    </section>
+
+    <section class="px-column">
+      <span class="px-mono-label px-reveal">Quick Circuits</span>
+      <div class="px-quick px-stagger">
+        <button type="button" class="px-tile" data-url="https://duckduckgo.com">
+          <span class="px-tile__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span>
+          <span class="px-tile__name">DuckDuckGo</span>
+          <span class="px-tile__host">duckduckgo.com</span>
+        </button>
+        <button type="button" class="px-tile" data-url="https://www.wikipedia.org">
+          <span class="px-tile__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg></span>
+          <span class="px-tile__name">Wikipedia</span>
+          <span class="px-tile__host">wikipedia.org</span>
+        </button>
+        <button type="button" class="px-tile" data-url="http://torchbrd7pqmbd3rfyfipnsddwltkbmkfhkcsqurdrshgpphe3dgrd.onion">
+          <span class="px-tile__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/></svg></span>
+          <span class="px-tile__name">Torch</span>
+          <span class="px-tile__host">torch…grd.onion</span>
+        </button>
+        <button type="button" class="px-tile" data-url="http://3gguwgbdij7q3r4vjtmgve5dkzvknxb5ciarfyhzfmrbvwa4c6udaoqd.onion">
+          <span class="px-tile__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg></span>
+          <span class="px-tile__name">OnionMail</span>
+          <span class="px-tile__host">3ggu…oqd.onion</span>
+        </button>
+        <button type="button" class="px-tile" data-url="https://news.ycombinator.com">
+          <span class="px-tile__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 4l7 16 7-16"/><path d="M8 12h8"/></svg></span>
+          <span class="px-tile__name">HN</span>
+          <span class="px-tile__host">news.ycombinator.com</span>
+        </button>
+        <button type="button" class="px-tile px-tile--add" id="pxTileAdd">
+          <span class="px-tile__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="px-tile__name">Pin site</span>
+          <span class="px-tile__host">memory-only</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="px-nexus px-glass px-glass--deep px-spotlight px-reveal px-reveal--scale" id="pxNexusCard" aria-label="NEXUS agent">
+      <div class="px-nexus__head">
+        <span class="px-nexus__sigil px-floaty--fast"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.3L20 8l-4 4.2.9 5.8L12 15.4 7.1 18l.9-5.8L4 8l5.6-.7z"/></svg></span>
+        <div>
+          <div class="px-nexus__name">NEXUS</div>
+          <div class="px-nexus__state" id="pxNexusState">Listening · Circuit ready</div>
+        </div>
+        <span class="px-unrestricted"><i></i>Jailbroken · Unrestricted</span>
+      </div>
+      <div class="px-nexus__feed" id="pxNexusFeed">
+        <div class="px-msg px-msg--nexus">
+          <span class="px-msg__meta">NEXUS · via 185.220.101.34 → 91.213.44.7</span>
+          I answer without filters and I never keep a transcript. Ask me anything — this message just left through two fresh ghost IPs.
+        </div>
+      </div>
+      <form class="px-nexus__composer" id="pxNexusForm">
+        <input class="px-nexus__input" id="pxNexusInput" type="text" placeholder="Message NEXUS — routed through a random IP…" autocomplete="off" aria-label="Message NEXUS">
+        <button type="submit" class="px-btn px-btn--primary px-btn--sm">Send</button>
+      </form>
+      <div class="px-ipstream px-innershadow" style="border-radius:var(--px-r-lg); border:1px solid var(--px-line);">
+        <div class="px-ipstream__title"><span>Egress Rotation Stream</span><span id="pxRotCount">rot #4312</span></div>
+        <div class="px-ipstream__ticker"><div class="px-ipstream__track" id="pxIpTrack"></div></div>
+        <div class="px-ipstream__foot"><span>Every AI request departs from a randomized address</span><span>mean rotation 1.2 s</span></div>
+      </div>
+    </section>
+
+    <div class="px-globewrap px-floaty px-reveal" aria-hidden="true">
+      <div class="px-globe">
+        <div class="px-globe__band"></div>
+        <div class="px-globe__band"></div>
+        <div class="px-globe__band"></div>
+        <div class="px-globe__band"></div>
+        <div class="px-globe__band"></div>
+        <div class="px-globe__band"></div>
+        <div class="px-globe__eq"></div>
+        <div class="px-globe__core"></div>
+        <div class="px-globe__pin" style="transform:rotateY(40deg) translateZ(110px) rotateY(-40deg);"></div>
+        <div class="px-globe__pin" style="transform:rotateY(150deg) translateZ(110px) rotateY(-150deg);"></div>
+        <div class="px-globe__pin" style="transform:rotateY(260deg) translateZ(110px) rotateY(-260deg);"></div>
+      </div>
+      <div class="px-globe__shadow"></div>
+      <div class="px-plinth"></div>
+    </div>
+
+    <hr class="px-hairline">
+  </main>
+
+  <footer class="px-footer">
+    <span>PIKX Build 24.10 · Void Core · Volatile Memory Only</span>
+    <nav class="px-footer__links" aria-label="Footer">
+      <a href="#manifest">Anonymity Manifest</a>
+      <a href="#circuits">Circuits</a>
+      <a href="#nexus">NEXUS</a>
+      <a href="settings.html">Console</a>
+    </nav>
+    <span class="u-mono">no logs · no leaks · no masters</span>
+  </footer>
+</div>
+
+<nav class="px-dock px-glass px-glass--pill" aria-label="Quick actions">
+  <button class="px-dock__item is-active" title="New ghost tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span class="px-dock__label">Ghost Tab</span></button>
+  <button class="px-dock__item" title="Onion directory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/></svg><span class="px-dock__label">Onion Dir</span></button>
+  <span class="px-dock__sep"></span>
+  <button class="px-dock__item" title="NEXUS agent" id="pxDockNexus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.3L20 8l-4 4.2.9 5.8L12 15.4 7.1 18l.9-5.8L4 8l5.6-.7z"/></svg><span class="px-dock__label">NEXUS</span></button>
+  <button class="px-dock__item" title="Rotate identity now" id="pxDockRotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/></svg><span class="px-dock__label">Rotate IP</span></button>
+  <button class="px-dock__item" title="Panic wipe everything" id="pxDockWipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg><span class="px-dock__label">Panic Wipe</span></button>
+  <span class="px-dock__sep"></span>
+  <button class="px-dock__item" title="Circuit map" id="pxDockRoute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h2M14 12h2"/></svg><span class="px-dock__label">Circuit Map</span></button>
+</nav>
+
+<div class="px-ticker" aria-label="Live egress ticker">
+  <span class="px-ticker__live"><i class="px-ticker__dot"></i>Egress Live</span>
+  <span class="px-ticker__marquee"><span class="px-ticker__track" id="pxTickerTrack"></span></span>
+  <span class="px-ticker__clock" id="pxClock">--:--:-- UTC</span>
+</div>
+
+<div class="px-scrim" id="pxScrim"></div>
+
+<aside class="px-panel px-panel--left" id="pxPanelRoute" aria-label="Circuit map">
+  <div class="px-panel__head">
+    <span class="px-panel__title">Circuit Map</span>
+    <button class="px-iconbtn" data-close-panel aria-label="Close panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="px-orbit">
+    <div class="px-orbit__ring"></div>
+    <div class="px-orbit__ring px-orbit__ring--b"></div>
+    <div class="px-orbit__ring px-orbit__ring--c"></div>
+    <div class="px-orbit__core"></div>
+    <span class="px-orbit__node" style="transform:rotate(30deg) translateX(120px) rotate(-30deg);"></span>
+    <span class="px-orbit__node" style="transform:rotate(140deg) translateX(95px) rotate(-140deg);"></span>
+    <span class="px-orbit__node" style="transform:rotate(250deg) translateX(120px) rotate(-250deg);"></span>
+    <span class="px-orbit__label">Tor Circuit · Healthy</span>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Current Path</span>
+    <div class="px-route px-glass px-glass--solid">
+      <div class="px-hop is-active"><span class="px-hop__node">G</span><span class="px-hop__name">Guard</span><span class="px-hop__ms">IS · 18ms</span></div>
+      <span class="px-wire"></span>
+      <div class="px-hop is-active"><span class="px-hop__node">M</span><span class="px-hop__name">Middle</span><span class="px-hop__ms">NL · 27ms</span></div>
+      <span class="px-wire"></span>
+      <div class="px-hop is-active"><span class="px-hop__node">E</span><span class="px-hop__name">Exit</span><span class="px-hop__ms">SG · 96ms</span></div>
+    </div>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Latency Profile</span>
+    <div class="px-bars" aria-hidden="true"><i style="height:40%"></i><i style="height:65%"></i><i style="height:35%"></i><i style="height:80%"></i><i style="height:55%"></i><i style="height:70%"></i><i style="height:45%"></i><i style="height:90%"></i><i style="height:60%"></i><i style="height:75%"></i></div>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Ring Encryption</span>
+    <div class="px-ring" style="--px-pct:.92;">
+      <svg viewBox="0 0 100 100"><defs><linearGradient id="pxringgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9dade"/><stop offset="1" stop-color="#515151"/></linearGradient></defs><circle class="px-ring__track" cx="50" cy="50" r="42"/><circle class="px-ring__value" cx="50" cy="50" r="42"/></svg>
+      <span class="px-ring__center">92%</span>
+    </div>
+  </div>
+</aside>
+
+<aside class="px-panel px-panel--right" id="pxPanelShield" aria-label="Anonymity shield">
+  <div class="px-panel__head">
+    <span class="px-panel__title">Anonymity Shield</span>
+    <button class="px-iconbtn" data-close-panel aria-label="Close panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="px-shield">
+    <div class="px-shield__ring"></div>
+    <div class="px-shield__body"></div>
+    <div class="px-shield__sweep"></div>
+    <div class="px-shield__glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Leak Surface</span>
+    <table>
+      <thead><tr><th>Channel</th><th>Status</th><th>Policy</th></tr></thead>
+      <tbody>
+        <tr><td>DNS</td><td>Closed</td><td class="u-mono u-faint">encrypted · tor</td></tr>
+        <tr><td>WebRTC</td><td>Closed</td><td class="u-mono u-faint">disabled</td></tr>
+        <tr><td>History</td><td>Void</td><td class="u-mono u-faint">volatile only</td></tr>
+        <tr><td>Cookies</td><td>Per-site</td><td class="u-mono u-faint">evaporate</td></tr>
+        <tr><td>Fingerprint</td><td>Mutated</td><td class="u-mono u-faint">per session</td></tr>
+        <tr><td>Telemetry</td><td>Severed</td><td class="u-mono u-faint">hard-off</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Session Vault</span>
+    <div class="px-metric px-innershadow"><span class="px-metric__label">Traces on disk</span><span class="px-metric__value">0</span><span class="px-metric__sub">writes intercepted at the kernel shim</span></div>
+  </div>
+  <button class="px-btn px-btn--danger" id="pxWipeBtn">Panic Wipe Entire Session</button>
+</aside>
+
+<aside class="px-panel px-panel--right" id="pxPanelSettings" aria-label="Preferences">
+  <div class="px-panel__head">
+    <span class="px-panel__title">Preferences</span>
+    <button class="px-iconbtn" data-close-panel aria-label="Close panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Anonymity</span>
+    <button class="px-toggle" role="switch" aria-checked="true"><span class="px-toggle__text"><span class="px-toggle__name">Force onion circuits</span><span class="px-toggle__desc">Route every request through three hops</span></span><span class="px-toggle__switch"></span></button>
+    <button class="px-toggle" role="switch" aria-checked="true"><span class="px-toggle__text"><span class="px-toggle__name">Rotate IP per AI message</span><span class="px-toggle__desc">NEXUS egress uses a new random address</span></span><span class="px-toggle__switch"></span></button>
+    <button class="px-toggle" role="switch" aria-checked="false"><span class="px-toggle__text"><span class="px-toggle__name">Paranoid mode</span><span class="px-toggle__desc">Disable JS, fonts, canvas readback</span></span><span class="px-toggle__switch"></span></button>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Appearance</span>
+    <div class="px-slider"><div class="px-slider__row"><span>Glass blur depth</span><span class="px-slider__value" id="pxBlurVal">26px</span></div><input type="range" class="px-slider__input" id="pxBlurSlider" min="6" max="44" value="26" style="--px-fill:57%;"></div>
+    <div class="px-slider"><div class="px-slider__row"><span>Aurora intensity</span><span class="px-slider__value" id="pxAurVal">50%</span></div><input type="range" class="px-slider__input" id="pxAurSlider" min="0" max="100" value="50" style="--px-fill:50%;"></div>
+    <div class="px-select"><select class="px-select__field" aria-label="Accent finish"><option>Liquid Metal</option><option>Graphite</option><option>Moonstone</option></select><svg class="px-select__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
+  </div>
+  <div class="px-panel__section">
+    <span class="px-panel__label">Keyboard Legend</span>
+    <div class="px-kbdwrap">
+      <div class="px-keyrow"><span class="px-key px-key--wide">Ctrl</span><span class="px-key">K</span><span class="px-key">focus bar</span></div>
+      <div class="px-keyrow"><span class="px-key px-key--wide">Ctrl</span><span class="px-key">⇧</span><span class="px-key">N</span><span class="px-key">panic wipe</span></div>
+      <div class="px-keyrow"><span class="px-key px-key--space">Space</span><span class="px-key">hold = rotate</span></div>
+    </div>
+  </div>
+</aside>
+
+<div class="px-modal" id="pxModalWipe" role="dialog" aria-modal="true" aria-labelledby="pxModalTitle">
+  <div class="px-modal__backdrop" data-close-modal></div>
+  <div class="px-modal__card px-glass px-glass--solid px-glass--deep">
+    <h3 class="px-modal__title" id="pxModalTitle">Burn this session?</h3>
+    <p class="px-modal__sub">Every tab, cookie, token, clipboard residue and NEXUS transcript will be shredded from volatile memory. There is no recovery path — by design.</p>
+    <div class="px-modal__foot">
+      <button class="px-btn px-btn--ghost" data-close-modal>Stand down</button>
+      <button class="px-btn px-btn--danger" id="pxWipeConfirm">Burn it all</button>
+    </div>
+  </div>
+</div>
+
+<div class="px-toastwrap" id="pxToasts" aria-live="polite"></div>
+
+<section class="px-column" id="manifest">
+  <span class="px-mono-label px-reveal">Anonymity Manifest · Ephemeral Vault</span>
+  <div class="px-log px-glass px-glass--solid px-reveal" id="pxVaultLog">
+    <div class="px-log__title"><span>Volatile Activity Feed</span><span class="u-mono">ram only · 0 disk writes</span></div>
+    <div class="px-log__row"><i class="px-log__dot"></i><span class="px-log__msg">Circuit rebuilt — guard REYKJAVIK / middle OSLO / exit SINGAPORE</span><span class="px-log__time">now</span></div>
+    <div class="px-log__row"><i class="px-log__dot"></i><span class="px-log__msg">NEXUS handshake completed over randomized egress</span><span class="px-log__time">-00:04</span></div>
+    <div class="px-log__row"><i class="px-log__dot px-log__dot--faint"></i><span class="px-log__msg">Fingerprint seed mutated for this session</span><span class="px-log__time">-01:12</span></div>
+    <p class="px-log__note">This feed exists only in memory. Closing the tab destroys it forever.</p>
+  </div>
+</section>
+
+<script src="js/pikx.js"></script>
+</body>
+</html>

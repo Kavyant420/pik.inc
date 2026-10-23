@@ -1,0 +1,90 @@
+.px-shell {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
+.px-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 7vh, 6rem) clamp(1rem, 4vw, 3rem) 7rem;
+  gap: clamp(1.6rem, 3.4vh, 2.6rem);
+}
+
+.px-brandline {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  font-family: var(--px-font-mono);
+  font-size: .74rem;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--px-dim);
+}
+
+.px-brandline::before,
+.px-brandline::after {
+  content: "";
+  inline-size: clamp(28px, 6vw, 72px);
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+}
+
+.px-wordmark {
+  font-size: clamp(4.2rem, 13vw, 9.5rem);
+  font-weight: 700;
+  letter-spacing: -.045em;
+  line-height: .95;
+  background-image: var(--px-grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 24px 48px rgba(0,0,0,.8));
+}
+
+.px-wordmark .x {
+  font-style: italic;
+  padding-inline: .04em;
+}
+
+.px-tagline {
+  max-width: 46ch;
+  text-align: center;
+  color: var(--px-dim);
+  font-size: clamp(.95rem, 1.4vw, 1.12rem);
+  line-height: 1.65;
+}
+
+.px-grid-floor {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 42vh;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(520px) rotateX(64deg) scale(2.2);
+  transform-origin: bottom center;
+  mask-image: linear-gradient(to top, rgba(0,0,0,.85), transparent 78%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,.85), transparent 78%);
+}
+
+.px-column {
+  inline-size: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+@media (max-width: 640px) {
+  .px-stage { justify-content: flex-start; padding-top: 3rem; }
+  .px-wordmark { font-size: clamp(3.4rem, 17vw, 5.4rem); }
+}

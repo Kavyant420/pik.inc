@@ -1,0 +1,66 @@
+.px-shield {
+  position: relative;
+  width: clamp(150px, 22vw, 210px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  perspective: 800px;
+}
+
+.px-shield__body {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 0%, 93% 16%, 93% 58%, 50% 100%, 7% 58%, 7% 16%);
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.02) 45%),
+    linear-gradient(200deg, #1b1b20, #0a0a0c 70%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+  transform-style: preserve-3d;
+  animation: px-shield-tilt 9s ease-in-out infinite alternate;
+}
+
+@keyframes px-shield-tilt {
+  from { transform: rotateY(-14deg) rotateX(6deg); }
+  to   { transform: rotateY(14deg) rotateX(-4deg); }
+}
+
+.px-shield__sweep {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 0%, 93% 16%, 93% 58%, 50% 100%, 7% 58%, 7% 16%);
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.22) 48%, transparent 62%);
+  background-size: 250% 100%;
+  animation: px-sweep 4.2s ease-in-out infinite;
+}
+
+@keyframes px-sweep {
+  0%   { background-position: 180% 0; }
+  60%  { background-position: -60% 0; }
+  100% { background-position: -60% 0; }
+}
+
+.px-shield__glyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--px-hi);
+}
+
+.px-shield__glyph svg {
+  width: 42%;
+  height: 42%;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,.8));
+}
+
+.px-shield__ring {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  border: 1px solid rgba(163,163,163,.18);
+  animation: px-shield-ring 6s ease-in-out infinite;
+}
+
+@keyframes px-shield-ring {
+  0%, 100% { transform: scale(.96); opacity: .35; }
+  50%      { transform: scale(1.05); opacity: .8; }
+}

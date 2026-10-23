@@ -1,0 +1,76 @@
+.px-orbit {
+  position: relative;
+  width: clamp(220px, 34vw, 340px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  perspective: 900px;
+  pointer-events: none;
+}
+
+.px-orbit__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,.14);
+  transform-style: preserve-3d;
+  animation: px-orbit-spin 22s linear infinite;
+}
+
+.px-orbit__ring--b {
+  inset: 12%;
+  border-style: solid;
+  border-color: rgba(255,255,255,.07);
+  animation-duration: 15s;
+  animation-direction: reverse;
+}
+
+.px-orbit__ring--c {
+  inset: 26%;
+  border-color: rgba(163,163,163,.22);
+  animation-duration: 30s;
+}
+
+@keyframes px-orbit-spin {
+  from { transform: rotateX(66deg) rotateZ(0deg); }
+  to   { transform: rotateX(66deg) rotateZ(360deg); }
+}
+
+.px-orbit__node {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 12px; height: 12px;
+  margin: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #f2f3f5, #8b8b8b 60%, #3a3a3a);
+  box-shadow: 0 0 14px rgba(217,218,222,.5);
+  transform-origin: center;
+}
+
+.px-orbit__core {
+  position: absolute;
+  inset: 36%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,.5), transparent 42%),
+    radial-gradient(circle at 62% 70%, rgba(81,81,81,.8), transparent 60%),
+    linear-gradient(160deg, #232327, #0c0c0e);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 24px 50px -18px rgba(0,0,0,.95), inset 0 2px 8px rgba(255,255,255,.12);
+  animation: px-core-breathe 5.5s ease-in-out infinite;
+}
+
+@keyframes px-core-breathe {
+  0%, 100% { transform: translateZ(0) scale(1); }
+  50% { transform: translateZ(18px) scale(1.035); }
+}
+
+.px-orbit__label {
+  position: absolute;
+  inset: auto 0 -8% 0;
+  text-align: center;
+  font-family: var(--px-font-mono);
+  font-size: .66rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--px-faint);
+}

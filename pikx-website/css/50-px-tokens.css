@@ -1,0 +1,83 @@
+:root {
+  --px-void: #030304;
+  --px-black: #060608;
+  --px-coal: #0b0b0e;
+  --px-onyx: #121217;
+  --px-slate: #1a1a21;
+
+  --px-ink: #f1f2f4;
+  --px-dim: #a9abb2;
+  --px-faint: #6d6f77;
+
+  --px-grey: #a3a3a3;
+  --px-dgrey: #515151;
+  --px-hi: #d9dade;
+  --px-lo: #363636;
+
+  --px-line: rgba(255,255,255,.08);
+  --px-line-hi: rgba(255,255,255,.18);
+
+  --px-glass: rgba(255,255,255,.05);
+  --px-glass-strong: rgba(255,255,255,.09);
+  --px-glass-solid: rgba(10,10,13,.72);
+  --px-blur: 26px;
+
+  --px-grad-edge: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.03) 42%, rgba(255,255,255,0));
+  --px-grad-metal: linear-gradient(135deg, #dfe1e4 0%, var(--px-grey) 38%, var(--px-dgrey) 62%, #cfd1d4 100%);
+  --px-grad-text: linear-gradient(100deg, #e6e8ea 0%, var(--px-grey) 42%, var(--px-dgrey) 74%, #e6e8ea 100%);
+
+  --px-r-sm: 10px;
+  --px-r-md: 16px;
+  --px-r-lg: 24px;
+  --px-r-xl: 34px;
+  --px-r-pill: 999px;
+
+  --px-shadow-deep: 0 40px 90px -30px rgba(0,0,0,.95);
+  --px-shadow-flat: 0 18px 40px -24px rgba(0,0,0,.85);
+  --px-inset: inset 0 1px 0 rgba(255,255,255,.16);
+
+  --px-font-display: "Space Grotesk", "Segoe UI Variable Display", sans-serif;
+  --px-font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --px-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --px-ease-out: cubic-bezier(.16,1,.3,1);
+  --px-ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --px-fast: 140ms;
+  --px-med: 320ms;
+  --px-slow: 620ms;
+
+  color-scheme: dark only !important;
+}
+
+.px-root {
+  background-color: var(--px-void);
+  color: var(--px-ink);
+  font-family: var(--px-font-body);
+}
+
+.px-root ::selection { background: rgba(163,163,163,.35); color: #fff; }
+
+.px-root input,
+.px-root textarea,
+.px-root select {
+  accent-color: var(--px-grey);
+  caret-color: var(--px-hi);
+}
+
+.px-root input[type="search"]::-webkit-search-cancel-button,
+.px-root input[type="search"]::-webkit-search-decoration,
+.px-root input[type="search"]::-webkit-search-results-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.px-root * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+.px-root *::-webkit-scrollbar { width: 10px; height: 10px; }
+.px-root *::-webkit-scrollbar-track { background: transparent; }
+.px-root *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.07));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
