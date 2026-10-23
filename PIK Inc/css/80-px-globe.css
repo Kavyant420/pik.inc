@@ -1,0 +1,22 @@
+.px-globewrap { position: relative; width: clamp(180px, 26vw, 260px); aspect-ratio: 1; margin-inline: auto; perspective: 900px; }
+
+.px-globe { position: absolute; inset: 0; border-radius: 50%; transform-style: preserve-3d; animation: px-globe-turn 24s linear infinite; }
+
+@keyframes px-globe-turn { from { transform: rotateY(0deg) rotateX(12deg); } to { transform: rotateY(360deg) rotateX(12deg); } }
+
+.px-globe__band { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); }
+
+.px-globe__band:nth-child(1) { transform: rotateY(0deg); }
+.px-globe__band:nth-child(2) { transform: rotateY(30deg); }
+.px-globe__band:nth-child(3) { transform: rotateY(60deg); }
+.px-globe__band:nth-child(4) { transform: rotateY(90deg); }
+.px-globe__band:nth-child(5) { transform: rotateY(120deg); }
+.px-globe__band:nth-child(6) { transform: rotateY(150deg); }
+
+.px-globe__eq { position: absolute; inset-inline: 0; top: 50%; height: 1px; background: rgba(163,163,163,.5); box-shadow: 0 -34px 0 -1px rgba(255,255,255,.1), 0 34px 0 -1px rgba(255,255,255,.1); }
+
+.px-globe__core { position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.28), transparent 40%), radial-gradient(circle at 60% 65%, rgba(81,81,81,.55), transparent 60%), #0b0b0e; border: 1px solid rgba(255,255,255,.12); box-shadow: inset 0 0 40px rgba(0,0,0,.9), 0 30px 60px -24px rgba(0,0,0,.95); }
+
+.px-globe__pin { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--px-hi); box-shadow: 0 0 10px rgba(217,218,222,.8); top: 50%; left: 50%; margin: -3.5px; }
+
+.px-globe__shadow { position: absolute; inset: auto 6% -14%; height: 16px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(0,0,0,.8), transparent 70%); filter: blur(4px); }

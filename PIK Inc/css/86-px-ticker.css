@@ -1,0 +1,15 @@
+.px-ticker { position: fixed; inset-inline: 0; bottom: 0; z-index: 35; display: flex; align-items: center; gap: 1rem; padding: .55rem clamp(1rem, 4vw, 2.4rem); background: rgba(6,6,9,.72); border-top: 1px solid var(--px-line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); font-family: var(--px-font-mono); font-size: .66rem; letter-spacing: .12em; color: var(--px-faint); }
+
+.px-ticker__live { display: inline-flex; align-items: center; gap: .4rem; color: var(--px-dim); text-transform: uppercase; }
+
+.px-ticker__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--px-grey); animation: px-dot-pulse 2s ease-out infinite; }
+
+.px-ticker__marquee { flex: 1; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+
+.px-ticker__track { display: inline-flex; gap: 2.6rem; white-space: nowrap; animation: px-ip-scroll 26s linear infinite; }
+
+.px-ticker__track span b { color: var(--px-dim); font-weight: 500; }
+
+.px-ticker__clock { color: var(--px-dim); }
+
+@media (max-width: 640px) { .px-ticker__marquee { display: none; } }
