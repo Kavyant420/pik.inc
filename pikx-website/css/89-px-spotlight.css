@@ -1,0 +1,36 @@
+.px-root [data-tilt] { transition: transform 180ms var(--px-ease-out); }
+
+.px-spotlight { position: relative; overflow: hidden; }
+
+.px-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(240px circle at var(--px-mx, 50%) var(--px-my, 50%), rgba(255,255,255,.1), transparent 60%);
+  opacity: 0;
+  transition: opacity var(--px-med) ease;
+  pointer-events: none;
+}
+
+.px-spotlight:hover::before { opacity: 1; }
+
+.px-edgeglow { position: relative; }
+
+.px-edgeglow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--px-angle, 0deg), transparent 0 30%, rgba(217,218,222,.5) 45%, transparent 60%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: px-angle-spin 6s linear infinite;
+  pointer-events: none;
+}
+
+@property --px-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+@keyframes px-angle-spin { to { --px-angle: 360deg; } }

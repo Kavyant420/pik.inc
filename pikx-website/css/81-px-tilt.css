@@ -1,0 +1,16 @@
+.px-tilt { transform-style: preserve-3d; }
+
+.px-parallax { position: relative; }
+.px-parallax__layer { will-change: transform; transition: transform 120ms linear; }
+
+.px-floaty { animation: px-floaty 7s ease-in-out infinite alternate; }
+.px-floaty--slow { animation-duration: 11s; animation-delay: -3s; }
+.px-floaty--fast { animation-duration: 5s; }
+
+@keyframes px-floaty { from { transform: translateY(-6px) translateZ(0); } to { transform: translateY(10px) translateZ(0); } }
+
+.px-plinth { position: relative; height: 14px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(255,255,255,.1), transparent 70%); margin-top: -4px; }
+
+.px-depth-1 { transform: translateZ(20px); }
+.px-depth-2 { transform: translateZ(45px); }
+.px-depth-3 { transform: translateZ(70px); }

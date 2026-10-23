@@ -1,0 +1,73 @@
+.px-dock {
+  position: fixed;
+  bottom: clamp(.8rem, 2.4vh, 1.6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  gap: .35rem;
+  padding: .5rem .7rem;
+  border-radius: var(--px-r-pill);
+}
+
+.px-dock__item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  border-radius: 15px;
+  color: var(--px-dim);
+  transition: transform var(--px-fast) var(--px-ease-spring),
+              background var(--px-fast) ease,
+              color var(--px-fast) ease;
+}
+
+.px-dock__item svg { width: 20px; height: 20px; }
+
+.px-dock__item:hover {
+  transform: translateY(-8px) scale(1.14);
+  background: rgba(255,255,255,.09);
+  color: var(--px-ink);
+}
+
+.px-dock__item.is-active {
+  background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.04));
+  color: var(--px-hi);
+}
+
+.px-dock__item.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--px-grey);
+  box-shadow: 0 0 8px rgba(163,163,163,.9);
+}
+
+.px-dock__sep {
+  width: 1px;
+  height: 30px;
+  margin-inline: .3rem;
+  background: var(--px-line);
+  align-self: center;
+}
+
+.px-dock__label {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: .28rem .6rem;
+  border-radius: 8px;
+  background: rgba(10,10,13,.9);
+  border: 1px solid var(--px-line);
+  font-size: .68rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--px-fast) ease, transform var(--px-fast) ease;
+}
+
+.px-dock__item:hover .px-dock__label { opacity: 1; transform: translateX(-50%) translateY(0); }

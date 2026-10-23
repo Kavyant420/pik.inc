@@ -1,0 +1,29 @@
+.px-root input[type="date"],
+.px-root input[type="time"],
+.px-root input[type="datetime-local"] { color-scheme: dark; }
+
+.px-root::-webkit-calendar-picker-indicator { filter: invert(.8) sepia(.1); cursor: pointer; }
+
+.px-root input:-webkit-autofill,
+.px-root textarea:-webkit-autofill,
+.px-root select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #14141a inset;
+  box-shadow: 0 0 0 1000px #14141a inset;
+  -webkit-text-fill-color: #f1f2f4;
+  caret-color: #d9dade;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.px-root input:-autofill,
+.px-root input:-webkit-autofill:hover,
+.px-root input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #14141a inset;
+  box-shadow: 0 0 0 1000px #14141a inset;
+  -webkit-text-fill-color: #f1f2f4;
+}
+
+.px-root input::placeholder,
+.px-root textarea::placeholder { color: #6d6f77; opacity: 1; }
+
+.px-root :-moz-ui-invalid { box-shadow: none; }
+.px-root output { font-family: var(--px-font-mono); color: var(--px-hi); }

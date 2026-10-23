@@ -1,0 +1,45 @@
+.px-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #17171c 0%, #0a0a0d 46%, var(--px-void) 100%);
+}
+
+.px-bg__aurora {
+  position: absolute;
+  inset: -20%;
+  filter: blur(90px) saturate(120%);
+  opacity: .5;
+  background:
+    radial-gradient(38% 30% at 22% 28%, rgba(163,163,163,.22), transparent 70%),
+    radial-gradient(32% 26% at 78% 62%, rgba(81,81,81,.34), transparent 70%),
+    radial-gradient(24% 22% at 56% 14%, rgba(217,218,222,.12), transparent 72%);
+  animation: px-aurora-drift 34s ease-in-out infinite alternate;
+}
+
+@keyframes px-aurora-drift {
+  from { transform: translate3d(-2%, -1%, 0) rotate(.4deg) scale(1.02); }
+  to   { transform: translate3d(2%, 2%, 0) rotate(-.6deg) scale(1.08); }
+}
+
+.px-bg__noise {
+  position: absolute;
+  inset: 0;
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+}
+
+.px-bg__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 100% at 50% 42%, transparent 55%, rgba(0,0,0,.72));
+}
+
+.px-bg__scanline {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 4px);
+  mix-blend-mode: overlay;
+}

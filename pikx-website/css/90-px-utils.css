@@ -1,0 +1,23 @@
+.px-root .u-center { text-align: center; display: grid; place-items: center; }
+.px-root .u-row { display: flex; align-items: center; gap: .6rem; }
+.px-root .u-col { display: flex; flex-direction: column; gap: .6rem; }
+.px-root .u-wrap { flex-wrap: wrap; }
+.px-root .u-between { justify-content: space-between; }
+.px-root .u-grow { flex: 1; min-width: 0; }
+.px-root .u-mono { font-family: var(--px-font-mono); }
+.px-root .u-dim { color: var(--px-dim); }
+.px-root .u-faint { color: var(--px-faint); }
+.px-root .u-hi { color: var(--px-hi); }
+.px-root .u-xs { font-size: .7rem; }
+.px-root .u-sm { font-size: .8rem; }
+.px-root .u-caps { text-transform: uppercase; letter-spacing: .2em; }
+.px-root .u-hide-sm { display: revert; }
+.px-root .u-nowrap { white-space: nowrap; }
+.px-root .u-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.px-root .u-gap-lg { gap: 1.2rem; }
+.px-root .u-mt-lg { margin-top: 1.4rem; }
+.px-root .u-wfull { inline-size: 100%; }
+
+@media (max-width: 720px) {
+  .px-root .u-hide-sm { display: none; }
+}
