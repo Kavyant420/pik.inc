@@ -1,0 +1,240 @@
+/* ============================================================================
+   97 — PIKX glass lift
+   ----------------------------------------------------------------------------
+   An upgrade layer over 53-px-glass.css, loaded last so it wins without
+   specificity hacks. All original code; no third-party stylesheet is copied.
+
+   53-px-glass.css already gets the fundamentals right (blur + saturate, an
+   edge gradient, an @supports fallback). What it lacks is the detail work that
+   separates convincing glass from a translucent grey box:
+
+     1. GRAIN. Large dark translucent surfaces band visibly because 8-bit
+        gradients have too few steps. A fine noise overlay breaks the banding
+        and is the single biggest perceptual win for dark glassmorphism.
+        Inline SVG data URI — no external asset, and pikx.html's CSP already
+        permits img-src data:.
+     2. ELEVATION TIERS. Nested panels previously shared one shadow, so depth
+        was unreadable. Three tiers now, each with its own blur, fill and
+        shadow.
+     3. NESTED BLUR GUARD. `.px-glass` inside `.px-glass` blurred twice: slow,
+        and the inner blur samples an already-blurred backdrop, which reads as
+        mud. Inner surfaces get a translucent fill instead.
+     4. SPECULAR RIM. A lit-from-above top highlight plus a bottom inner shadow
+        gives the pane physical thickness.
+     5. INTERACTION + FOCUS. Consistent hover lift and a visible focus ring;
+        glass elements previously had no reliable focus indicator.
+     6. prefers-reduced-transparency. Users who cannot tolerate transparency
+        get opaque surfaces rather than being forced to squint.
+   ========================================================================= */
+
+.px-root {
+  /* ---- elevation tiers -------------------------------------------------- */
+  --px-elev-1-blur: 18px;
+  --px-elev-1-fill: rgba(255,255,255,.045);
+  --px-elev-1-shadow:
+    0 1px 1px rgba(0,0,0,.4),
+    0 8px 20px -12px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.10);
+
+  --px-elev-2-blur: 26px;
+  --px-elev-2-fill: rgba(255,255,255,.065);
+  --px-elev-2-shadow:
+    0 2px 3px rgba(0,0,0,.42),
+    0 18px 40px -20px rgba(0,0,0,.88),
+    inset 0 1px 0 rgba(255,255,255,.16);
+
+  --px-elev-3-blur: 34px;
+  --px-elev-3-fill: rgba(255,255,255,.09);
+  --px-elev-3-shadow:
+    0 3px 5px rgba(0,0,0,.45),
+    0 40px 90px -30px rgba(0,0,0,.95),
+    inset 0 1px 0 rgba(255,255,255,.22);
+
+  /* specular rim: bright at the top-left light source, fading to nothing */
+  --px-rim: linear-gradient(
+    137deg,
+    rgba(255,255,255,.30) 0%,
+    rgba(255,255,255,.10) 18%,
+    rgba(255,255,255,.02) 42%,
+    rgba(255,255,255,0) 60%
+  );
+
+  /* thickness: the pane catches light along its bottom inner edge too */
+  --px-thickness: inset 0 -1px 0 rgba(255,255,255,.05), inset 0 -8px 18px -14px rgba(255,255,255,.10);
+
+  --px-focus-ring: 0 0 0 2px rgba(3,3,4,.9), 0 0 0 4px rgba(217,218,222,.72);
+}
+
+/* --------------------------------------------------------------- 1. grain
+   fractalNoise at low opacity, composited with soft-light so it lifts the
+   midtones without greying the blacks. `position: fixed` + pointer-events:none
+   keeps it out of the layout and out of hit testing. z-index sits above the
+   background canvas but below content. */
+.px-root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: .035;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* ---------------------------------------------------------- 2. elevation */
+
+.px-glass {
+  backdrop-filter: blur(var(--px-elev-2-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--px-elev-2-blur)) saturate(160%);
+  background-color: var(--px-elev-2-fill);
+  box-shadow: var(--px-elev-2-shadow), var(--px-thickness);
+}
+
+.px-glass--elev1,
+.px-chip,
+.px-tabitem,
+.px-srcbadge {
+  backdrop-filter: blur(var(--px-elev-1-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--px-elev-1-blur)) saturate(140%);
+  box-shadow: var(--px-elev-1-shadow);
+}
+
+.px-glass--elev3,
+.px-panel,
+.px-modal__card,
+.px-suggest,
+.px-answer {
+  backdrop-filter: blur(var(--px-elev-3-blur)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--px-elev-3-blur)) saturate(170%);
+  background-color: var(--px-elev-3-fill);
+  box-shadow: var(--px-elev-3-shadow), var(--px-thickness);
+}
+
+/* Overlays must stay opaque enough to read over arbitrary content. */
+.px-glass--solid,
+.px-modal__card {
+  background-color: rgba(10,10,13,.82);
+}
+
+/* ----------------------------------------------- 3. nested blur guard
+   A second backdrop-filter inside an already-blurred pane re-samples the
+   blurred result: it costs a full compositing pass and looks like frosted mud.
+   Inner panes keep the rim and fill but drop the filter. */
+.px-glass .px-glass,
+.px-panel .px-glass,
+.px-modal__card .px-glass,
+.px-result .px-glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background-color: rgba(255,255,255,.05);
+}
+
+/* ------------------------------------------------------- 4. specular rim
+   53-px-glass.css already paints --px-grad-edge on ::after at z-index -1.
+   Add the directional rim on ::before so a pane reads as lit from one side
+   rather than uniformly fogged. Elements that already use ::before for their
+   own decoration are excluded by the :not() list. */
+.px-glass:not(.px-omni):not(.px-wordmark):not(.px-cube)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--px-rim);
+  opacity: .55;
+  pointer-events: none;
+  z-index: 0;
+}
+.px-glass:not(.px-omni):not(.px-wordmark):not(.px-cube) > * { position: relative; z-index: 1; }
+
+/* --------------------------------------------------- 5. interaction/focus */
+
+.px-result,
+.px-tile,
+.px-card,
+.px-chip,
+.px-tabitem,
+.px-iconbtn {
+  transition:
+    transform var(--px-fast) var(--px-ease-out),
+    box-shadow var(--px-med) var(--px-ease-out),
+    border-color var(--px-fast) var(--px-ease-out),
+    background-color var(--px-fast) var(--px-ease-out);
+}
+
+.px-tile:hover,
+.px-card:hover,
+.px-chip:hover {
+  border-color: var(--px-line-hi);
+  box-shadow: var(--px-elev-3-shadow), var(--px-thickness);
+  transform: translateY(-2px);
+}
+.px-tile:active,
+.px-card:active,
+.px-chip:active { transform: translateY(0) scale(.99); }
+
+/* Keyboard focus must be visible on every interactive glass element. The page
+   previously relied on browser defaults, which are near-invisible on a
+   near-black translucent background. */
+.px-root :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--px-focus-ring);
+  border-radius: var(--px-r-sm);
+}
+.px-tabitem:focus-visible { border-radius: var(--px-r-pill); }
+.px-omni__input:focus-visible { box-shadow: none; }   /* the pill already signals focus */
+
+/* ---------------------------------------------------- 6. reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .px-tile:hover, .px-card:hover, .px-chip:hover,
+  .px-tile:active, .px-card:active, .px-chip:active { transform: none; }
+  .px-result, .px-tile, .px-card, .px-chip, .px-tabitem, .px-iconbtn { transition: none; }
+}
+
+/* ------------------------------------------- 7. reduced transparency
+   For users who find translucent surfaces hard to read. Swap every glass pane
+   to an opaque graphite fill and drop the blur entirely, keeping the rim and
+   borders so the hierarchy still reads. */
+@media (prefers-reduced-transparency: reduce) {
+  .px-glass,
+  .px-glass--solid,
+  .px-glass--strong,
+  .px-panel,
+  .px-modal__card,
+  .px-suggest,
+  .px-answer,
+  .px-result,
+  .px-chip,
+  .px-tabitem {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: #14141a !important;
+  }
+  .px-root::after { display: none; }   /* grain is pointless on an opaque fill */
+}
+
+/* ------------------------------------------------ 8. no-backdrop-filter
+   Extends the fallback in 53-px-glass.css to the new tiers and to grain. */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .px-glass,
+  .px-glass--elev1,
+  .px-glass--elev3,
+  .px-panel,
+  .px-modal__card,
+  .px-suggest,
+  .px-answer { background-color: rgba(14,14,18,.94); }
+}
+
+/* --------------------------------------------------- 9. low-power devices
+   backdrop-filter is the most expensive effect on this page. On coarse
+   pointers (phones/tablets) reduce the blur radius — the visual difference is
+   small at arm's length and the compositing cost is not. */
+@media (pointer: coarse) {
+  .px-root {
+    --px-elev-1-blur: 12px;
+    --px-elev-2-blur: 16px;
+    --px-elev-3-blur: 20px;
+  }
+  .px-root::after { opacity: .028; }
+}
