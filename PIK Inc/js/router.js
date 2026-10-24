@@ -1,16 +1,21 @@
 /* ============================================================================
    PIK//NEXUS — router.js
-   Chat transport with a full no-key fallback chain:
+   Chat transport with a full no-key fallback chain (verified 2026-10-25):
      1. OpenRouter (user key) while the rolling free-budget window has room
      2. any 429 / rate-limit / quota error from OpenRouter => permanent switch
         for this session ("free tier over") — we never hammer it again
      3. text.pollinations.ai  (keyless, free)          -> engine "pollinations"
-     4. universal.pollinations.ai (keyless mirror)     -> engine "polli-alt"
+     4. Puter.js              (keyless, free)          -> engine "puter"
      5. text.pollinations.ai GET endpoint (keyless)    -> engine "polli-get"
-     6. DeepInfra public inference API (keyless)       -> engine "deepinfra-free"
-   NOTE: the old "cohere-free" hop was REMOVED — api.cohere.com requires an
-   API key for every model and always answered HTTP 401 from the browser.
-   DeepInfra's public endpoint needs no key and supports streaming + CORS.
+     6. DeepInfra (ONLY when the visitor saved a key)  -> engine "deepinfra-free"
+   NOTE: "polli-alt" (universal.pollinations.ai) is no longer a hop — that host
+   does not resolve and was removed from POLLINATIONS_CHAIN; the doc line above
+   used to still advertise it. "cohere-free" was likewise removed: api.cohere.com
+   requires an API key for every model and always answered HTTP 401 from the
+   browser. DeepInfra is key-gated for the same reason — an unauthenticated POST
+   to it answers 401 "missing API key", so it is skipped unless LS.KEY_DI is set.
+   In practice, for a visitor with no keys at all, the working engines are
+   pollinations -> puter -> polli-get.
    Every keyless engine is tried in order until one answers; the first token
    of reasoning streams straight into the live THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
@@ -24,7 +29,7 @@
   var Router = {
     /* usage ledger: timestamps of OR requests inside rolling window */
     _usage: [],
-    engine: "openrouter",   // openrouter | pollinations | polli-alt | polli-get | deepinfra-free
+    engine: "openrouter",   // openrouter | pollinations | puter | polli-get | deepinfra-free | local-micro
     onEngineChange: null,   // callback(engine, reason)
     _orBurned: false,       // set once OpenRouter reports quota exhausted
     _blacklist: {},         // engines that returned 401/403/404 this session (key-gated or dead)
@@ -413,9 +418,22 @@
       return { text: text, reasoning: "", engine: "polli-get", model: model, digest: meta.digest, usedFallback: true };
     },
 
-    /* ---------- DeepInfra public inference API (no key needed) -------------
-       Keyless OpenAI-compatible endpoint with SSE streaming support. */
+    /* ---------- DeepInfra inference API (REQUIRES a key) -------------------
+       OpenAI-compatible endpoint with SSE streaming support.
+
+       CORRECTED: this is not a keyless hop. An unauthenticated POST answers
+       HTTP 401 "missing API key", so the old code guaranteed a failed request
+       at the tail of every fallback chain. The caller now skips this engine
+       entirely unless the visitor stored a key in Settings (LS.KEY_DI); when
+       one is present it is sent as a Bearer token. */
     async _viaDeepInfra(opts, settings) {
+      var diKey = "";
+      try { diKey = PIKCrypto.peekSecret(CFG.LS.KEY_DI) || ""; } catch (e) {}
+      if (!diKey) {
+        var eSkip = new Error("deepinfra skipped — no API key configured");
+        eSkip.status = 401;
+        throw eSkip;
+      }
       var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         if (typeof m.content === "string") return m;
@@ -432,7 +450,11 @@
       var meta = await this.digest(body);
       var res = await fetch(CFG.DEEPINFRA_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream, application/json",
+          "Authorization": "Bearer " + diKey
+        },
         body: JSON.stringify(body),
         signal: opts.signal
       });
