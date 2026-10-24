@@ -125,6 +125,17 @@
   };
 
   var wireReveal = function () {
+    var targets = $(".px-reveal");
+    /* IntersectionObserver is absent from older browsers and from some embedded
+       WebViews. Constructing it unguarded threw here and aborted the whole of
+       boot(), which meant the omnibox, tabs, panels and modal all silently
+       stopped working. When it is unavailable we mark every reveal target as
+       visible instead — .px-reveal starts hidden and only becomes visible via
+       .is-in, so skipping this would leave whole sections of the page blank. */
+    if (typeof IntersectionObserver !== "function") {
+      targets.forEach(function (el) { el.classList.add("is-in"); });
+      return;
+    }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) {
@@ -133,7 +144,7 @@
         }
       });
     }, { threshold: 0.18 });
-    $$(".px-reveal").forEach(function (el) { io.observe(el); });
+    targets.forEach(function (el) { io.observe(el); });
   };
 
   var wireSpotlight = function () {
@@ -340,13 +351,36 @@
         toast("Clearnet request dispatched via guard " + ghostIp());
         vaultPush("Clearnet fetch routed through three hops", true);
       }
-      setTimeout(function () {
-        if (/^https?:\/\//i.test(v) || /\.(com|org|net|io|onion)(\/|$)/i.test(v)) {
-          window.open((/^https?:/i.test(v) ? "" : (isOnion ? "http://" : "https://")) + v, "_blank", "noopener,noreferrer");
-        } else {
+      /* Previously this called window.open("https://duckduckgo.com/?q=…") and
+         sent the user to another site. Queries now stay in PIKX and are
+         rendered into the results tab by js/px-results.js.
+
+         A typed ADDRESS is still opened externally — that is normal browser
+         behaviour and is not what the redirect complaint was about. Address
+         detection now goes through PIKSearch.isUrl, which understands any TLD;
+         the old inline regex only matched .com/.org/.net/.io/.onion, so
+         "example.dev" or "example.co.uk" was mis-handled as a search query. */
+      var R = window.PIKResults;
+      var treatAsUrl = R ? R.isUrl(v) : (/^https?:\/\//i.test(v) || /\.(com|org|net|io|onion)(\/|$)/i.test(v));
+
+      if (treatAsUrl) {
+        var dest = R ? R.toUrl(v) : ((/^https?:/i.test(v) ? "" : (isOnion ? "http://" : "https://")) + v);
+        setTimeout(function () {
+          window.open(dest, "_blank", "noopener,noreferrer");
+        }, 700);
+      } else if (R && typeof R.run === "function") {
+        /* the circuit toast above is cosmetic; run the search immediately so the
+           skeleton appears without waiting on the animation */
+        R.run(v);
+        vaultPush("Search “" + v.slice(0, 40) + "” rendered in the results tab", true);
+      } else {
+        /* PIKResults failed to load — degrade to the old behaviour rather than
+           leaving the form silently dead. */
+        toast("Results module unavailable · opening DuckDuckGo instead");
+        setTimeout(function () {
           window.open("https://duckduckgo.com/?q=" + encodeURIComponent(v) + "&ia=anonymous", "_blank", "noopener,noreferrer");
-        }
-      }, 700);
+        }, 700);
+      }
     });
     var modeBtn = $("#pxModeToggle");
     modeBtn.addEventListener("click", function () {
@@ -473,23 +507,41 @@
   };
 
   var boot = function () {
-    antiBlueGuard();
-    buildParticles();
-    buildIpStream();
-    buildTicker();
-    wireReveal();
-    wireSpotlight();
-    wireTilt();
-    wirePanels();
-    wireModal();
-    wireToggles();
-    wireSliders();
-    wireNexus();
-    wireOmnibox();
-    wireChipsTiles();
-    wireKeys();
-    ambientRotation();
-    setTimeout(countUp, 500);
+    /* Each stage is isolated. Previously these were a bare sequence of calls,
+       so a single throw in an early cosmetic step (a missing DOM node, an
+       unsupported API) aborted everything after it — including wireOmnibox(),
+       which left the search bar completely dead with no visible error. Now a
+       failure is logged and boot continues. Order still matters: the results
+       tab must exist before the omnibox can submit into it. */
+    var step = function (name, fn) {
+      try { fn(); }
+      catch (e) {
+        if (window.console && console.error) console.error("[PIKX] " + name + " failed:", e);
+      }
+    };
+
+    step("antiBlueGuard", antiBlueGuard);
+    step("buildParticles", buildParticles);
+    step("buildIpStream", buildIpStream);
+    step("buildTicker", buildTicker);
+    step("wireReveal", wireReveal);
+    step("wireSpotlight", wireSpotlight);
+    step("wireTilt", wireTilt);
+    step("wirePanels", wirePanels);
+    step("wireModal", wireModal);
+    step("wireToggles", wireToggles);
+    step("wireSliders", wireSliders);
+    step("wireNexus", wireNexus);
+    step("results-tab", function () {
+      if (window.PIKResults && window.PIKResults.init) window.PIKResults.init();
+      else if (window.console && console.warn) console.warn("[PIKX] js/px-results.js did not load — searches will fall back to opening DuckDuckGo");
+    });
+    step("wireOmnibox", wireOmnibox);
+    step("wireChipsTiles", wireChipsTiles);
+    step("wireKeys", wireKeys);
+    step("ambientRotation", ambientRotation);
+
+    setTimeout(function () { step("countUp", countUp); }, 500);
     setTimeout(function () { toast("Zero-knowledge session established · nothing will be logged"); }, 900);
   };
 

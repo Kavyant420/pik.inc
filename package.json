@@ -1,0 +1,15 @@
+{
+  "name": "pik-inc-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test harness for pik.inc. Lives at the repository root, which is OUTSIDE the Vercel root directory (PIK Inc/), so nothing here is deployed and this file does not affect the build.",
+  "scripts": {
+    "test": "node tests/search.test.js && node tests/px-search.test.js && node tests/results.integration.test.js",
+    "test:api": "node tests/search.test.js",
+    "test:search": "node tests/px-search.test.js",
+    "test:ui": "node tests/results.integration.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}
