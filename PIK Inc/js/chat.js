@@ -390,67 +390,113 @@
 
         this.history.push({ role: "assistant", content: res.text || "" });
 
-        /* ---------- reactive web research (agent tool call) --------------
-           If the model emitted WEBGET[...] calls inside its answer, NEXUS
-           surfs them right now — with the same shining overlay UX as
-           "Thinking…" — then auto-continues so the follow-up answer is
-           grounded in the freshly fetched pages. */
-        if (global.PIKSurfer && !this._surfGuard) {
-          var calledUrls = PIKSurfer.extractUrls(res.rawText || "");
-          if (calledUrls.length) {
-            this._surfGuard = true; // one research hop per user turn — no loops
-            bodyEl.innerHTML = surfMarkup();
-            bodyEl.classList.add("is-generating");
-            node.genShown = true;
-            var rUrlEl = bodyEl.querySelector(".nx-surf__url");
-            var sres = await PIKSurfer.surf(calledUrls, (this.controller = new AbortController()).signal, function (st) {
-              if (rUrlEl && st.url) {
-                try { rUrlEl.textContent = "reading " + new URL(st.url).host + " (" + (st.index + 1) + "/" + st.total + ")"; } catch (e) {}
-              }
-            });
-            bodyEl.classList.remove("is-generating");
-            this._addResearchMsg(sres);
-            this.history.push({ role: "user", content: PIKSurfer.toContext(sres) });
-            bodyEl.innerHTML = genMarkup(genLogo);
-            bodyEl.classList.add("is-generating");
-            node.genShown = true;
-            var sr2 = null;
-            try { sr2 = PIKStream.create(bodyEl); } catch (e) { sr2 = null; }
-            var res2 = await PIKRouter.chat({
-              model: this.modelId(),
-              messages: this.history.slice(-24),
-              thinking: this.lastEffort,
-              signal: (this.controller = new AbortController()).signal,
-              onDelta: function (d, isReasoning) {
-                if (isReasoning) {
-                  thinkWrap.hidden = false;
-                  thinkBody.textContent += d;
-                  node.think.classList.add("is-shining", "is-closed");
-                  node.thinkLabel.textContent = "Thinking\u2026";
-                } else {
-                  if (node.genShown) { node.genShown = false; bodyEl.classList.remove("is-generating"); bodyEl.innerHTML = ""; }
-                  if (!bodyEl.classList.contains("md")) bodyEl.classList.add("md");
-                  if (sr2) { sr2.push(d); } else { bodyEl.textContent += d; }
+        /* ---------- agentic tool loop ------------------------------------
+           Replaces the single hardcoded research hop that was guarded by
+           `_surfGuard` with the comment "one research hop per user turn - no
+           loops". That is not an agent: it could fetch a page once and never
+           act on what it found.
+
+           The model may now iterate - WEBSEARCH for candidates, WEBGET the
+           promising one, WEBSEARCH again to fill a gap, then answer. Parsing
+           and execution live in js/agent-tools.js so they are unit-testable;
+           this block only drives the loop and the existing render/UX.
+
+           Bounded by PIKAgentTools.MAX_STEPS. Each step is a full model round
+           trip on a rate-limited free tier, so an unbounded loop would burn
+           the quota and then fail mid-answer. */
+        if (global.PIKAgentTools && !this._surfGuard) {
+          this._surfGuard = true;
+          try {
+            var AT = PIKAgentTools;
+            /* The router now surfaces native OpenAI tool_calls (streamed
+               fragments reassembled in _consumeSSE) alongside the raw text, so
+               a call is picked up whichever way the model chose to emit it.
+               res.rawText is the untouched stream, so text-form tokens survive
+               here even after scrubCalls cleaned the displayed copy. */
+            var lastRes = res;
+            var toolTotal = 0;
+            var doneCalls = Object.create(null);   /* never repeat a call this turn */
+
+            for (var step = 0; step < AT.MAX_STEPS; step++) {
+              var calls = AT.callsFrom(lastRes).filter(function (c) {
+                var key = c.tool + "\u0000" + c.arg.toLowerCase();
+                if (doneCalls[key]) return false;
+                doneCalls[key] = true;
+                return true;
+              });
+              if (!calls.length) break;   /* model answered without asking for tools */
+              toolTotal += calls.length;
+
+              /* --- execute this step's tool calls --- */
+              bodyEl.innerHTML = surfMarkup();
+              bodyEl.classList.add("is-generating");
+              node.genShown = true;
+              var stepUrlEl = bodyEl.querySelector(".nx-surf__url");
+              var stepRes = await AT.executeAll(
+                calls,
+                (this.controller = new AbortController()).signal,
+                function (st) { if (stepUrlEl) stepUrlEl.textContent = AT.statusLabel(st); }
+              );
+              bodyEl.classList.remove("is-generating");
+
+              this._addResearchMsg(stepRes);
+              this.history.push({ role: "user", content: AT.toContext(stepRes) });
+
+              /* --- let the model reason over the results --- */
+              bodyEl.innerHTML = genMarkup(genLogo);
+              bodyEl.classList.add("is-generating");
+              node.genShown = true;
+              var srN = null;
+              if (global.PIKStream) { try { srN = PIKStream.create(bodyEl); } catch (e) { srN = null; } }
+
+              var resN = await PIKRouter.chat({
+                model: this.modelId(),
+                messages: this.history.slice(-24),
+                thinking: this.lastEffort,
+                signal: (this.controller = new AbortController()).signal,
+                onDelta: function (d, isReasoning) {
+                  if (isReasoning) {
+                    thinkWrap.hidden = false;
+                    thinkBody.textContent += d;
+                    node.think.classList.add("is-shining", "is-closed");
+                    node.thinkLabel.textContent = "Thinking\u2026";
+                  } else {
+                    if (node.genShown) { node.genShown = false; bodyEl.classList.remove("is-generating"); bodyEl.innerHTML = ""; }
+                    if (!bodyEl.classList.contains("md")) bodyEl.classList.add("md");
+                    if (srN) { srN.push(d); } else { bodyEl.textContent += d; }
+                  }
                 }
+              });
+
+              bodyEl.classList.add("md");
+              if (srN) srN.finish();
+
+              /* resN is raw model output and may request FURTHER tools, either
+                 natively or as text tokens - keep the whole response for the
+                 next iteration, display the scrubbed version. */
+              lastRes = resN;
+              var finalTxt = AT.scrubCalls(resN.text || "");
+              bodyEl.innerHTML = mdLite(finalTxt || "(empty response)");
+              if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
+              if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
+              scrubEmoji(bodyEl);
+              this.history.push({ role: "assistant", content: finalTxt });
+
+              var wroteN = PIKWorkspace.ingestAgentText(finalTxt);
+              if (wroteN.length) {
+                document.dispatchEvent(new CustomEvent("pik:agentfiles", { detail: wroteN.map(function (w) { return w.path; }) }));
               }
-            });
-            bodyEl.classList.add("md");
-            if (sr2) sr2.finish();
-            var finalTxt = PIKSurfer.scrubCalls(res2.text || "");
-            bodyEl.innerHTML = mdLite(finalTxt || "(empty response)"); // re-render clean
-            if (global.PIKMD && PIKMD.wire) PIKMD.wire(bodyEl);
-            if (global.PIKCodeEnhance) PIKCodeEnhance.enhance(bodyEl);
-            scrubEmoji(bodyEl);
-            this.history.push({ role: "assistant", content: finalTxt });
-            var wrote2 = PIKWorkspace.ingestAgentText(finalTxt);
-            if (wrote2.length) {
-              document.dispatchEvent(new CustomEvent("pik:agentfiles", { detail: wrote2.map(function (w) { return w.path; }) }));
+              if (resN.digest) {
+                node.digest.innerHTML = "<b>sha256</b> " + esc(String(resN.digest).slice(0, 20)) +
+                  " <b>engine</b> " + esc(resN.engine) + " <b>model</b> " + esc(String(resN.model || "")) +
+                  " <b>tools</b> " + toolTotal + " call(s) over " + (step + 1) + " step(s)";
+              }
             }
-            if (res2.digest) node.digest.innerHTML = "<b>sha256</b> " + esc(String(res2.digest).slice(0, 20)) +
-              " <b>engine</b> " + esc(res2.engine) + " <b>model</b> " + esc(String(res2.model || "")) +
-              " <b>web</b> " + calledUrls.length + " page(s) surfaced";
+          } finally {
+            /* always release, including on abort or transport error, otherwise
+               every later turn in the session silently loses its tools */
+            this._surfGuard = false;
           }
-          this._surfGuard = false;
         }
       } catch (e) {
         this._surfGuard = false;
@@ -516,23 +562,37 @@
       try {
         if (!this.els || !this.els.thread || !Array.isArray(results) || !results.length) return;
         var esc = function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
+        /* Accepts both shapes produced by the tool layer:
+             {url, ok, text, error, relay}  from PIKSurfer.surf (user-prompt WEBGETs)
+             {tool, arg, ok, text, error, meta} from PIKAgentTools.executeAll
+           The verb and the label adapt so a WEBSEARCH is not described as a
+           page that was "surfed". */
+        var searches = 0;
         var lines = results.map(function (r) {
-          var host = "web";
-          try { host = new URL(r.url).host; } catch (e) {}
+          var target = r.url || r.arg || "";
+          var isSearch = r.tool === "websearch";
+          if (isSearch) searches++;
+          var label = target;
+          if (!isSearch) { try { label = new URL(target).host; } catch (e) {} }
+          label = String(label).slice(0, 70);
           if (r.ok) {
-            var chars = String((r.text || "").length);
-            return '<li><span class="nx-research__ok">✓</span> <code>' + esc(host) + '</code> <span class="meta">' + esc(chars) + ' chars via ' + esc(r.relay || "relay") + '</span></li>';
+            var detail = isSearch
+              ? (r.meta || "results")
+              : (String((r.text || "").length) + " chars via " + (r.relay || r.meta || "relay"));
+            return '<li><span class="nx-research__ok">&#10003;</span> <code>' + esc(isSearch ? '"' + label + '"' : label) + '</code> <span class="meta">' + esc(detail) + '</span></li>';
           }
-          return '<li><span class="nx-research__fail">✕</span> <code>' + esc(host) + '</code> <span class="meta">' + esc(String(r.error || "unreachable")) + '</span></li>';
+          return '<li><span class="nx-research__fail">&#10007;</span> <code>' + esc(isSearch ? '"' + label + '"' : label) + '</code> <span class="meta">' + esc(String(r.error || "unreachable")) + '</span></li>';
         }).join("");
+        var noun = searches === results.length ? "search(es)" : (searches ? "tool call(s)" : "page(s)");
+        var verb = searches === results.length ? "Ran " : (searches ? "Executed " : "Surfed ");
         var div = document.createElement("div");
         div.className = "nx-msg nx-msg--ai nx-msg--research";
         div.innerHTML =
-          '<div class="nx-msg__avatar">◉</div>' +
+          '<div class="nx-msg__avatar">&#9673;</div>' +
           '<div class="nx-msg__body">' +
             '<div class="nx-msg__head"><span class="nx-msg__who">Nexus Surfer</span>' +
             '<span class="nx-msg__tag">live web</span></div>' +
-            '<div class="nx-msg__text"><strong>Surfed ' + results.length + ' page(s) — injected as live context:</strong>' +
+            '<div class="nx-msg__text"><strong>' + verb + results.length + ' ' + noun + ' — injected as live context:</strong>' +
             '<ul class="nx-research__list">' + lines + '</ul></div>' +
           '</div>';
         this.els.thread.appendChild(div);

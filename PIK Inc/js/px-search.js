@@ -116,7 +116,8 @@
 
   function viaProxy(query, n, signal) {
     if (!isSecureContext()) {
-      return Promise.reject(new Error("proxy unavailable on " + (global.location.protocol || "unknown") + " origin"));
+      var proto = (global.location && global.location.protocol) || "unknown";
+      return Promise.reject(new Error("proxy unavailable on a " + proto + " origin"));
     }
     var url = CFG.SELF_PROXY + "?q=" + encodeURIComponent(query) + "&n=" + encodeURIComponent(n);
     return fetch(url, { signal: signal, headers: { "Accept": "application/json" } })
