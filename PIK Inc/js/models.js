@@ -30,6 +30,25 @@
           .map(function (m) { return Models._normalize(m); })
           .sort(function (a, b) { return b.ctx - a.ctx; });
         this.all = free;
+        /* PIN THE DEFAULT: Qwen 3.8 27B (qwen/qwen3.8-27b) is NEXUS's default
+           flagship and must always be selectable, even when the live :free
+           catalog filter drops it. Synthesize its record from the verified
+           endpoint probe (1M ctx, reasoning xhigh/medium/low/none) and keep
+           it first in the list so suggest() never misses. */
+        var qid = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
+        var hasQ = free.some(function (m) { return m.id === qid; });
+        if (!hasQ) {
+          free.unshift({
+            id: qid, name: "Qwen: Qwen3.8 27B", provider: "qwen",
+            ctx: CFG.QWEN_CTX || 1000000, maxOut: 262144,
+            modality: "text->text", vision: false, video: false, audio: false,
+            reasoning: true, efforts: ["xhigh", "medium", "low", "none"],
+            defaultEffort: "xhigh", mandatoryReasoning: false, tools: true,
+            desc: "NEXUS default flagship. Runs FREE with no API key through the keyless gateway chain: Puter.js -> OpenRouter app route -> Glider -> Jaiowr.",
+            logo: Models.logoUrl("qwen"),
+            suggested: true
+          });
+        }
         this.byId = {};
         var _s = this;
         free.forEach(function (m) { _s.byId[m.id] = m; });
@@ -106,7 +125,8 @@
     },
 
     suggest() {
-      return this.byId[CFG.SUGGESTED_MODEL] || this.all[0] || null;
+      /* Qwen 3.8 27B is the hard default; only fall back if it vanished */
+      return this.byId[CFG.QWEN_MODEL] || this.byId[CFG.SUGGESTED_MODEL] || this.all[0] || null;
     },
 
     search(q) {
@@ -128,6 +148,7 @@
     /* ---------- offline snapshot (live data captured Oct 2026, ctx desc) ---------- */
     _offline() {
       var raw = [
+        ["qwen/qwen3.8-27b", "Qwen: Qwen3.8 27B", 1000000, "text->text", ["xhigh", "medium", "low", "none"]],
         ["thinkingmachines/inkling:free","Thinking Machines: Inkling (free)",1048576,"text+image+audio->text",["max","xhigh","high","medium","low","minimal"]],
         ["thinkingmachines/inkling-small:free","Thinking Machines: Inkling Small (free)",1048576,"text+image+audio->text",["max","high","medium","low"]],
         ["minimax/minimax-m3.1-flash:free","MiniMax: MiniMax M3.1 Flash (free)",1000000,"text+image+video->text",["max","xhigh","high","medium","low"]],
@@ -155,7 +176,7 @@
           mandatoryReasoning: false, tools: true,
           desc: "Offline snapshot of the free catalog (context-ordered).",
           logo: Models.logoUrl(provider),
-          suggested: r[0] === CFG.SUGGESTED_MODEL
+          suggested: r[0] === (CFG.QWEN_MODEL || CFG.SUGGESTED_MODEL)
         };
       });
     }
