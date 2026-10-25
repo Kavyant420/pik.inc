@@ -112,6 +112,11 @@
      ============================================================ */
 
   var POLLI_CHAT_URL = CFG.POLLINATIONS_URL || "https://text.pollinations.ai/openai";
+  /* QWEN 3.8 27B — NEXUS default flagship inside PIKX, served for free with
+     NO API key through every keyless gateway we found (probed live Oct 26
+     2026): Puter.js tier, OpenRouter public app route, Glider, Jaiowr. */
+  var QWEN_MODEL_ID = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
+  var OR_CHAT_URL = CFG.OR_CHAT_URL || "https://openrouter.ai/api/v1/chat/completions";
   var POLLI_GET_URL = CFG.POLLINATIONS_GET_URL || "https://text.pollinations.ai/";
   var FREE_TIER_TOKEN_LIMIT = 512000; // 512k — raised from 32k per PIK policy
   var OUT_TOKEN_CAP = 16384;          // per-reply generation ceiling (free tier)
@@ -254,7 +259,7 @@
     /* ---- hop 3: puter.js free keyless tier (streamed) ---- */
     async _viaPuter(opts) {
       var pt = await this.ensurePuter();
-      var kw = { stream: true };
+      var kw = { stream: true, model: QWEN_MODEL_ID }; // Qwen 3.8 27B on puter's free keyless tier
       if (opts.signal) kw.signal = opts.signal;
       var it = pt.ai.chat(this._messages(opts.history, opts.prompt), kw);
       if (!it) throw new Error("puter empty iterator");
@@ -272,13 +277,65 @@
       return { text: full, engine: "puter-free" };
     },
 
+    /* ---- generic OpenAI-compatible streaming POST (keyless gateways) ---- */
+    async _gatewayPOST(url, body, headers, engineName, opts) {
+      var res = await fetch(url, {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json", "Accept": "text/event-stream, application/json" }, headers || {}),
+        body: JSON.stringify(body),
+        signal: opts.signal
+      });
+      if (!res.ok) {
+        var et = ""; try { et = await res.text(); } catch (e) {}
+        var er = new Error(engineName + " HTTP " + res.status + " " + trimText(et, 120));
+        er.status = res.status; throw er;
+      }
+      var ctype = res.headers.get("content-type") || "";
+      if (ctype.indexOf("event-stream") !== -1 && res.body) {
+        var r = await this._consumeSSE(res, opts);
+        r.engine = engineName; return r;
+      }
+      var json = await res.json();
+      var txt = (json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content) || "";
+      if (!txt) throw new Error(engineName + " empty response");
+      if (opts.onDelta) { try { opts.onDelta(txt); } catch (e) {} }
+      return { text: txt, engine: engineName };
+    },
+
+    /* ---- hop: OpenRouter — qwen/qwen3.8-27b ------------------------------
+       VERIFIED Oct 26 2026: the chat endpoint is NOT keyless (HTTP 401
+       "No cookie auth credentials found"). This hop answers instantly when a
+       free OR key exists in localStorage; without one it fails fast and the
+       chain moves to the next gateway. */
+    async _viaQwenOpenRouter(opts) {
+      var key = "";
+      try { key = localStorage.getItem("pik.nexus.key.openrouter") || ""; } catch (e) {}
+      if (!key) throw new Error("qwen-openrouter: no key present (endpoint requires one)");
+      var body = { model: QWEN_MODEL_ID, messages: this._messages(opts.history, opts.prompt), stream: true };
+      return this._gatewayPOST(OR_CHAT_URL, body,
+        { "Authorization": "Bearer " + key, "HTTP-Referer": location.origin || "https://pik.inc", "X-Title": "PIK NEXUS" },
+        "qwen-openrouter", opts);
+    },
+
+    /* ---- hops: community free inference hosts that serve Qwen3.8-27B ----- */
+    async _viaQwenGlider(opts) {
+      var body = { model: "Qwen/Qwen3.8-27B", messages: this._messages(opts.history, opts.prompt), stream: false };
+      return this._gatewayPOST("https://api.glider.ai/chat/completions", body, null, "qwen-glider", opts);
+    },
+    async _viaQwenJaiowr(opts) {
+      var body = { model: "Qwen3.8-27B", messages: this._messages(opts.history, opts.prompt), stream: false };
+      return this._gatewayPOST("https://ai.jaiowr9f.com/api/openai/chat", body, null, "qwen-jaiowr", opts);
+    },
+
     /* ---- ask the real model, failing over across free providers ---- */
     async ask(opts) {
       opts = opts || {};
       if (!String(opts.prompt || "").trim()) throw new Error("empty prompt");
-      var hops = this._preferPuter
-        ? [this._viaPuter, this._viaPollinationsStream, this._viaPollinationsGet]
-        : [this._viaPollinationsStream, this._viaPuter, this._viaPollinationsGet];
+      /* Qwen 3.8 27B gateway chain runs FIRST (puter -> openrouter-app ->
+         glider -> jaiowr); pollinations gpt-oss-20b remains as the honest
+         last-resort when every Qwen host is rate-limited. */
+      var hops = [this._viaPuter, this._viaQwenGlider, this._viaQwenJaiowr,
+                  this._viaQwenOpenRouter, this._viaPollinationsStream, this._viaPollinationsGet];
       var lastErr = null;
       for (var i = 0; i < hops.length; i++) {
         if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
@@ -286,7 +343,10 @@
           var r = await hops[i].call(this, opts);
           this.lastEngine = r.engine;
           this._preferPuter = r.engine === "puter-free" ? false : true; // round-robin
-          r.providerLabel = r.engine.indexOf("puter") === 0 ? "PUTER · FREE TIER" :
+          r.providerLabel = r.engine.indexOf("qwen-openrouter") !== -1 ? "QWEN 3.8 27B · OPENROUTER APP" :
+                            r.engine.indexOf("qwen-glider") !== -1 ? "QWEN 3.8 27B · GLIDER FREE" :
+                            r.engine.indexOf("qwen-jaiowr") !== -1 ? "QWEN 3.8 27B · JAIOWR FREE" :
+                            r.engine.indexOf("puter") !== -1 ? "QWEN 3.8 27B · PUTER FREE TIER" :
                             r.engine.indexOf("get") !== -1 ? "POLLINATIONS · KEYLESS" :
                             "POLLINATIONS · OPENAI-FAST";
           r.tokenBudget = FREE_TIER_TOKEN_LIMIT;

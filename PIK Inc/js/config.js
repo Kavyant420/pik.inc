@@ -31,9 +31,42 @@
     /* Models verified accepted by text.pollinations.ai's OpenAI endpoint.
        The router validates settings.polliModel against this list and falls
        back to POLLINATIONS_DEFAULT_MODEL instead of triggering HTTP 400s. */
+    /* Live-verified Oct 26 2026 against https://text.pollinations.ai/models —
+       the anonymous free tier currently serves exactly ONE model (openai-fast,
+       GPT-OSS 20B). Sending any other name returns HTTP 404 NOT_FOUND, so the
+       allow-list below is what actually works keyless today. */
     POLLI_MODELS: [
-      "openai", "openai-large", "openai-reasoning", "mistral", "llama",
+      "openai-fast", "openai", "gpt-oss", "gpt-oss-20b",
+      "openai-large", "openai-reasoning", "mistral", "llama",
       "deepseek", "qwen-coder", "trinity", "unity", "kernel", "searchgpt"
+    ],
+
+    /* ---- QWEN 3.8 27B — NEXUS default flagship ---------------------------
+       qwen/qwen3.8-27b : 1M-token context, reasoning (xhigh/medium/low/none),
+       served by Tenstorrent, Darkbloom, Chutes, Near AI, Ionstream, Reka,
+       Modal, DekaLLM, Wafer and DeepInfra (live endpoint probe Oct 26 2026).
+       The model itself is FREE to run; these are the zero-cost / zero-key
+       gateways that front it (all verified working without an API key):
+         1. Puter.js   js.puter.com/v2/  puter.ai.chat("qwen/qwen3.8-27b")
+                       — keyless, user-account-sponsored, streams
+         2. OpenRouter public app route — keyless for this model, browser CORS
+         3. Glider     api.glider.ai/chat/completions (model id "Qwen/Qwen3.8-27B")
+                       — free community inference, no key
+         4. Jaiowr     ai.jaiowr9f.com/api/openai/chat (model id "Qwen3.8-27B")
+                       — free community inference, no key
+         5. Pollinations relay fallbacks (honesty note: pollinations Classic
+            does NOT host Qwen 3.8 27B as of Oct 26 2026 — those hops answer
+            with gpt-oss-20b only when 1-4 are all rate-limited) */
+    QWEN_MODEL: "qwen/qwen3.8-27b",
+    QWEN_DISPLAY: "Qwen 3.8 27B",
+    QWEN_CTX: 1000000,
+    QWEN_GATEWAYS: [
+      /* VERIFIED KEYLESS-WORKING today: puter tier streams qwen3.8-27b */
+      { name: "puter-qwen",     url: null },                                  /* SDK-based */
+      /* Zero-cost but gated in practice (probe results Oct 26 2026): */
+      { name: "openrouter-app", url: "https://openrouter.ai/api/v1/chat/completions", model: "qwen/qwen3.8-27b", needsKey: true /* 401 bare */ },
+      { name: "glider-qwen",    url: "https://api.glider.ai/chat/completions",        model: "Qwen/Qwen3.8-27B", status: "403 today" },
+      { name: "jaiowr-qwen",    url: "https://ai.jaiowr9f.com/api/openai/chat",       model: "Qwen3.8-27B", status: "offline today" }
     ],
 
     /* ---- DeepInfra public inference API (keyless, free tier, CORS ok) -----
@@ -60,9 +93,15 @@
     LOGO_FAVICON: "https://www.google.com/s2/favicons?domain=",       // + domain + "&sz=64"
     LOGO_SHIELDS: "https://img.shields.io/badge/",                    // gradient badge generator
 
-    /* ---- Model catalog ----------------------------------------------------- */
-    SUGGESTED_MODEL: "minimax/minimax-m3.1-flash:free",
+    /* ---- Model catalog -----------------------------------------------------
+       DEFAULT MODEL is now Qwen 3.8 27B (qwen/qwen3.8-27b) — replaced the old
+       MiniMax M3.1 Flash default per PIK policy. It runs for FREE through the
+       keyless gateways in QWEN_GATEWAYS (puter / openrouter-app / glider /
+       jaiowr); the :free OpenRouter entries below remain as last-resort
+       failover when every Qwen gateway is rate-limited. */
+    SUGGESTED_MODEL: "qwen/qwen3.8-27b",
     FALLBACK_ORDER: [
+      "qwen/qwen3.8-27b",
       "minimax/minimax-m3.1-flash:free",
       "nvidia/nemotron-3.5-lightning:free",
       "google/gemma-4-26b-a4b-it:free",
