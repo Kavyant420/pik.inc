@@ -57,6 +57,7 @@
 <link rel="stylesheet" href="css/93-px-native-controls.css">
 <link rel="stylesheet" href="css/94-px-anti-blue.css">
 <link rel="stylesheet" href="css/95-px-material.css">
+<link rel="stylesheet" href="css/96-px-serp.css">
 </head>
 <body class="pikx-body">
 
@@ -109,7 +110,7 @@
     </nav>
   </header>
 
-  <main class="px-stage">
+  <main class="px-stage px-home">
     <span class="px-brandline px-hero-anim">Private · Encrypted · Untraceable</span>
     <h1 class="px-wordmark px-hero-anim px-emboss">PIK<span class="x">X</span></h1>
     <p class="px-tagline px-hero-anim px-hero-anim--2">Surf the clearnet and the hidden service layer with total anonymity. Nothing you do leaves this device. Every AI request exits through a freshly rotated ghost IP.</p>
@@ -294,6 +295,92 @@
     <hr class="px-hairline">
   </main>
 
+  <!-- ==================== IN-TAB SEARCH RESULTS (SERP) ====================
+       Rendered by js/pikx-engine.js + js/pikx.js. PIKX never redirects a
+       search to another site: results, news, images and the NEXUS AI
+       Overview are fetched live from keyless free APIs and painted here. -->
+  <div class="px-view px-view--results" id="pxResults" aria-label="Search results">
+    <div class="px-results">
+      <div class="px-results__topbar">
+        <button type="button" class="px-results__wordmark" id="pxResultsHome">PIK<span class="x">X</span></button>
+        <form class="px-results__miniomni" id="pxMiniForm" autocomplete="off">
+          <input id="pxMiniInput" type="search" placeholder="Search the web — results open right here" aria-label="Search">
+        </form>
+        <span class="px-results__stats" id="pxResultsStats"></span>
+        <button type="button" class="px-backchip" id="pxBackHome">← Ghost new tab</button>
+      </div>
+
+      <nav class="px-tabs" aria-label="Result types">
+        <button type="button" data-pxtab="all" class="is-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>All</button>
+        <button type="button" data-pxtab="images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 15l-5-5-9 8"/></svg>Images</button>
+        <button type="button" data-pxtab="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v9a2 2 0 0 1-2 2M8 9h6M8 13h6M8 17h4"/></svg>News</button>
+        <button type="button" data-pxtab="nexus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.3L20 8l-4 4.2.9 5.8L12 15.4 7.1 18l.9-5.8L4 8l5.6-.7z"/></svg>Ask NEXUS</button>
+      </nav>
+
+      <div class="px-col-main">
+        <!-- NEXUS AI Overview (deep, grounded, streamed) -->
+        <section class="px-ov px-glass" id="pxOverview" hidden>
+          <header class="px-ov__head">
+            <span class="px-ov__sigil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.3L20 8l-4 4.2.9 5.8L12 15.4 7.1 18l.9-5.8L4 8l5.6-.7z"/></svg></span>
+            <span class="px-ov__name">NEXUS AI Overview</span>
+            <span class="px-ov__engine" id="pxOvEngine"><i class="px-ov__live"></i><span id="pxOvEngineTxt">booting free engines…</span></span>
+          </header>
+          <div class="px-ov__body" id="pxOvBody"></div>
+          <footer class="px-ov__foot">
+            <span id="pxOvFootMeta">grounded on live API data · nothing logged</span>
+            <button type="button" class="px-ov__btn" id="pxOvRegen">Regenerate</button>
+            <button type="button" class="px-ov__btn" id="pxOvAsk">Continue in Ask NEXUS</button>
+          </footer>
+        </section>
+
+        <div class="px-soon" id="pxWebSoon" hidden>Organic web results</div>
+        <div id="pxTabAll">
+          <div class="px-ia" id="pxIa" hidden></div>
+          <div class="px-webres" id="pxWebList"></div>
+          <div class="px-related" id="pxRelatedMain" hidden style="margin-top:1.2rem">
+            <div class="px-related__t">People also search for</div>
+            <div class="px-related__grid" id="pxRelatedGrid"></div>
+          </div>
+        </div>
+
+        <div id="pxTabImages" hidden>
+          <div class="px-imggrid" id="pxImgGrid"></div>
+          <div class="px-empty" id="pxImgEmpty" hidden>No images could be fetched from the free endpoints for this query.</div>
+        </div>
+
+        <div id="pxTabNews" hidden>
+          <div class="px-newslist" id="pxNewsList"></div>
+          <div class="px-empty" id="pxNewsEmpty" hidden>The news vertical returned nothing for this query right now.</div>
+        </div>
+
+        <div id="pxTabNexus" hidden>
+          <div class="px-askwrap">
+            <div class="px-nexus__state" id="pxAskState" style="font-size:.72rem;color:var(--px-faint);font-family:var(--px-font-mono)">Real streaming inference · pollinations / puter free tiers · 512k token budget</div>
+            <div class="px-ask-feed" id="pxAskFeed"></div>
+            <form class="px-ask-form" id="pxAskForm" autocomplete="off">
+              <input id="pxAskInput" type="text" placeholder="Follow up with NEXUS about this topic…" aria-label="Ask NEXUS">
+              <button type="submit" class="px-btn px-btn--primary px-btn--sm">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <aside class="px-col-side">
+        <div class="px-kp" id="pxKnowledgePanel" hidden></div>
+        <div class="px-related" id="pxRelatedSide" hidden>
+          <div class="px-related__t">Related searches</div>
+          <div class="px-related__grid" id="pxRelatedSideGrid"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="px-lightbox" id="pxLightbox" role="dialog" aria-modal="true" aria-label="Image preview">
+    <button type="button" class="px-iconbtn px-lightbox__close" id="pxLbClose" aria-label="Close preview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <img id="pxLbImg" alt="">
+    <div class="px-lightbox__cap" id="pxLbCap"></div>
+  </div>
+
   <footer class="px-footer">
     <span>PIKX Build 24.10 · Void Core · Volatile Memory Only</span>
     <nav class="px-footer__links" aria-label="Footer">
@@ -447,6 +534,7 @@
   </div>
 </section>
 
+<script src="js/pikx-engine.js"></script>
 <script src="js/pikx.js"></script>
 </body>
 </html>
