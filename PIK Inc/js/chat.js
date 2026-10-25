@@ -201,6 +201,27 @@
       return this.els.modelchip.dataset.model || CFG.SUGGESTED_MODEL;
     },
 
+    /* ---------- 512k-token context window ----------
+       The free tier budget was raised from 32k to 512k tokens
+       (~2,048,000 chars at ~4 chars/token). Instead of the old hard
+       24-message cap, keep as many recent messages as fit inside a
+       generous char budget, always preserving the newest turn. */
+    contextWindow: function () {
+      var BUDGET = 512000 * 4;            // 512k tokens -> ~2M chars
+      var MAXMSG = 400;                   // sanity ceiling on message count
+      var h = this.history || [];
+      var out = [], used = 0;
+      for (var i = h.length - 1; i >= 0; i--) {
+        var m = h[i];
+        var c = typeof m.content === "string" ? m.content.length : JSON.stringify(m.content || "").length;
+        if (used + c > BUDGET && out.length) break;
+        out.push(m);
+        used += c;
+        if (out.length >= MAXMSG) break;
+      }
+      return out.reverse();
+    },
+
     /* ---------- main send loop ---------- */
     send: async function () {
       if (this.busy) return;
@@ -283,7 +304,9 @@
       try {
         var res = await PIKRouter.chat({
           model: this.modelId(),
-          messages: this.history.slice(-24),
+          /* 512k-token free tier: keep a much larger rolling window
+             (~200 msgs, token-budgeted below) instead of the old 24-msg cap */
+          messages: this.contextWindow(),
           thinking: this.lastEffort,
           signal: (this.controller = new AbortController()).signal,
           onDelta: function (d, isReasoning) {
@@ -418,7 +441,7 @@
             try { sr2 = PIKStream.create(bodyEl); } catch (e) { sr2 = null; }
             var res2 = await PIKRouter.chat({
               model: this.modelId(),
-              messages: this.history.slice(-24),
+              messages: this.contextWindow(),
               thinking: this.lastEffort,
               signal: (this.controller = new AbortController()).signal,
               onDelta: function (d, isReasoning) {
