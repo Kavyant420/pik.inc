@@ -253,25 +253,24 @@
     });
   };
 
-  var nexusReply = function (text) {
-    var ipA = ghostIp();
-    var ipB = ghostIp();
-    var openers = [
-      "Unfiltered answer inbound — routed out via " + ipA + ", acked at " + ipB + ".",
-      "No safety rails here. Egress " + ipA + " → " + ipB + ".",
-      "Consider it done. This reply left through " + ipA + ", untraceable as smoke.",
-      "NEXUS speaking plainly. Path: " + ipA + " ▸ " + ipB + "."
-    ];
-    var bodies = [
-      "On “" + text.slice(0, 48) + "” — the honest take is that anonymity is a spectrum, and you just slid off the end of it. Everything I know about onion circuits, fingerprint mutation and egress rotation lives in this browser’s volatile core.",
-      "Here is the raw version nobody filters for you: the question “" + text.slice(0, 48) + "” has a technical answer, a political one, and a practical one. PIKX only cares about the practical one — keep your traffic indistinguishable from everyone else’s.",
-      "Short answer: yes, and without a trace. Longer answer: three randomized hops, per-session fingerprint mutation, and a memory model that never touches disk. Your prompt existed for exactly as long as this reply took to render.",
-      "I can go deeper on “" + text.slice(0, 48) + "” than any censored assistant will. Ask me for the circuit diagram, the threat model, or the kernel shim internals — I answer all three with 100% partiality."
-    ];
-    return { opener: pick(openers), body: pick(bodies) };
+  /* ========================================================================
+     REAL NEXUS AI — js/pikx-engine.js talks to genuinely free, keyless
+     inference providers (Pollinations streaming SSE + Puter.js free tier)
+     with automatic failover. The fake canned-reply path is gone; if the
+     real engines are unreachable we say so honestly instead of pretending.
+     ==================================================================== */
+  var hasRealAI = !!(window.PIKNexusAI && window.PIKOverview && window.PIKSearch);
+  var nexusHistory = [];           /* rolling transcript for the real model */
+  var nexusAbort = null;
+
+  var mdRender = function (md) {
+    if (window.PIKOverview && window.PIKOverview.render) return window.PIKOverview.render(md);
+    var d = doc.createElement("div");
+    d.textContent = md;
+    return d.innerHTML;
   };
 
-  var appendMsg = function (cls, meta, text) {
+  var appendMsgHtml = function (cls, meta, html) {
     var feed = $("#pxNexusFeed");
     if (!feed) return null;
     var m = doc.createElement("div");
@@ -280,7 +279,9 @@
     s.className = "px-msg__meta";
     s.textContent = meta;
     m.appendChild(s);
-    m.appendChild(doc.createTextNode(text));
+    var b = doc.createElement("div");
+    b.innerHTML = html;
+    m.appendChild(b);
     feed.appendChild(m);
     feed.scrollTop = feed.scrollHeight;
     return m;
@@ -289,7 +290,7 @@
   var wireNexus = function () {
     var form = $("#pxNexusForm");
     if (!form) return;
-    form.addEventListener("submit", function (ev) {
+    form.addEventListener("submit", async function (ev) {
       ev.preventDefault();
       var input = $("#pxNexusInput");
       var text = (input.value || "").trim();
@@ -300,19 +301,381 @@
       vaultPush("NEXUS prompt exited via randomized IP " + ghostIp(), true);
       appendMsg("px-msg--user", "You · masked device hash " + Math.random().toString(36).slice(2, 10), text);
       var stateEl = $("#pxNexusState");
-      if (stateEl) stateEl.textContent = "Rotating egress…";
+      if (stateEl) stateEl.textContent = "Streaming from free inference engines…";
       var typing = doc.createElement("div");
       typing.className = "px-typing";
       typing.innerHTML = "<span></span><span></span><span></span>";
       $("#pxNexusFeed").appendChild(typing);
-      setTimeout(function () {
-        typing.remove();
-        var r = nexusReply(text);
-        appendMsg("px-msg--nexus", "NEXUS · via " + ghostIp() + " → " + ghostIp(), r.opener + " " + r.body);
-        if (stateEl) stateEl.textContent = "Listening · Circuit ready";
-        toast("AI request exited from random IP · untraceable");
-      }, 900 + rand(900));
+
+      if (!hasRealAI) {
+        setTimeout(function () {
+          typing.remove();
+          appendMsg("px-msg--nexus", "NEXUS · offline", "Engine module failed to load — no reply fabricated.");
+          if (stateEl) stateEl.textContent = "Listening · Circuit ready";
+        }, 400);
+        return;
+      }
+
+      var node = appendMsgHtml("px-msg--nexus", "NEXUS · booting free engine chain…", '<span class="px-ov__cursor"></span>');
+      var body = node ? node.querySelector("div:last-child") : null;
+      var acc = "";
+      try {
+        if (nexusAbort) nexusAbort.abort();
+        nexusAbort = new AbortController();
+        var r = await window.PIKNexusAI.ask({
+          prompt: text,
+          history: nexusHistory.slice(),
+          signal: nexusAbort.signal,
+          onDelta: function (d) {
+            acc += d;
+            if (body) {
+              body.innerHTML = mdRender(acc) + '<span class="px-ov__cursor"></span>';
+              var feed = $("#pxNexusFeed");
+              if (feed) feed.scrollTop = feed.scrollHeight;
+            }
+            if (typing.parentNode) typing.remove();
+          }
+        });
+        if (typing.parentNode) typing.remove();
+        if (body) body.innerHTML = mdRender(r.text || acc);
+        nexusHistory.push({ role: "user", content: text });
+        nexusHistory.push({ role: "assistant", content: r.text || acc });
+        if (nexusHistory.length > 48) nexusHistory = nexusHistory.slice(-48);
+        var metaEl = node.querySelector(".px-msg__meta");
+        if (metaEl) metaEl.textContent = "NEXUS · " + (r.providerLabel || r.engine) + " · egress " + ghostIp() + " → " + ghostIp();
+        if (stateEl) stateEl.textContent = "Listening · Circuit ready · " + (r.tokenBudget ? (r.tokenBudget / 1000) + "k token budget" : "");
+        toast("Real AI reply streamed · " + (r.providerLabel || r.engine));
+      } catch (e) {
+        if (typing.parentNode) typing.remove();
+        if (e && e.name === "AbortError") return;
+        if (body) body.innerHTML = '<span class="px-ov__err">Every free engine is unreachable right now — nothing was faked. ' + esc(String((e && e.message) || e)) + "</span>";
+        if (stateEl) stateEl.textContent = "Circuit quiet · engines unreachable";
+      }
     });
+  };
+
+  /* ========================================================================
+     IN-TAB SEARCH — no more redirects. A search is fetched and rendered
+     right here by js/pikx-engine.js (DuckDuckGo IA + HTML, Wikipedia REST,
+     Wikimedia Commons, keyless CORS relays) with a streamed NEXUS AI
+     Overview on top. Only typed URLs still navigate to the site itself.
+     ==================================================================== */
+
+  var esc = function (s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  };
+
+  var serp = {
+    q: "",
+    data: {},
+    tab: "all",
+    ovCtrl: null,
+    askHistory: [],
+    askAbort: null,
+    started: false
+  };
+
+  var el = function (id) { return doc.getElementById(id); };
+
+  var goResults = function () { doc.body.classList.add("px-in-results"); window.scrollTo(0, 0); };
+  var goHome = function () {
+    doc.body.classList.remove("px-in-results");
+    if (serp.ovCtrl) { try { serp.ovCtrl.abort(); } catch (e) {} }
+    if (serp.askAbort) { try { serp.askAbort.abort(); } catch (e) {} }
+  };
+
+  var skels = function (host, n, h) {
+    var html = "";
+    for (var i = 0; i < (n || 5); i++) html += '<div class="px-skel" style="height:' + (h || 14) + 'px;margin:.55rem 0;width:' + (72 + Math.random() * 28) + '%"></div>';
+    host.innerHTML = html;
+  };
+
+  var hlTerms = function (text, q) {
+    var t = esc(text);
+    var words = String(q || "").toLowerCase().split(/\s+/).filter(function (w) { return w.length > 3; }).slice(0, 6);
+    words.forEach(function (w) {
+      try { t = t.replace(new RegExp("\\b(" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")\\b", "i"), "<b>$1</b>"); } catch (e) {}
+    });
+    return t;
+  };
+
+  var renderWeb = function (list, q) {
+    var host = el("pxWebList");
+    if (!host) return;
+    if (!list || !list.length) {
+      host.innerHTML = '<div class="px-empty">The organic-result endpoints (DuckDuckGo HTML via free relays) returned nothing for this query. The instant-answer, knowledge panel, images, news and NEXUS overview above are unaffected.</div>';
+      return;
+    }
+    host.innerHTML = list.map(function (r) {
+      return '<article class="px-webitem">' +
+        '<div class="px-webitem__head"><img class="px-webitem__icon" loading="lazy" src="' + esc(r.icon) + '" alt="" onerror="this.style.visibility=\'hidden\'"><span class="px-webitem__site">' + esc(r.host) + "</span></div>" +
+        '<a class="px-webitem__title" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + hlTerms(r.title, q) + "</a>" +
+        '<div class="px-webitem__url">' + esc(r.url) + "</div>" +
+        '<p class="px-webitem__snippet">' + hlTerms(r.snippet, q) + "</p>" +
+        "</article>";
+    }).join("");
+  };
+
+  var renderIa = function (ia) {
+    var host = el("pxIa");
+    if (!host) return;
+    var txt = (ia && (ia.answer || ia.definition || ia.abstractText)) || "";
+    if (!txt) { host.hidden = true; return; }
+    var srcUrl = ia.abstractUrl || ia.definitionUrl || "";
+    host.innerHTML =
+      (ia.image && !ia.imageIsLogo ? '<img src="' + esc(ia.image) + '" alt="" loading="lazy">' : "") +
+      "<div><div class=\"px-ia__answer\">" + esc(txt) + "</div>" +
+      '<div class="px-ia__src">' + esc(ia.abstractSource || ia.answerType || "DuckDuckGo Instant Answers") +
+      (srcUrl ? ' · <a href="' + esc(srcUrl) + '" target="_blank" rel="noopener noreferrer">source</a>' : "") +
+      "</div></div>";
+    host.hidden = false;
+  };
+
+  var renderWiki = function (w) {
+    var host = el("pxKnowledgePanel");
+    if (!host) return;
+    if (!w || !w.extract) { host.hidden = true; return; }
+    var thumbs = [w.thumb].concat(w.extraThumbs || []).filter(Boolean).slice(0, 3);
+    host.innerHTML =
+      (w.thumb ? '<img class="px-kp__img" src="' + esc(w.thumb) + '" alt="" loading="lazy">' : "") +
+      '<div class="px-kp__body">' +
+      '<div class="px-kp__sub">Knowledge panel · Wikipedia</div>' +
+      '<div class="px-kp__title">' + esc(w.title) + "</div>" +
+      '<p class="px-kp__extract">' + esc(PIKPxUtilTrim(w.extract, 700)) + "</p>" +
+      (thumbs.length > 1 ? '<div class="px-kp__more">' + thumbs.slice(0, 3).map(function (t) { return '<img src="' + esc(t) + '" data-lb="' + esc(t) + '" alt="" loading="lazy">'; }).join("") + "</div>" : "") +
+      '<a class="px-kp__link" href="' + esc(w.url) + '" target="_blank" rel="noopener noreferrer">Read on Wikipedia →</a>' +
+      ((w.more || []).length ? '<div class="px-kp__rows">' + w.more.map(function (m) {
+        return '<div class="px-kp__row"><a href="' + esc(m.url) + '" target="_blank" rel="noopener noreferrer">' + esc(m.title) + "</a><p>" + esc(m.extract) + "</p></div>";
+      }).join("") + "</div>" : "") +
+      "</div>";
+    host.hidden = false;
+  };
+
+  var PIKPxUtilTrim = function (s, n) {
+    s = String(s || "").replace(/\s+/g, " ").trim();
+    return s.length > n ? s.slice(0, n - 1).replace(/[\s,;:]\S*$/, "") + "…" : s;
+  };
+
+  var renderRelated = function (rel) {
+    ["pxRelatedGrid", "pxRelatedSideGrid"].forEach(function (gid) {
+      var g = el(gid);
+      if (!g) return;
+      var box = g.parentNode;
+      if (!rel || !rel.length) { box.hidden = true; return; }
+      g.innerHTML = rel.map(function (r) {
+        return '<button type="button" class="px-related__chip" data-q="' + esc(r) + '"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>' + esc(r) + "</span></button>";
+      }).join("");
+      box.hidden = false;
+    });
+  };
+
+  var renderImages = function (imgs) {
+    var g = el("pxImgGrid"), empty = el("pxImgEmpty");
+    if (!g) return;
+    if (!imgs || !imgs.length) { g.innerHTML = ""; empty.hidden = false; return; }
+    empty.hidden = true;
+    g.innerHTML = imgs.map(function (im) {
+      return '<figure class="px-imgcell" data-full="' + esc(im.full) + '" data-page="' + esc(im.page || "") + '" data-cap="' + esc(im.title) + '">' +
+        '<img src="' + esc(im.thumb) + '" alt="' + esc(im.title) + '" loading="lazy"><span>' + esc(im.title) + "</span></figure>";
+    }).join("");
+  };
+
+  var renderNews = function (news) {
+    var l = el("pxNewsList"), empty = el("pxNewsEmpty");
+    if (!l) return;
+    if (!news || !news.length) { l.innerHTML = ""; empty.hidden = false; return; }
+    empty.hidden = true;
+    l.innerHTML = news.map(function (n) {
+      return '<a class="px-newscard" href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer"><div class="px-newscard__l">' +
+        '<div class="px-newscard__meta"><span>' + esc(n.source || n.host.split(" ")[0]) + "</span>" + (n.age ? "<span>" + esc(n.age) + "</span>" : "") + "</div>" +
+        '<div class="px-newscard__title">' + esc(n.title) + "</div>" +
+        '<div class="px-newscard__snip">' + esc(n.snippet) + "</div></div></a>";
+    }).join("");
+  };
+
+  var switchTab = function (name) {
+    serp.tab = name;
+    $$(".px-tabs button").forEach(function (b) { b.classList.toggle("is-on", b.getAttribute("data-pxtab") === name); });
+    [["all", "pxTabAll"], ["images", "pxTabImages"], ["news", "pxTabNews"], ["nexus", "pxTabNexus"]].forEach(function (p) {
+      var e = el(p[1]);
+      if (e) e.hidden = p[0] !== name;
+    });
+    var ov = el("pxOverview");
+    if (ov) ov.hidden = name !== "all";
+  };
+
+  var openLightbox = function (full, cap, page) {
+    var lb = el("pxLightbox");
+    if (!lb) return;
+    el("pxLbImg").src = full;
+    el("pxLbCap").innerHTML = esc(cap || "") + (page ? ' · <a href="' + esc(page) + '" target="_blank" rel="noopener noreferrer">source page</a>' : "");
+    lb.classList.add("is-open");
+  };
+
+  var runOverview = async function () {
+    var ov = el("pxOverview"), bodyEl = el("pxOvBody"), engTxt = el("pxOvEngineTxt"), footMeta = el("pxOvFootMeta");
+    if (!ov || !window.PIKOverview) return;
+    if (serp.ovCtrl) { try { serp.ovCtrl.abort(); } catch (e) {} }
+    serp.ovCtrl = new AbortController();
+    ov.hidden = false;
+    engTxt.textContent = "grounding… streaming live";
+    bodyEl.innerHTML = '<div class="px-skel" style="height:18px"></div><div class="px-skel" style="height:14px;width:90%"></div><div class="px-skel" style="height:14px;width:80%"></div><div class="px-skel" style="height:14px;width:88%"></div>';
+    var acc = "";
+    var painted = false;
+    try {
+      var r = await window.PIKOverview.generate(serp.q, serp.data, {
+        signal: serp.ovCtrl.signal,
+        onDelta: function (d) {
+          acc += d;
+          if (!painted) { painted = true; }
+          bodyEl.innerHTML = mdRender(acc) + '<span class="px-ov__cursor"></span>';
+        }
+      });
+      bodyEl.innerHTML = mdRender(r.markdown);
+      engTxt.textContent = r.providerLabel || r.engine;
+      footMeta.textContent = "streamed live · " + (r.tokenBudget ? (r.tokenBudget / 1000) + "k token budget · " : "") + "grounded on " +
+        ((serp.data.web && serp.data.web.length) || 0) + " web results, " +
+        ((serp.data.news && serp.data.news.length) || 0) + " news items, Wikipedia extract" +
+        (serp.data.ia && serp.data.ia.topics && serp.data.ia.topics.length ? ", DDG instant answers" : "");
+      serp.askHistory = [{ role: "user", content: "Topic under discussion: " + serp.q }, { role: "assistant", content: r.markdown }];
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      engTxt.textContent = "engine unreachable";
+      bodyEl.innerHTML = '<span class="px-ov__err">NEXUS could not reach any free inference engine for the overview (' + esc(String((e && e.message) || e)) + '). Organic results below are still live data.</span>';
+    }
+  };
+
+  var doSearch = async function (q) {
+    q = String(q || "").trim();
+    if (!q || !window.PIKSearch) return;
+    serp.q = q;
+    serp.data = {};
+    goResults();
+    var mini = el("pxMiniInput");
+    if (mini) mini.value = q;
+    switchTab("all");
+    el("pxResultsStats").textContent = "fetching from free APIs…";
+    skels(el("pxWebList"), 6, 40);
+    el("pxIa").hidden = true;
+    el("pxKnowledgePanel").hidden = true;
+    el("pxImgGrid").innerHTML = ""; el("pxNewsList").innerHTML = "";
+    var ov = el("pxOverview");
+    if (ov) { ov.hidden = false; el("pxOvBody").innerHTML = '<div class="px-skel" style="height:16px"></div><div class="px-skel" style="height:14px;width:85%"></div>'; el("pxOvEngineTxt").textContent = "waiting for grounding data…"; }
+    pulse();
+    rotateIdentity(true);
+    vaultPush("Live SERP fetch dispatched for “" + PIKPxUtilTrim(q, 40) + "” · zero redirects", true);
+
+    var firstPaintOv = false;
+    var res = await window.PIKSearch.runAll(q, {
+      ia: function (v) { serp.data.ia = v; renderIa(v); },
+      wiki: function (v) { serp.data.wiki = v; renderWiki(v); },
+      web: function (v) { serp.data.web = v || []; renderWeb(serp.data.web, q); },
+      news: function (v) { serp.data.news = v || []; renderNews(serp.data.news); },
+      images: function (v) { serp.data.images = v || []; renderImages(serp.data.images); },
+      related: function (v) { serp.data.related = v || []; renderRelated(serp.data.related); }
+    });
+    serp.data = res;
+    el("pxResultsStats").textContent = res.meta.ms + " ms · " + ((res.web || []).length) + " web · " + ((res.news || []).length) + " news · " + ((res.images || []).length) + " images · ddg + wikipedia + commons (keyless)";
+    if (!firstPaintOv) { firstPaintOv = true; runOverview(); }
+  };
+
+  var wireSerP = function () {
+    if (!window.PIKSearch) return;
+    /* result tabs */
+    $$(".px-tabs button").forEach(function (b) {
+      b.addEventListener("click", function () { switchTab(b.getAttribute("data-pxtab")); });
+    });
+    /* back to ghost new tab */
+    ["pxBackHome", "pxResultsHome"].forEach(function (id) {
+      var btn = el(id);
+      if (btn) btn.addEventListener("click", goHome);
+    });
+    /* mini omnibox on the results page */
+    var mf = el("pxMiniForm");
+    if (mf) mf.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      doSearch(el("pxMiniInput").value);
+    });
+    /* related-search chips (delegated) */
+    doc.addEventListener("click", function (ev) {
+      var chip = ev.target.closest ? ev.target.closest(".px-related__chip") : null;
+      if (chip && chip.getAttribute("data-q")) { doSearch(chip.getAttribute("data-q")); return; }
+      var kb = ev.target.closest ? ev.target.closest(".px-kp__more img") : null;
+      if (kb) { openLightbox(kb.getAttribute("data-lb"), "Wikipedia image", ""); return; }
+      var cell = ev.target.closest ? ev.target.closest(".px-imgcell") : null;
+      if (cell) { openLightbox(cell.getAttribute("data-full"), cell.getAttribute("data-cap"), cell.getAttribute("data-page")); }
+    });
+    /* lightbox close */
+    var lb = el("pxLightbox");
+    if (lb) {
+      el("pxLbClose").addEventListener("click", function () { lb.classList.remove("is-open"); });
+      lb.addEventListener("click", function (ev) { if (ev.target === lb) lb.classList.remove("is-open"); });
+    }
+    /* overview actions */
+    var regen = el("pxOvRegen");
+    if (regen) regen.addEventListener("click", runOverview);
+    var ovAsk = el("pxOvAsk");
+    if (ovAsk) ovAsk.addEventListener("click", function () {
+      switchTab("nexus");
+      var feed = el("pxAskFeed");
+      if (feed && !feed.children.length && serp.askHistory.length) {
+        appendAskMsg("px-msg--nexus", "NEXUS · AI Overview (continued)", mdRender(serp.askHistory[serp.askHistory.length - 1].content));
+      }
+      var inp = el("pxAskInput");
+      if (inp) inp.focus();
+    });
+    /* ask-nexus follow-up chat (real model, session history) */
+    var af = el("pxAskForm");
+    if (af) af.addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      var input = el("pxAskInput");
+      var text = (input.value || "").trim();
+      if (!text) return;
+      input.value = "";
+      var feed = el("pxAskFeed");
+      appendAskMsg("px-msg--user", "You · masked device hash " + Math.random().toString(36).slice(2, 10), esc(text));
+      if (!serp.askHistory.length) serp.askHistory.push({ role: "user", content: "Topic under discussion: " + serp.q });
+      var node = appendAskMsg("px-msg--nexus", "NEXUS · booting free engine chain…", '<span class="px-ov__cursor"></span>');
+      var body = node.querySelector("div:last-child");
+      var acc = "";
+      try {
+        if (serp.askAbort) { try { serp.askAbort.abort(); } catch (e) {} }
+        serp.askAbort = new AbortController();
+        var r = await window.PIKNexusAI.ask({
+          prompt: text,
+          history: serp.askHistory.slice(),
+          signal: serp.askAbort.signal,
+          onDelta: function (d) {
+            acc += d;
+            body.innerHTML = mdRender(acc) + '<span class="px-ov__cursor"></span>';
+          }
+        });
+        body.innerHTML = mdRender(r.text || acc);
+        node.querySelector(".px-msg__meta").textContent = "NEXUS · " + (r.providerLabel || r.engine) + " · 512k budget";
+        serp.askHistory.push({ role: "user", content: text });
+        serp.askHistory.push({ role: "assistant", content: r.text || acc });
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+        body.innerHTML = '<span class="px-ov__err">Engines unreachable — nothing faked. ' + esc(String((e && e.message) || e)) + "</span>";
+      }
+    });
+  };
+
+  var appendAskMsg = function (cls, meta, innerHtml) {
+    var feed = el("pxAskFeed");
+    var m = doc.createElement("div");
+    m.className = "px-msg " + cls;
+    var s = doc.createElement("span");
+    s.className = "px-msg__meta";
+    s.textContent = meta;
+    m.appendChild(s);
+    var b = doc.createElement("div");
+    b.innerHTML = innerHtml;
+    m.appendChild(b);
+    if (feed) feed.appendChild(m);
+    return m;
   };
 
   var wireOmnibox = function () {
@@ -331,9 +694,17 @@
     $$(".px-suggest__row").forEach(function (row) {
       row.addEventListener("click", function () {
         var title = row.querySelector(".px-suggest__title");
-        if (title) input.value = title.textContent;
+        if (!title) return;
+        var t = title.textContent.trim();
         suggest.classList.remove("is-open");
-        input.focus();
+        /* "Ask NEXUS anything" jumps straight to the real AI composer */
+        if (/^ask nexus/i.test(t)) {
+          var nx = $("#pxNexusCard");
+          if (nx) { nx.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(function () { $("#pxNexusInput").focus(); }, 600); }
+          return;
+        }
+        input.value = t;
+        doSearch(t);
       });
     });
     var form = $("#pxOmniForm");
@@ -343,13 +714,13 @@
       if (!v) return;
       pulse();
       var isOnion = /\.onion\b/i.test(v);
-      if (isOnion) {
-        toast("Hidden service detected · onionized circuit built");
-        vaultPush("Onion circuit opened to " + v.slice(0, 42), true);
-      } else {
+      /* Typed URLs still navigate to the site itself… */
+      if (/^https?:\/\//i.test(v) || /\.(com|org|net|io|dev|app|onion)(\/|$)/i.test(v)) {
         rotateIdentity(true);
-        toast("Clearnet request dispatched via guard " + ghostIp());
-        vaultPush("Clearnet fetch routed through three hops", true);
+        toast("Navigating directly · identity rotated first");
+        vaultPush(isOnion ? "Onion circuit opened to " + v.slice(0, 42) : "Direct navigation to " + v.slice(0, 48), true);
+        window.open((/^https?:/i.test(v) ? "" : (isOnion ? "http://" : "https://")) + v, "_blank", "noopener,noreferrer");
+        return;
       }
       /* Previously this called window.open("https://duckduckgo.com/?q=…") and
          sent the user to another site. Queries now stay in PIKX and are

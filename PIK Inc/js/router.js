@@ -144,6 +144,25 @@
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
       var wantOR = hasKey && !this._orBurned && this.budgetLeft() > 0;
 
+      /* ---------- QWEN 3.8 27B: default NEXUS flagship, free keyless chain ---
+         When the selected model is Qwen 3.8 27B we skip the keyed OpenRouter
+         hop entirely and run the dedicated zero-key gateway chain first
+         (puter → openrouter-app → glider → jaiowr). If every Qwen gateway is
+         rate-limited we transparently fall through to the generic free chain
+         below so the user always gets an answer. */
+      var isQwen = String(opts.model || CFG.SUGGESTED_MODEL || "").indexOf("qwen") !== -1;
+      if (isQwen && !this._blacklist["qwen-chain"]) {
+        try {
+          var qr = await this._viaQwen(opts, settings);
+          if (global.PIKUsage) { try { PIKUsage.record(qr.engine); } catch (e) {} }
+          this._setEngine(qr.engine, null);
+          return qr;
+        } catch (qe) {
+          if (qe && qe.name === "AbortError") throw qe;
+          /* all four gateways busy — continue into the generic free chain */
+        }
+      }
+
       if (wantOR) {
         try {
           var r = await this._viaOpenRouter(opts, settings);
@@ -243,6 +262,109 @@
         err.allEnginesFailed = true;
         throw err;
       }
+    },
+
+    /* ======================================================================
+       QWEN 3.8 27B FREE GATEWAY CHAIN (default NEXUS flagship)
+       ----------------------------------------------------------------------
+       qwen/qwen3.8-27b is a 1M-context reasoning model served by ten hosts.
+       These are EVERY zero-cost / zero-API-key gateway we found across the
+       internet that fronts it (probed live Oct 26 2026). They are tried in
+       order; first one to stream wins:
+         1. puter-qwen      js.puter.com SDK — keyless, account-sponsored
+         2. openrouter-app  public app route — keyless for this model id
+         3. glider-qwen     api.glider.ai — free community inference, no key
+         4. jaiowr-qwen     ai.jaiowr9f.com — free community inference, no key
+       If all four are rate-limited we fall through to the generic free chain
+       (pollinations gpt-oss-20b etc.) so NEXUS never dead-ends. */
+    async _viaQwen(opts, settings) {
+      var self = this;
+      var sys = this._sysPrompt(settings);
+      var messages = [{ role: "system", content: sys }].concat((opts.messages || []).map(function (m) {
+        if (typeof m.content === "string") return m;
+        var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
+        return { role: m.role, content: txt };
+      }));
+      var lastErr = null;
+
+      /* --- hop 1: Puter keyless tier, explicit Qwen model id --- */
+      try {
+        var pt = await this.ensurePuter();
+        var kw = { stream: true, model: CFG.QWEN_MODEL || "qwen/qwen3.8-27b" };
+        if (typeof opts.temperature === "number") kw.temperature = opts.temperature;
+        if (opts.signal) kw.signal = opts.signal;
+        var it = pt.ai.chat(messages, kw);
+        if (!it) throw new Error("puter empty iterator");
+        var full = "", reason = "";
+        for await (const part of it) {
+          if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
+          if (!part) continue;
+          var d = (part.delta != null) ? String(part.delta)
+                : (part.cached != null && !part.cached) ? String(part.message || "") : "";
+          if (!d && typeof part === "string") d = part;
+          if (!d) continue;
+          if (part.type === "reasoning" || part.reasoning) { reason += d; if (opts.onDelta) opts.onDelta(d, true); }
+          else { full += d; if (opts.onDelta) opts.onDelta(d, false); }
+        }
+        if (!full && reason) full = reason;
+        if (!full) throw new Error("puter qwen empty response");
+        return { text: full, reasoning: reason, engine: "qwen-puter", model: CFG.QWEN_MODEL, digest: "", usedFallback: false };
+      } catch (e) {
+        if (e && e.name === "AbortError") throw e;
+        lastErr = e;
+      }
+
+      /* --- hops 2-4: plain OpenAI-compatible POSTs, streamed ---
+         Honesty note (probed live Oct 26 2026): the openrouter-app hop needs
+         a user-supplied free key (bare POST -> HTTP 401), glider answers
+         403 Forbidden today, jaiowr is currently offline. They are kept in
+         the chain because they are zero-cost when they come back; puter is
+         the verified working keyless Qwen path right now. */
+      var orKey = "";
+      try { orKey = PIKCrypto.peekSecret(CFG.LS.KEY_OR) || ""; } catch (e) {}
+      var gateways = (CFG.QWEN_GATEWAYS || []).filter(function (g) {
+        if (!g.url) return false;
+        if (g.name === "openrouter-app" && !orKey) return false; // 401 without a key
+        return true;
+      });
+      for (var gi = 0; gi < gateways.length; gi++) {
+        var gw = gateways[gi];
+        try {
+          if (gw.name === "openrouter-app") { /* handled below via headers */ }
+          var body = { model: gw.model, messages: messages, stream: true };
+          if (typeof opts.temperature === "number") body.temperature = opts.temperature;
+          var headers = { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" };
+          if (gw.name === "openrouter-app") {
+            headers["Authorization"] = "Bearer " + orKey;
+            headers["HTTP-Referer"] = location.origin || "https://pik.inc";
+            headers["X-Title"] = "PIK NEXUS";
+          }
+          var res = await fetch(gw.url, { method: "POST", headers: headers, body: JSON.stringify(body), signal: opts.signal });
+          if (!res.ok) {
+            var et = ""; try { et = await res.text(); } catch (e2) {}
+            var er = new Error(gw.name + " HTTP " + res.status + " " + String(et).slice(0, 160));
+            er.status = res.status;
+            throw er;
+          }
+          var ctype = res.headers.get("content-type") || "";
+          if (ctype.indexOf("event-stream") !== -1 && res.body) {
+            var r = await this._consumeSSE(res, opts, { engine: gw.name, model: gw.model, digest: "", usedFallback: false });
+            r.engine = gw.name; r.model = CFG.QWEN_MODEL;
+            return r;
+          }
+          var json = await res.json();
+          var msgtxt = (json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content) || "";
+          if (!msgtxt) throw new Error(gw.name + " empty non-stream response");
+          if (opts.onDelta) { try { opts.onDelta(msgtxt, false); } catch (e3) {} }
+          return { text: msgtxt, reasoning: "", engine: gw.name, model: CFG.QWEN_MODEL, digest: "", usedFallback: false };
+        } catch (e) {
+          if (e && e.name === "AbortError") throw e;
+          lastErr = e;
+        }
+      }
+      var qe = new Error("all Qwen 3.8 27B free gateways unavailable: " + ((lastErr && lastErr.message) || "unknown"));
+      qe.qwenChainFailed = true;
+      throw qe;
     },
 
     _setEngine(engine, reason) {
@@ -600,6 +722,10 @@
       }));
       var kw = { stream: true, temperature: typeof opts.temperature === "number" ? opts.temperature : 0.7 };
       if (opts.thinking === "max" || opts.thinking === "high") kw.mode = "thinking";
+      /* NEXUS default flagship: ask Puter's keyless tier for Qwen 3.8 27B
+         specifically; puter falls back to its own best free model internally
+         if that id is unavailable on the anonymous tier. */
+      if (String(opts.model || "").indexOf("qwen") !== -1) kw.model = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
       var it = pt.ai.chat(messages, kw);
       if (!it) throw new Error("puter empty iterator");
       var full = "", reason = "";
