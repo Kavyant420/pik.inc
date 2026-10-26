@@ -6,6 +6,22 @@
 <meta name="color-scheme" content="dark only">
 <meta name="theme-color" content="#030304">
 <meta name="referrer" content="no-referrer">
+<!--
+  This page previously shipped with NO Content-Security-Policy at all, which is
+  a poor fit for a product whose entire premise is privacy: any injected script
+  would run with full access to the session. The policy below is scoped to what
+  this page actually loads, verified against the markup and js/pikx.js:
+    - no inline <script> blocks and no inline event handlers exist, so
+      script-src needs neither 'unsafe-inline' nor 'unsafe-eval'
+    - 11 inline style="" attributes do exist, so style-src keeps 'unsafe-inline'
+    - connect-src is limited to our own /api/search proxy and the DuckDuckGo
+      Instant Answer API (the only two endpoints js/px-search.js calls)
+    - img-src allows any https origin because result favicons and Wikipedia
+      thumbnails come from third-party CDNs we do not control
+    - upgrade-insecure-requests is deliberately OMITTED: the quick tiles link to
+      http:// .onion addresses, which have no TLS variant and would break
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.duckduckgo.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>PIKX — Zero-Knowledge Browser</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,7 +73,8 @@
 <link rel="stylesheet" href="css/93-px-native-controls.css">
 <link rel="stylesheet" href="css/94-px-anti-blue.css">
 <link rel="stylesheet" href="css/95-px-material.css">
-<link rel="stylesheet" href="css/96-px-serp.css">
+<link rel="stylesheet" href="css/96-px-results.css">
+<link rel="stylesheet" href="css/97-px-glass-lift.css">
 </head>
 <body class="pikx-body">
 
@@ -102,15 +119,28 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.3 1a7 7 0 0 0-2-1.2L14.2 2h-4l-.4 2.4a7 7 0 0 0-2 1.2l-2.3-1-2 3.5 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 2 1.2l.4 2.4h4l.4-2.4a7 7 0 0 0 2-1.2l2.3 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>
       </button>
     </div>
+    <!--
+      The tab bar used to be three hardcoded <button>s with no panels and no
+      click handlers: "Ghost New Tab", "onionmail3g…onion" and "NEXUS Agent"
+      were decoration that implied state which did not exist. Tabs are now real
+      objects owned by js/pikx.js and rendered into #pxTabs. The single static
+      tab below is the initial one, so the bar is not empty before JS runs and
+      the first search reuses it instead of spawning a duplicate.
+    -->
     <nav class="px-tabbar" aria-label="Browser tabs">
-      <button class="px-tabitem is-active"><i class="px-tabitem__dot"></i><span class="px-tabitem__label">Ghost New Tab</span><span class="px-tabitem__close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-      <button class="px-tabitem"><i class="px-tabitem__dot"></i><span class="px-tabitem__label">onionmail3g…onion</span><span class="px-tabitem__close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-      <button class="px-tabitem"><i class="px-tabitem__dot"></i><span class="px-tabitem__label">NEXUS Agent</span><span class="px-tabitem__close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+      <div class="px-tabs" id="pxTabs" role="tablist">
+        <button class="px-tabitem is-active" role="tab" aria-selected="true" data-tab-id="t1" data-kind="new">
+          <i class="px-tabitem__dot"></i>
+          <span class="px-tabitem__label">Ghost New Tab</span>
+          <span class="px-tabitem__close" role="button" tabindex="-1" aria-label="Close tab" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        </button>
+      </div>
       <button class="px-newtab" id="pxNewTab" title="New ghost tab" aria-label="New tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
     </nav>
   </header>
 
-  <main class="px-stage px-home">
+  <main class="px-stage" id="pxStage" data-view="newtab">
+   <div class="px-view px-view--newtab" id="pxViewNewTab">
     <span class="px-brandline px-hero-anim">Private · Encrypted · Untraceable</span>
     <h1 class="px-wordmark px-hero-anim px-emboss">PIK<span class="x">X</span></h1>
     <p class="px-tagline px-hero-anim px-hero-anim--2">Surf the clearnet and the hidden service layer with total anonymity. Nothing you do leaves this device. Every AI request exits through a freshly rotated ghost IP.</p>
@@ -293,6 +323,68 @@
     </div>
 
     <hr class="px-hairline">
+   </div>
+
+   <!--
+     RESULTS TAB. Rendered entirely by js/pikx.js from data returned by
+     js/px-search.js. Nothing here is populated server-side and no result
+     string is ever inserted as HTML — the renderer builds nodes and assigns
+     textContent, because titles and snippets are untrusted third-party input.
+   -->
+   <div class="px-view px-view--results" id="pxViewResults" hidden>
+     <section class="px-results" aria-label="Search results">
+
+       <header class="px-results__head">
+         <div class="px-results__query">
+           <span class="px-mono-label">Query</span>
+           <h2 class="px-results__q" id="pxResQuery">&nbsp;</h2>
+         </div>
+         <div class="px-results__meta">
+           <span class="px-results__count" id="pxResCount"></span>
+           <span class="px-results__time" id="pxResTime"></span>
+           <button type="button" class="px-iconbtn px-results__refresh" id="pxResRefresh" title="Re-run this search" aria-label="Re-run this search">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+           </button>
+         </div>
+       </header>
+
+       <div class="px-results__sources" id="pxResSources" aria-label="Result sources"></div>
+
+       <div class="px-results__banner" id="pxResBanner" hidden></div>
+
+       <article class="px-answer px-glass" id="pxResAnswer" hidden>
+         <div class="px-answer__head">
+           <span class="px-mono-label">Instant answer</span>
+           <span class="px-answer__src" id="pxAnsSrc"></span>
+         </div>
+         <h3 class="px-answer__title" id="pxAnsTitle"></h3>
+         <p class="px-answer__text" id="pxAnsText"></p>
+         <a class="px-answer__link" id="pxAnsLink" href="#" target="_blank" rel="noopener noreferrer nofollow">
+           <span id="pxAnsLinkHost"></span>
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+         </a>
+       </article>
+
+       <div class="px-results__status" id="pxResStatus" hidden>
+         <span class="px-results__spinner" aria-hidden="true"></span>
+         <span id="pxResStatusText">Building circuit and fetching results…</span>
+       </div>
+
+       <ol class="px-resultlist" id="pxResList"></ol>
+
+       <div class="px-results__empty" id="pxResEmpty" hidden>
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M8 11h6"/></svg>
+         <h3 id="pxEmptyTitle">Nothing came back</h3>
+         <p id="pxEmptyText"></p>
+         <div class="px-results__empty-actions">
+           <button type="button" class="px-btn px-btn--ghost" id="pxEmptyRetry">Retry this search</button>
+           <a class="px-btn px-btn--ghost" id="pxEmptyExternal" href="#" target="_blank" rel="noopener noreferrer nofollow">Open in DuckDuckGo instead</a>
+         </div>
+       </div>
+
+       <p class="px-results__note">Results are fetched for this session only and held in memory. Nothing is written to disk or to your account.</p>
+     </section>
+   </div>
   </main>
 
   <!-- ==================== IN-TAB SEARCH RESULTS (SERP) ====================
@@ -534,7 +626,8 @@
   </div>
 </section>
 
-<script src="js/pikx-engine.js"></script>
+<script src="js/px-search.js"></script>
+<script src="js/px-results.js"></script>
 <script src="js/pikx.js"></script>
 </body>
 </html>

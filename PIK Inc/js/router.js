@@ -1,16 +1,21 @@
 /* ============================================================================
    PIK//NEXUS — router.js
-   Chat transport with a full no-key fallback chain:
+   Chat transport with a full no-key fallback chain (verified 2026-10-25):
      1. OpenRouter (user key) while the rolling free-budget window has room
      2. any 429 / rate-limit / quota error from OpenRouter => permanent switch
         for this session ("free tier over") — we never hammer it again
      3. text.pollinations.ai  (keyless, free)          -> engine "pollinations"
-     4. universal.pollinations.ai (keyless mirror)     -> engine "polli-alt"
+     4. Puter.js              (keyless, free)          -> engine "puter"
      5. text.pollinations.ai GET endpoint (keyless)    -> engine "polli-get"
-     6. DeepInfra public inference API (keyless)       -> engine "deepinfra-free"
-   NOTE: the old "cohere-free" hop was REMOVED — api.cohere.com requires an
-   API key for every model and always answered HTTP 401 from the browser.
-   DeepInfra's public endpoint needs no key and supports streaming + CORS.
+     6. DeepInfra (ONLY when the visitor saved a key)  -> engine "deepinfra-free"
+   NOTE: "polli-alt" (universal.pollinations.ai) is no longer a hop — that host
+   does not resolve and was removed from POLLINATIONS_CHAIN; the doc line above
+   used to still advertise it. "cohere-free" was likewise removed: api.cohere.com
+   requires an API key for every model and always answered HTTP 401 from the
+   browser. DeepInfra is key-gated for the same reason — an unauthenticated POST
+   to it answers 401 "missing API key", so it is skipped unless LS.KEY_DI is set.
+   In practice, for a visitor with no keys at all, the working engines are
+   pollinations -> puter -> polli-get.
    Every keyless engine is tried in order until one answers; the first token
    of reasoning streams straight into the live THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
@@ -24,7 +29,7 @@
   var Router = {
     /* usage ledger: timestamps of OR requests inside rolling window */
     _usage: [],
-    engine: "openrouter",   // openrouter | pollinations | polli-alt | polli-get | deepinfra-free
+    engine: "openrouter",   // openrouter | pollinations | puter | polli-get | deepinfra-free | local-micro
     onEngineChange: null,   // callback(engine, reason)
     _orBurned: false,       // set once OpenRouter reports quota exhausted
     _blacklist: {},         // engines that returned 401/403/404 this session (key-gated or dead)
@@ -492,11 +497,22 @@
       var msg = choice.message || {};
       var text = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content || "");
       var reasoning = msg.reasoning || msg.reasoning_content || json.reasoning || "";
-      if (text === "" && reasoning) text = reasoning; // some mirrors only fill reasoning
-      if (text === "") throw new Error(engineName + " empty response");
-      if (opts.onDelta) { try { opts.onDelta(text, false); } catch (e) {} }
+      /* a native tool call is a complete answer on its own — it carries no
+         content, so treating it as "empty" discarded the call and surfaced the
+         private reasoning instead */
+      var nativeCalls = Array.isArray(msg.tool_calls)
+        ? msg.tool_calls.map(function (tc) {
+            var fn = tc.function || {};
+            return { id: tc.id || "", name: fn.name || "", args: fn.arguments || "" };
+          }).filter(function (c) { return c.name || c.args; })
+        : [];
+      if (text === "" && !nativeCalls.length && reasoning) text = reasoning;
+      if (text === "" && !nativeCalls.length) throw new Error(engineName + " empty response");
+      if (text && opts.onDelta) { try { opts.onDelta(text, false); } catch (e) {} }
       return {
         text: text, reasoning: reasoning,
+        toolCalls: nativeCalls,
+        finishReason: choice.finish_reason || "",
         engine: engineName, model: json.model || model,
         digest: meta.digest, usedFallback: true
       };
@@ -520,8 +536,12 @@
       var full = ctx ? ctx + "\nUser: " + prompt : prompt;
       var sys = this._sysPrompt(settings);
       var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
+      /* The system prompt used to be sliced to 2000 chars here. It is ~4.8k,
+         and the AGENT TOOLS contract sits near the end of it — so this hop
+         silently told the model nothing about WEBSEARCH/WEBGET and could never
+         produce a tool call. Raised to cover the whole default prompt. */
       var u = CFG.POLLINATIONS_GET_URL + encodeURIComponent(full.slice(0, 24000)) +
-        "?model=" + encodeURIComponent(model) + "&system=" + encodeURIComponent(sys.slice(0, 2000)) + "&json=false";
+        "?model=" + encodeURIComponent(model) + "&system=" + encodeURIComponent(sys.slice(0, 6000)) + "&json=false";
       var meta = await this.digest({ url: u });
       var res = await fetch(u, { signal: opts.signal });
       if (!res.ok) {
@@ -531,13 +551,70 @@
       }
       var text = (await res.text() || "").trim();
       if (!text || text.length < 2) throw new Error("polli-get empty response");
-      if (opts.onDelta) { try { opts.onDelta(text, false); } catch (er) {} }
-      return { text: text, reasoning: "", engine: "polli-get", model: model, digest: meta.digest, usedFallback: true };
+
+      /* Despite json=false this endpoint returns a JSON envelope whenever the
+         model answers with reasoning and/or tool calls:
+           {"role":"assistant","reasoning":"…","tool_calls":[{…}],"content":"…"}
+         The old code passed that straight through as the answer, so the user
+         was shown raw JSON. Unwrap it into the same shape the streaming path
+         produces, so the agent loop can act on the tool calls. */
+      var reasoning = "";
+      var toolCalls = [];
+      if (/^[\[{]/.test(text)) {
+        try {
+          var parsed = JSON.parse(text);
+          var msg = Array.isArray(parsed) ? parsed[0] : parsed;
+          if (msg && typeof msg === "object") {
+            var content = msg.content != null ? msg.content
+              : (msg.message != null ? msg.message : "");
+            if (typeof content !== "string") content = JSON.stringify(content);
+            reasoning = msg.reasoning || msg.reasoning_content || "";
+            if (Array.isArray(msg.tool_calls)) {
+              toolCalls = msg.tool_calls.map(function (tc) {
+                var fn = tc.function || {};
+                var args = fn.arguments != null ? fn.arguments
+                  : (tc.arguments != null ? tc.arguments : "");
+                return {
+                  id: tc.id || "",
+                  name: fn.name || tc.name || "",
+                  args: typeof args === "string" ? args : JSON.stringify(args)
+                };
+              }).filter(function (c) { return c.name || c.args; });
+            }
+            if (content || toolCalls.length || reasoning) text = String(content || "");
+          }
+        } catch (eNotJson) { /* not an envelope after all — keep the raw text */ }
+      }
+
+      if (!text && !toolCalls.length) {
+        /* a tool call with no prose is a complete answer on its own */
+        if (reasoning) text = reasoning;
+        else throw new Error("polli-get empty response");
+      }
+      if (text && opts.onDelta) { try { opts.onDelta(text, false); } catch (er) {} }
+      return {
+        text: text, reasoning: reasoning, toolCalls: toolCalls,
+        finishReason: toolCalls.length ? "tool_calls" : "",
+        engine: "polli-get", model: model, digest: meta.digest, usedFallback: true
+      };
     },
 
-    /* ---------- DeepInfra public inference API (no key needed) -------------
-       Keyless OpenAI-compatible endpoint with SSE streaming support. */
+    /* ---------- DeepInfra inference API (REQUIRES a key) -------------------
+       OpenAI-compatible endpoint with SSE streaming support.
+
+       CORRECTED: this is not a keyless hop. An unauthenticated POST answers
+       HTTP 401 "missing API key", so the old code guaranteed a failed request
+       at the tail of every fallback chain. The caller now skips this engine
+       entirely unless the visitor stored a key in Settings (LS.KEY_DI); when
+       one is present it is sent as a Bearer token. */
     async _viaDeepInfra(opts, settings) {
+      var diKey = "";
+      try { diKey = PIKCrypto.peekSecret(CFG.LS.KEY_DI) || ""; } catch (e) {}
+      if (!diKey) {
+        var eSkip = new Error("deepinfra skipped — no API key configured");
+        eSkip.status = 401;
+        throw eSkip;
+      }
       var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
         if (typeof m.content === "string") return m;
@@ -554,7 +631,11 @@
       var meta = await this.digest(body);
       var res = await fetch(CFG.DEEPINFRA_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream, application/json",
+          "Authorization": "Bearer " + diKey
+        },
         body: JSON.stringify(body),
         signal: opts.signal
       });
@@ -668,6 +749,20 @@
       var reader = res.body.getReader();
       var de = new TextDecoder();
       var buf = "", full = "", reason = "";
+      /* Native OpenAI function calling arrives as streamed fragments:
+           delta.tool_calls[0].function.name      = "WEBSEARCH"     (first frame)
+           delta.tool_calls[0].function.arguments = "on"  "ion"  " routing"   (later frames)
+         and the turn ends with finish_reason:"tool_calls".
+         This used to be dropped on the floor entirely — the accumulator only
+         read d.reasoning and d.content — so a model that answered by calling a
+         tool produced an empty string, and the `if (!full && reason)` fallback
+         below then displayed the model's PRIVATE reasoning as if it were the
+         answer. That is why NEXUS replied with things like "Need to search."
+         instead of actually searching. Verified against
+         text.pollinations.ai/openai (gpt-oss-20b) on 2026-10-25. */
+      var toolCalls = {};   /* index -> {id, name, args} */
+      var finishReason = "";
+
       while (true) {
         var chunk = await reader.read();
         if (chunk.done) break;
@@ -679,9 +774,33 @@
           if (!line.startsWith("data:")) continue;
           var data = line.slice(5).trim();
           if (data === "[DONE]") continue;
+          var obj = null;
+          try { obj = JSON.parse(data); } catch (e) { continue; }   /* partial frame */
+          if (!obj) continue;
+
+          /* Upstream error frames. Pollinations terminates a broken stream with
+               data: {"error":{"message":"…","type":"upstream_error","code":"usage_missing"}}
+             rather than closing it cleanly. This used to be ignored, so the
+             router returned whatever partial text had arrived — which is how a
+             truncated stream surfaced the model's private reasoning ("Need to
+             search.") as if it were the answer. Throwing here lets the fallback
+             chain do its job and move on to the next engine.
+             Observed live 2026-10-25; the free tier is also rate limited to
+             roughly one reply per 30s per IP, which answers HTTP 402
+             FREE_LIMIT and is handled by the !res.ok path in the caller. */
+          if (obj.error) {
+            var em = obj.error;
+            var eUp = new Error((base.engine || "stream") + " upstream error: " +
+              (em.message || JSON.stringify(em)) + (em.code ? " [" + em.code + "]" : ""));
+            eUp.status = em.code === "FREE_LIMIT" ? 429 : 502;
+            throw eUp;
+          }
+
           try {
-            var obj = JSON.parse(data);
-            var d = (obj.choices && obj.choices[0] && obj.choices[0].delta) || {};
+            var choice = (obj.choices && obj.choices[0]) || {};
+            var d = choice.delta || {};
+            if (choice.finish_reason) finishReason = choice.finish_reason;
+
             if (d.reasoning || d.reasoning_content) {
               var rc = d.reasoning || d.reasoning_content;
               reason += rc;
@@ -691,11 +810,37 @@
               full += d.content;
               if (opts.onDelta) opts.onDelta(d.content, false);
             }
-          } catch (e) { /* partial frame */ }
+            if (Array.isArray(d.tool_calls)) {
+              for (var t = 0; t < d.tool_calls.length; t++) {
+                var tc = d.tool_calls[t];
+                var idx = (typeof tc.index === "number") ? tc.index : t;
+                if (!toolCalls[idx]) toolCalls[idx] = { id: "", name: "", args: "" };
+                if (tc.id) toolCalls[idx].id = tc.id;
+                var fn = tc.function || {};
+                if (fn.name) toolCalls[idx].name += fn.name;
+                /* arguments stream as raw JSON fragments, not whole objects */
+                if (fn.arguments) toolCalls[idx].args += fn.arguments;
+              }
+            }
+          } catch (eFrame) { /* malformed delta — skip this frame only */ }
         }
       }
-      if (!full && reason) full = reason; // mirrored engines sometimes only stream reasoning
-      base.text = full; base.reasoning = reason;
+
+      var calls = Object.keys(toolCalls)
+        .sort(function (a, b) { return a - b; })
+        .map(function (k) { return toolCalls[k]; })
+        .filter(function (c) { return c.name || c.args; });
+
+      /* Only substitute reasoning when there is genuinely nothing else — never
+         when the model answered with a tool call, and never in preference to
+         real content. Showing chain-of-thought as the answer is a leak: the UI
+         has a dedicated THINKING panel for it. */
+      if (!full && !calls.length && reason) full = reason;
+
+      base.text = full;
+      base.reasoning = reason;
+      base.toolCalls = calls;
+      base.finishReason = finishReason;
       base.usedFallback = base.engine !== "openrouter";
       return base;
     }
