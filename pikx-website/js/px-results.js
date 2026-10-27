@@ -236,6 +236,8 @@
   function showSkeleton() {
     if (!els.pxResList) return;
     clearNode(els.pxResList);
+    /* PERFORMANCE: built off-DOM and committed in a single insertion. */
+    var frag = doc.createDocumentFragment();
     for (var i = 0; i < 4; i++) {
       var s = doc.createElement("li");
       s.className = "px-skel";
@@ -244,8 +246,9 @@
         '<span class="px-skel__line px-skel__line--title"></span>' +
         '<span class="px-skel__line px-skel__line--a"></span>' +
         '<span class="px-skel__line px-skel__line--b"></span>';
-      els.pxResList.appendChild(s);
+      frag.appendChild(s);
     }
+    els.pxResList.appendChild(frag);
   }
 
   function renderSources(env) {
@@ -473,8 +476,14 @@
     renderAnswer(env);
 
     if (els.pxResList) {
+      /* PERFORMANCE: append each <li> straight onto the live list before. Every
+         insertion invalidated layout of a list sitting on top of blurred,
+         animated background layers, so rendering N results cost N forced
+         layouts. Build off-DOM in one DocumentFragment, commit once. */
       clearNode(els.pxResList);
-      env.results.forEach(function (r, i) { els.pxResList.appendChild(renderResult(r, i)); });
+      var frag = doc.createDocumentFragment();
+      env.results.forEach(function (r, i) { frag.appendChild(renderResult(r, i)); });
+      els.pxResList.appendChild(frag);
     }
 
     if (!env.results.length) renderEmpty(env);

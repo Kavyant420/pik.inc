@@ -1,0 +1,81 @@
+/* ============================================================================
+   102 — PIKX ghost-table data grids (original)
+   ----------------------------------------------------------------------------
+   For settings screens and vault logs: a table that behaves like the rest of
+   the glass UI. Sticky header, hairline rules, row-hover reveal. Uses logical
+   properties so it mirrors correctly in RTL locales.
+   ========================================================================= */
+
+.px-ghosttable {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: .84rem;
+}
+
+.px-ghosttable caption {
+  text-align: start;
+  padding-block-end: .6rem;
+  color: var(--px-faint, #6b6b72);
+  font-family: var(--px-font-mono, ui-monospace, monospace);
+  font-size: .62rem;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+
+.px-ghosttable thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  text-align: start;
+  padding: .55rem .8rem;
+  background: rgba(10,10,13,.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-block-end: 1px solid var(--px-line-hi, rgba(255,255,255,.18));
+  color: var(--px-grey, #a3a3a3);
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: .68rem;
+}
+
+.px-ghosttable tbody td {
+  padding: .6rem .8rem;
+  border-block-end: 1px solid rgba(255,255,255,.05);
+  vertical-align: middle;
+}
+
+.px-ghosttable tbody tr {
+  transition: background .15s ease;
+}
+.px-ghosttable tbody tr:hover { background: rgba(255,255,255,.035); }
+
+/* numeric columns stay aligned while values tick */
+.px-ghosttable .num {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  font-family: var(--px-font-mono, ui-monospace, monospace);
+}
+
+/* status pip used by vault-log rows */
+.px-ghosttable .pip {
+  display: inline-block;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  margin-inline-end: .5em;
+  background: var(--px-grey, #a3a3a3);
+  box-shadow: 0 0 8px rgba(217,218,222,.4);
+}
+.px-ghosttable .pip--off { background: #4a4a50; box-shadow: none; }
+
+@media (max-width: 640px) {
+  .px-ghosttable thead { display: none; }
+  .px-ghosttable tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-block-end: 0;
+  }
+  .px-ghosttable tbody tr { border-block-end: 1px solid rgba(255,255,255,.06); }
+}

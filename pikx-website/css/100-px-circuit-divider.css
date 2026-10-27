@@ -1,0 +1,54 @@
+/* ============================================================================
+   100 — PIKX circuit-nerve dividers (original)
+   ----------------------------------------------------------------------------
+   Section separators that read like a PCB trace: a hairline with a travelling
+   spark. The animation is transform-only on a composited layer, so it costs
+   nothing while the rest of the page scrolls. Honours reduced-motion.
+   ========================================================================= */
+
+.px-nerve {
+  position: relative;
+  block-size: 1px;
+  border: 0;
+  margin-block: clamp(2rem, 6vh, 4rem);
+  background: linear-gradient(90deg,
+    transparent, var(--px-line-hi, rgba(255,255,255,.18)) 18%,
+    var(--px-line-hi, rgba(255,255,255,.18)) 82%, transparent);
+  overflow: visible;
+}
+
+.px-nerve::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inline-size: 14%;
+  block-size: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(217,218,222,.85), transparent);
+  filter: blur(.5px);
+  will-change: transform;
+  animation: px-nerve-travel 7s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+@keyframes px-nerve-travel {
+  0%   { transform: translateX(-10%) scale(.6); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateX(720%) scale(.6); opacity: 0; }
+}
+
+/* node dots at the ends, like solder pads */
+.px-nerve--padded::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: -2px;
+  block-size: 5px;
+  background:
+    radial-gradient(circle at 0% 50%, var(--px-grey, #a3a3a3) 0 2px, transparent 3px),
+    radial-gradient(circle at 100% 50%, var(--px-grey, #a3a3a3) 0 2px, transparent 3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-nerve::before { animation: none; opacity: .35; }
+}

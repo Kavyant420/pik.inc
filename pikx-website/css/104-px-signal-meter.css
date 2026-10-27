@@ -1,0 +1,68 @@
+/* ============================================================================
+   104 — PIKX signal-meter components (original)
+   ----------------------------------------------------------------------------
+   Circuit health read-outs: a hop-quality bar strip and a radial gauge, both
+   driven by custom properties so JS updates one number instead of rewriting
+   markup. No SVG needed for the bars; the gauge uses conic-gradient with a
+   plain-circle fallback.
+   ========================================================================= */
+
+.px-signal {
+  display: inline-flex;
+  gap: 3px;
+  align-items: flex-end;
+  block-size: 16px;
+}
+
+.px-signal__bar {
+  inline-size: 4px;
+  border-radius: 1px;
+  background: rgba(255,255,255,.12);
+  transition: background .25s ease;
+}
+.px-signal__bar:nth-child(1) { block-size: 40%; }
+.px-signal__bar:nth-child(2) { block-size: 58%; }
+.px-signal__bar:nth-child(3) { block-size: 76%; }
+.px-signal__bar:nth-child(4) { block-size: 94%; }
+
+/* strength is set with data-level="0..4" on .px-signal */
+.px-signal[data-level="1"] .px-signal__bar:nth-child(-n+1),
+.px-signal[data-level="2"] .px-signal__bar:nth-child(-n+2),
+.px-signal[data-level="3"] .px-signal__bar:nth-child(-n+3),
+.px-signal[data-level="4"] .px-signal__bar {
+  background: var(--px-grey, #a3a3a3);
+}
+
+.px-signal--live .px-signal__bar { animation: px-signal-flick 2.8s ease-in-out infinite; }
+@keyframes px-signal-flick {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+/* ---- radial circuit gauge --------------------------------------------- */
+.px-gauge {
+  --px-val: 0;                     /* 0–100, set from JS */
+  inline-size: 72px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(closest-side, #0b0b0e calc(100% - 7px), transparent calc(100% - 7px)),
+    conic-gradient(var(--px-grey, #a3a3a3) calc(var(--px-val) * 1%), rgba(255,255,255,.08) 0);
+}
+
+.px-gauge__num {
+  font-family: var(--px-font-mono, ui-monospace, monospace);
+  font-size: .8rem;
+  color: var(--px-ink, #e8e8ec);
+  font-variant-numeric: tabular-nums;
+}
+
+@supports not (background: conic-gradient(red, blue)) {
+  .px-gauge { background: radial-gradient(closest-side, #0b0b0e 60%, rgba(255,255,255,.1)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-signal--live .px-signal__bar { animation: none; }
+}

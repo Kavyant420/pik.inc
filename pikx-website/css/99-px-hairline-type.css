@@ -1,0 +1,43 @@
+/* ============================================================================
+   99 — PIKX hairline typography scale (original)
+   ----------------------------------------------------------------------------
+   The PIK Inc voice is quiet and technical: wide-tracked mono labels over
+   tight grotesk body copy. This sheet defines the reusable type roles only —
+   it never sets font-family (that stays in 50-px-tokens.css).
+   ========================================================================= */
+
+.px-eyebrow {
+  font-family: var(--px-font-mono, ui-monospace, monospace);
+  font-size: .62rem;
+  line-height: 1;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--px-faint, #6b6b72);
+}
+
+.px-lede {
+  font-size: clamp(1.02rem, 1.6vw, 1.24rem);
+  line-height: 1.65;
+  max-inline-size: 58ch;
+  color: var(--px-ink-dim, #b9b9bf);
+  text-wrap: pretty;
+}
+
+.px-figure {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -.02em;
+}
+
+/* drop-cap style for long-form product pages */
+.px-prose::first-letter {
+  font-size: 2.4em;
+  line-height: .85;
+  padding-inline-end: .08em;
+  color: var(--px-ink, #e8e8ec);
+}
+
+/* balanced headings — supported everywhere modern, ignored elsewhere */
+h1.px-balance, h2.px-balance, h3.px-balance {
+  text-wrap: balance;
+}
