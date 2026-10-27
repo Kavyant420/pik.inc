@@ -39,7 +39,7 @@ function makeSandbox(stubs) {
   Object.keys(stubs || {}).forEach(function (k) { sandbox[k] = stubs[k]; });
   var ctx = vm.createContext(sandbox);
   vm.runInContext(
-    fs.readFileSync(path.join(__dirname, "..", "PIK Inc", "js", "agent-tools.js"), "utf8"),
+    fs.readFileSync(path.join(__dirname, "..", "pik-inc", "js", "agent-tools.js"), "utf8"),
     ctx, { filename: "agent-tools.js" }
   );
   return { T: sandbox.PIKAgentTools, logs: logs, sandbox: sandbox };

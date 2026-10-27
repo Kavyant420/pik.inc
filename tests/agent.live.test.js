@@ -23,7 +23,7 @@ var path = require("path");
 var vm = require("vm");
 var crypto = require("crypto");
 
-var ROOT = path.join(__dirname, "..", "PIK Inc");
+var ROOT = path.join(__dirname, "..", "pik-inc");
 var MODULES = [
   "js/config.js",
   "js/crypto.js",

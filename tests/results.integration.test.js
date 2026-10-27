@@ -19,7 +19,7 @@ try { jsdom = require("jsdom"); }
 catch (e) { jsdom = require(path.join(process.env.JSDOM_DIR || "/tmp/node_modules", "jsdom")); }
 var JSDOM = jsdom.JSDOM, VirtualConsole = jsdom.VirtualConsole;
 
-var ROOT = path.join(__dirname, "..", "PIK Inc");
+var ROOT = path.join(__dirname, "..", "pik-inc");
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {
   var a = JSON.stringify(actual), e = JSON.stringify(expected);

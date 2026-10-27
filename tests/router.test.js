@@ -19,7 +19,7 @@ var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
 
-var ROOT = path.join(__dirname, "..", "PIK Inc");
+var ROOT = path.join(__dirname, "..", "pik-inc");
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {
   var a = JSON.stringify(actual), e = JSON.stringify(expected);
