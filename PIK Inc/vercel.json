@@ -2,5 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "",
-  "outputDirectory": "../pik-inc"
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/search",
+      "destination": "../pik-inc/api/search"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "../pik-inc/api/_fallback"
+    }
+  ]
 }
