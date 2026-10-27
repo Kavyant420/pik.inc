@@ -15,7 +15,7 @@
 // Hard browser limits (stated honestly in the UI):
 //  * A normal web page cannot redirect your OS / other apps' traffic — that
 //    needs a system VPN profile or TUN device (see docs/vpn-backend.md, which
-//    ships with this site at PIK Inc/docs/vpn-backend.md). We generate a
+//    ships with this site at pik-inc/docs/vpn-backend.md). We generate a
 //    ready-to-import WireGuard .conf for exactly that purpose.
 //  * JS fetch() cannot pick an arbitrary per-request upstream proxy; browsers
 //    only honor the system/PAC proxy. "Routing through server X" from a page

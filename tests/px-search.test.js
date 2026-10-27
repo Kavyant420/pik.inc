@@ -47,7 +47,7 @@ function makeSandbox(fetchImpl, protocol) {
     }
   };
   var ctx = vm.createContext(sandbox);
-  var src = fs.readFileSync(path.join(__dirname, "..", "PIK Inc", "js", "px-search.js"), "utf8");
+  var src = fs.readFileSync(path.join(__dirname, "..", "pik-inc", "js", "px-search.js"), "utf8");
   vm.runInContext(src, ctx, { filename: "px-search.js" });
   return sandbox.PIKSearch;
 }

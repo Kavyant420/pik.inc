@@ -11,7 +11,7 @@
 "use strict";
 
 var path = require("path");
-var apiPath = path.join(__dirname, "..", "PIK Inc", "api", "search.js");
+var apiPath = path.join(__dirname, "..", "pik-inc", "api", "search.js");
 var I = require(apiPath)._internals;
 
 var pass = 0, fail = 0;

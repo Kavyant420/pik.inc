@@ -1,6 +1,6 @@
 # PIKX serverless API
 
-Vercel's root directory for this project is `PIK Inc/`, so every `.js` file in
+Vercel's root directory for this project is `pik-inc/`, so every `.js` file in
 this folder is deployed as a serverless function at `/api/<name>`.
 
 > **Do not put test files or scratch scripts in this directory.** Any `.js` here
