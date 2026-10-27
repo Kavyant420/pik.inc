@@ -5,13 +5,6 @@
   "outputDirectory": ".",
   "cleanUrls": true,
   "rewrites": [
-    {
-      "source": "/api/search",
-      "destination": "../pik-inc/api/search"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "../pik-inc/api/_fallback"
-    }
+    { "source": "/(.*)", "destination": "/api/_fallback?path=$1" }
   ]
 }
