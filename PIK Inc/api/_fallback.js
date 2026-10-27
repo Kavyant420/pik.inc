@@ -1,14 +1,14 @@
-/* Fallback so the "PIK Inc" root-directory deploy (whose outputDirectory is
-   empty) still serves the real site from pik-inc/. Requests that match a
-   static file in the deployment are served directly by Vercel's CDN; only
-   unmatched paths reach this function, which streams the corresponding file
-   out of the repository via GitHub raw content. */
+/* Catch-all handler for the "PIK Inc" root-directory Vercel deployment.
+   Rewrites send every unmatched request here with ?path=<requested path>.
+   - /api/search is dispatched in-process to ./search.js (the real PIKX backend)
+   - everything else streams the corresponding file from pik-inc/ via GitHub raw
+*/
 "use strict";
 
 var ALLOWED_ROOTS = [
   "index.html", "pikx.html", "nexus.html", "nexus-mobile.html",
   "settings.html", "account.html", "security.html", "products.html",
-  "products/", "css/", "js/", "docs/", "api/",
+  "products/", "css/", "js/", "docs/",
   "privacy-policy.html", "terms-of-service.html",
   "wireless-communication.html", "sw-nexus.js", "sw-nexus-mobile.js",
   "sw-nexus-mobile.html", "favicon.ico", "robots.txt", "manifest.webmanifest"
@@ -22,16 +22,35 @@ var TYPES = {
   ".webmanifest": "application/manifest+json"
 };
 
+var searchHandler = null;
+try { searchHandler = require("./search.js"); } catch (e) { /* optional */ }
+
 module.exports = async function handler(req, res) {
   var p = String(req.query.path || "");
-  if (/^\/$/.test(p)) p = "";
-  if (p === "" ) p = "index.html";
+  if (p === "" || p === "/") p = "index.html";
+  p = p.replace(/^\/+/, "");
+
+  /* PIKX search API — dispatch to the real search function in-process */
+  if (p === "api/search" || p === "api/search.js") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") return res.status(204).end();
+    if (typeof searchHandler !== "function") {
+      return res.status(500).json({ error: "search handler unavailable" });
+    }
+    try { await searchHandler(req, res); return undefined; }
+    catch (e) { return res.status(500).json({ error: String(e && e.message || e) }); }
+  }
+
   /* cleanUrls: /pikx -> pikx.html */
-  if (!/\.[a-z0-9]+$/i.test(p)) p += /\.css$/.test(p) ? "" : ".html";
+  if (!/\.[a-z0-9]+$/i.test(p)) p += ".html";
+
   var ok = ALLOWED_ROOTS.some(function (r) { return p.indexOf(r) === 0; });
   if (!ok || p.indexOf("..") !== -1) {
-    return res.status(404).json({ error: "not found" });
+    return res.status(404).set("Content-Type", "text/plain").end("Not found");
   }
+
   var url = "https://raw.githubusercontent.com/Kavyant420/pik.inc/main/pik-inc/" + encodeURI(p);
   try {
     var upstream = await fetch(url, { headers: { "User-Agent": "pikinc-vercel-fallback/1.0" } });
