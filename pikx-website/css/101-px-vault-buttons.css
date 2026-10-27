@@ -1,0 +1,76 @@
+/* ============================================================================
+   101 — PIKX vault-door buttons (original)
+   ----------------------------------------------------------------------------
+   The primary action for a zero-knowledge product: a machined metal key that
+   depresses under the finger. Pure CSS, transform/filter effects only — no
+   layout-affecting transitions, so hovering never reflows a result list.
+   ========================================================================= */
+
+.px-vaultbtn {
+  --px-vb-press: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .55em;
+  padding: .8em 1.6em;
+  border-radius: var(--px-r-pill, 999px);
+  border: 1px solid rgba(255,255,255,.22);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03) 45%, rgba(0,0,0,.25));
+  color: var(--px-ink, #e8e8ec);
+  font-weight: 600;
+  letter-spacing: .04em;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.25),
+    0 10px 24px -14px rgba(0,0,0,.9);
+  transition: transform .18s var(--px-ease-out, ease-out), box-shadow .18s ease, filter .18s ease;
+  will-change: transform;
+}
+
+.px-vaultbtn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+}
+
+.px-vaultbtn:active {
+  transform: translateY(1px) scale(.985);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* the engraved ring that "spins" once on press — one-shot, driven by a class
+   toggled from JS or :focus-visible as a keyboard affordance */
+.px-vaultbtn::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 1px dashed rgba(217,218,222,.35);
+  opacity: 0;
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+.px-vaultbtn:focus-visible::after,
+.px-vaultbtn.is-engaging::after { opacity: 1; animation: px-vb-spin 2.4s linear infinite; }
+
+@keyframes px-vb-spin { to { rotate: 360deg; } }
+
+.px-vaultbtn--ghost {
+  background: transparent;
+  border-color: var(--px-line, rgba(255,255,255,.12));
+  box-shadow: none;
+}
+
+.px-vaultbtn[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-vaultbtn { transition: none; }
+  .px-vaultbtn::after { animation: none; }
+}

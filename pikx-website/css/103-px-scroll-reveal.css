@@ -1,0 +1,49 @@
+/* ============================================================================
+   103 — PIKX scroll-reveal motion (original)
+   ----------------------------------------------------------------------------
+   One shared, GPU-only reveal recipe. The existing .px-reveal system in
+   77-px-motion.css animates opacity/transform; this adds direction variants
+   and stagger tokens that JS can set with a single custom property (--px-i).
+   Everything degrades to fully-visible when motion is reduced or unsupported.
+   ========================================================================= */
+
+.px-rise {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity .7s var(--px-ease-out, ease-out),
+    transform .7s cubic-bezier(.2, .8, .2, 1);
+  transition-delay: calc(var(--px-i, 0) * 60ms);
+}
+.px-rise.is-in { opacity: 1; transform: none; }
+
+.px-slide-start {
+  opacity: 0;
+  transform: translate3d(-18px, 0, 0);
+  transition: opacity .6s ease, transform .6s cubic-bezier(.2, .8, .2, 1);
+  transition-delay: calc(var(--px-i, 0) * 50ms);
+}
+.px-slide-start.is-in { opacity: 1; transform: none; }
+
+/* scale-in for tiles / favicons */
+.px-pop {
+  opacity: 0;
+  transform: scale(.94);
+  transition: opacity .45s ease, transform .45s var(--px-ease-out, ease-out);
+  transition-delay: calc(var(--px-i, 0) * 40ms);
+}
+.px-pop.is-in { opacity: 1; transform: scale(1); }
+
+/* If IntersectionObserver never runs (JS disabled), don't hide content.
+   noscript pages get this via the html element flag set in markup. */
+html.no-js .px-rise,
+html.no-js .px-slide-start,
+html.no-js .px-pop { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .px-rise, .px-slide-start, .px-pop {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

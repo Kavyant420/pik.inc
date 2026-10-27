@@ -1,14 +1,18 @@
-.px-aurora-orb { position: fixed; border-radius: 50%; filter: blur(70px); z-index: -2; pointer-events: none; opacity: .35; }
+/* PERFORMANCE: same story as .px-bg__aurora — two fixed 46–52vw orbs with
+   blur(70px) that animate transform every frame. Promoted to composited
+   layers and the blur radius trimmed; visually near-identical, dramatically
+   cheaper while result lists scroll over them. */
+.px-aurora-orb { position: fixed; border-radius: 50%; filter: blur(40px); z-index: -2; pointer-events: none; opacity: .35; will-change: transform; transform: translateZ(0); }
 
 .px-aurora-orb--a { top: -12%; left: -8%; width: 46vw; height: 46vw; background: radial-gradient(circle, rgba(163,163,163,.5), transparent 65%); animation: px-float-a 26s ease-in-out infinite alternate; }
 .px-aurora-orb--b { bottom: -18%; right: -10%; width: 52vw; height: 52vw; background: radial-gradient(circle, rgba(81,81,81,.65), transparent 62%); animation: px-float-b 32s ease-in-out infinite alternate; }
 
-@keyframes px-float-a { to { transform: translate(6vw, 8vh) scale(1.15); } }
-@keyframes px-float-b { to { transform: translate(-5vw, -6vh) scale(.92); } }
+@keyframes px-float-a { to { transform: translate3d(6vw, 8vh, 0) scale(1.15); } }
+@keyframes px-float-b { to { transform: translate3d(-5vw, -6vh, 0) scale(.92); } }
 
-.px-particlefield { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.px-particlefield { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; content-visibility: hidden; contain-intrinsic-size: 0 0; }
 
-.px-particle { position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; background: rgba(217,218,222,.5); box-shadow: 0 0 10px rgba(217,218,222,.35); animation: px-drift linear infinite; }
+.px-particle { position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; background: rgba(217,218,222,.5); box-shadow: 0 0 10px rgba(217,218,222,.35); animation: px-drift linear infinite; will-change: transform; }
 
 @keyframes px-drift {
   from { transform: translateY(0) translateX(0); opacity: 0; }

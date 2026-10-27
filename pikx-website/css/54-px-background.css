@@ -10,8 +10,17 @@
 .px-bg__aurora {
   position: absolute;
   inset: -20%;
-  filter: blur(90px) saturate(120%);
+  /* PERFORMANCE: a full-viewport blur(90px) that is also *animated* is one of
+     the most expensive things a browser can composite — it re-rasterises the
+     entire blurred layer every frame, and that cost multiplies with every
+     backdrop-filter glass card drawn on top of it (i.e. exactly when search
+     results paint). The radial gradients are already soft, so the heavy blur
+     was decorative only. Blur halved, animation promoted to its own composited
+     layer via translate3d + will-change so it no longer repaints the page. */
+  filter: blur(48px) saturate(120%);
   opacity: .5;
+  will-change: transform;
+  transform: translateZ(0);
   background:
     radial-gradient(38% 30% at 22% 28%, rgba(163,163,163,.22), transparent 70%),
     radial-gradient(32% 26% at 78% 62%, rgba(81,81,81,.34), transparent 70%),

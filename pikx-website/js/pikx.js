@@ -147,25 +147,55 @@
     targets.forEach(function (el) { io.observe(el); });
   };
 
+  /* PERFORMANCE: pointermove handlers used to call getBoundingClientRect() and
+     write styles synchronously on every mouse event. Each rect read during a
+     move forces layout, and each style write invalidates it again — the page
+     thrashed layout dozens of times per second while the cursor moved over a
+     card, which is exactly when a search result list is being painted. Both
+     handlers are now rAF-coalesced (one read+write per animation frame at
+     most) and passive. */
+  var rafSchedule = function (fn) {
+    var queued = false;
+    return function (arg) {
+      if (queued) { fn.lastArg = arg; return; }
+      queued = true;
+      requestAnimationFrame(function () {
+        queued = false;
+        var a = fn.lastArg !== undefined ? fn.lastArg : arg;
+        fn.lastArg = undefined;
+        fn(a);
+      });
+    };
+  };
+
   var wireSpotlight = function () {
     $$(".px-spotlight").forEach(function (el) {
-      el.addEventListener("pointermove", function (ev) {
+      var last = null;
+      var paint = function () {
+        if (!last) return;
         var r = el.getBoundingClientRect();
-        el.style.setProperty("--px-mx", ((ev.clientX - r.left) / r.width * 100) + "%");
-        el.style.setProperty("--px-my", ((ev.clientY - r.top) / r.height * 100) + "%");
-      });
+        el.style.setProperty("--px-mx", ((last.clientX - r.left) / r.width * 100) + "%");
+        el.style.setProperty("--px-my", ((last.clientY - r.top) / r.height * 100) + "%");
+      };
+      paint = rafSchedule(paint);
+      el.addEventListener("pointermove", function (ev) { last = ev; paint(ev); }, { passive: true });
     });
   };
 
   var wireTilt = function () {
     $$(".px-showcase").forEach(function (card) {
-      card.addEventListener("pointermove", function (ev) {
+      var last = null;
+      var paint = function () {
+        if (!last) return;
         var r = card.getBoundingClientRect();
-        var dx = (ev.clientX - r.left) / r.width - 0.5;
-        var dy = (ev.clientY - r.top) / r.height - 0.5;
+        var dx = (last.clientX - r.left) / r.width - 0.5;
+        var dy = (last.clientY - r.top) / r.height - 0.5;
         card.style.transform = "perspective(700px) rotateY(" + (dx * 10) + "deg) rotateX(" + (-dy * 10) + "deg) translateY(-7px) scale(1.015)";
-      });
+      };
+      paint = rafSchedule(paint);
+      card.addEventListener("pointermove", function (ev) { last = ev; paint(ev); }, { passive: true });
       card.addEventListener("pointerleave", function () {
+        last = null;
         card.style.transform = "";
       });
     });
@@ -319,6 +349,23 @@
       var node = appendMsgHtml("px-msg--nexus", "NEXUS · booting free engine chain…", '<span class="px-ov__cursor"></span>');
       var body = node ? node.querySelector("div:last-child") : null;
       var acc = "";
+      /* PERFORMANCE: SSE deltas arrive many times per second. Re-parsing the
+         whole accumulated markdown and replacing innerHTML on every token was
+         O(n²) work on the main thread — the page stuttered for the entire
+         stream. Coalesce to at most one repaint per animation frame. */
+      var paintQueued = false;
+      var paintStream = function (final) {
+        if (!body) return;
+        if (final) { body.innerHTML = mdRender(acc); return; }
+        if (paintQueued) return;
+        paintQueued = true;
+        requestAnimationFrame(function () {
+          paintQueued = false;
+          body.innerHTML = mdRender(acc) + '<span class="px-ov__cursor"></span>';
+          var feed = $("#pxNexusFeed");
+          if (feed) feed.scrollTop = feed.scrollHeight;
+        });
+      };
       try {
         if (nexusAbort) nexusAbort.abort();
         nexusAbort = new AbortController();
@@ -328,16 +375,13 @@
           signal: nexusAbort.signal,
           onDelta: function (d) {
             acc += d;
-            if (body) {
-              body.innerHTML = mdRender(acc) + '<span class="px-ov__cursor"></span>';
-              var feed = $("#pxNexusFeed");
-              if (feed) feed.scrollTop = feed.scrollHeight;
-            }
+            paintStream(false);
             if (typing.parentNode) typing.remove();
           }
         });
         if (typing.parentNode) typing.remove();
-        if (body) body.innerHTML = mdRender(r.text || acc);
+        acc = r.text || acc;
+        paintStream(true);
         nexusHistory.push({ role: "user", content: text });
         nexusHistory.push({ role: "assistant", content: r.text || acc });
         if (nexusHistory.length > 48) nexusHistory = nexusHistory.slice(-48);
@@ -801,28 +845,47 @@
   };
 
   var wireKeys = function () {
+    /* PERFORMANCE: this handler ran on EVERY keydown, including while the user
+       was typing in the search box. It re-queried the whole document for
+       .px-key elements and read each one's textContent — a forced style/layou
+       pass per keystroke — before doing anything else. Now we bail out first
+       when the event is not one of our shortcuts or originates from a text
+       field, and the keyboard-highlight query only runs once per frame of an
+       actual key press outside inputs. */
+    var keysCache = null;
     doc.addEventListener("keydown", function (ev) {
       if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") {
         ev.preventDefault();
         var input = $("#pxOmniInput");
         if (input) input.focus();
+        return;
       }
       if ((ev.ctrlKey || ev.metaKey) && ev.shiftKey && ev.key.toLowerCase() === "n") {
         ev.preventDefault();
         var modal = $("#pxModalWipe");
         if (modal) modal.classList.add("is-open");
+        return;
       }
       if (ev.key === "Escape") {
         closePanels();
-        var modal = $("#pxModalWipe");
-        if (modal) modal.classList.remove("is-open");
+        var modal2 = $("#pxModalWipe");
+        if (modal2) modal2.classList.remove("is-open");
+        return;
       }
-      $$(".px-key").forEach(function (k) {
-        if (k.textContent.trim().toLowerCase() === ev.key.toLowerCase()) {
-          k.classList.add("is-press");
-          setTimeout(function () { k.classList.remove("is-press"); }, 220);
+      /* Typing inside any field must never touch the decorative keyboard. */
+      var ae = doc.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return;
+      if (ev.key.length > 1 && ev.key !== " ") return;   /* modifiers/arrows */
+      if (!keysCache) keysCache = $$(".px-key");
+      var k = ev.key.toLowerCase();
+      for (var i = 0; i < keysCache.length; i++) {
+        if (keysCache[i].textContent.trim().toLowerCase() === k) {
+          var node = keysCache[i];
+          node.classList.add("is-press");
+          setTimeout(function () { node.classList.remove("is-press"); }, 220);
+          break;
         }
-      });
+      }
     });
   };
 
@@ -863,15 +926,40 @@
     row.children[2].textContent = vaultStamp();
     var note = log.querySelector(".px-log__note");
     log.insertBefore(row, note || null);
-    while (log.querySelectorAll(".px-log__row").length > 8) {
-      log.removeChild(log.querySelector(".px-log__row"));
+    /* PERFORMANCE: `querySelectorAll(...).length` re-queried the whole DOM on
+       every loop pass while rows were removed. Track the count instead. */
+    var rowCount = log.querySelectorAll(".px-log__row").length;
+    while (rowCount > 8) {
+      var first = log.querySelector(".px-log__row");
+      if (!first) break;
+      log.removeChild(first);
+      rowCount--;
     }
   };
 
   var ambientRotation = function () {
+    /* PERFORMANCE: the decorative ticker was rebuilt with innerHTML every
+       12 s regardless of whether anyone could see it — and the results view
+       hides the new-tab stage entirely, so all that string building and DOM
+       replacement happened while the user was reading search results, each
+       rotation forcing a fresh layout of the marquee. Now the work is skipped
+       when the page is hidden or the widgets are not in the active view. */
+    var heavyVisible = function () {
+      if (doc.hidden) return false;
+      var stage = $("#pxStage");
+      if (stage && stage.getAttribute("data-view") === "results") return false;
+      return true;
+    };
     setInterval(function () {
-      rotateIdentity(true);
-      vaultPush("Egress rotated to " + ghostIp() + " · nothing persisted", false);
+      state.rotations++;
+      state.requests += 1 + rand(4);
+      var rot = $("#pxRotCount");
+      if (rot && heavyVisible()) rot.textContent = "rot #" + state.rotations;
+      if (heavyVisible()) {
+        buildIpStream();
+        buildTicker();
+        vaultPush("Egress rotated to " + ghostIp() + " · nothing persisted", false);
+      }
     }, 12000);
     setInterval(tickClock, 1000);
     tickClock();
