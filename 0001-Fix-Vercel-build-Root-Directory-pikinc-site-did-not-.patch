@@ -1,0 +1,54 @@
+From 850d5f062749624cc6dfa622ce11b66c7d0b403f Mon Sep 17 00:00:00 2001
+From: "qwen.ai[bot]" <qwenlm-intl@service.alibaba.com>
+Date: Sun, 1 Nov 2026 15:49:49 +0000
+Subject: [PATCH] Fix Vercel build: Root Directory 'pikinc-site' did not exist
+ in the repo
+
+Vercel's project settings point at Root Directory "pikinc-site", but no such
+directory was tracked in git (the alias folder was named 'PIK Inc'), so every
+build failed with: The specified Root Directory "pikinc-site" does not exist.
+
+- Rename 'PIK Inc/' -> 'pikinc-site/' so a tracked directory matches the
+  configured Root Directory exactly (case-sensitive on Vercel's Linux clones).
+- Keep its vercel.json shim (framework null, empty buildCommand,
+  outputDirectory ../pik-inc) so the site content and URLs are unchanged.
+- Add pikinc-site/_tmp/.gitkeep as belt-and-braces: if the project's Root
+  Directory is actually '_tmp' (relative to repo root that resolves to
+  pikinc-site/_tmp), the folder now exists and is tracked too.
+- Fix .gitignore: bare '_tmp/' matched ANY depth, including the new
+  pikinc-site/_tmp; anchor it to '/_tmp/' so only the root scratch dir is
+  ignored (verified with git check-ignore).
+---
+ .gitignore                           | 8 +++++++-
+ pikinc-site/_tmp/.gitkeep            | 0
+ {PIK Inc => pikinc-site}/vercel.json | 0
+ 3 files changed, 7 insertions(+), 1 deletion(-)
+ create mode 100644 pikinc-site/_tmp/.gitkeep
+ rename {PIK Inc => pikinc-site}/vercel.json (100%)
+
+diff --git a/.gitignore b/.gitignore
+index b244a95..63bbb56 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,4 +1,10 @@
+-_tmp/
++# Ignore only the root-level /_tmp/ scratch dir (Vercel treats a leading slash
++# as repo-root-relative). Without the leading slash, gitignore matches ANY
++# directory named _tmp at any depth — including pikinc-site/_tmp, which is the
++# Vercel project's configured Root Directory. When that folder was ignored,
++# it contained no tracked files, so GitHub/Vercel didn't see it and builds
++# failed with: 'The specified Root Directory "pikinc-site" does not exist.'
++/_tmp/
+ node_modules/
+ npm-debug.log*
+ .DS_Store
+diff --git a/pikinc-site/_tmp/.gitkeep b/pikinc-site/_tmp/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/PIK Inc/vercel.json b/pikinc-site/vercel.json
+similarity index 100%
+rename from PIK Inc/vercel.json
+rename to pikinc-site/vercel.json
+-- 
+2.39.5
+
