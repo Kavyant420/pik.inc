@@ -1,19 +1,11 @@
 /* ============================================================================
    PIK//NEXUS — router.js
-   Chat transport with explicit provider routing:
-     1. OpenRouter models when the visitor has configured an OpenRouter key
-     2. Puter GPT-5.6 Luna only after the visitor opts in to its user-pays
-        allowance (monthly free allowance first; purchased credits may apply)
+   Chat transport:
+     1. OpenRouter :free models when an OpenRouter key is configured
+     2. BlockRun GPT-OSS 20B as the public no-login, no-key fallback (128K context)
      3. DeepInfra only when the visitor has configured a DeepInfra key
      4. PIK MicroEngine when enabled as an on-device fallback
-   Legacy Pollinations helpers remain for compatibility but are not treated
-   as an anonymous, free inference service.
-   Legacy Pollinations helpers are not part of the default provider chain.
-   Qwen community gateways are optional and their availability can change.
-   Puter requests (including Qwen-through-Puter) are blocked unless the user
-   explicitly enables the Puter usage consent in Settings.
-   Consent-gated Puter and optional on-device inference are used when a keyed
-   OpenRouter route is unavailable; reasoning streams into the THINKING panel.
+   Community gateways are best-effort and may change access rules.
    Every outbound payload is SHA-256 digested before send; digests are kept in
    a local audit ledger so you can verify exactly what left the machine.
    ========================================================================= */
@@ -25,7 +17,7 @@
   var Router = {
     /* usage ledger: timestamps of OR requests inside rolling window */
     _usage: [],
-    engine: "openrouter",   // openrouter | pollinations | puter | polli-get | deepinfra-free | local-micro
+    engine: "blockrun",   // blockrun | openrouter | deepinfra-free | local-micro
     onEngineChange: null,   // callback(engine, reason)
     _orBurned: false,       // set once OpenRouter reports quota exhausted
     _blacklist: {},         // engines that returned 401/403/404 this session (key-gated or dead)
@@ -37,9 +29,9 @@
         if (saved && saved.burned) this._orBurned = true;
       } catch (e) {}
       this._prune();
-      // No OpenRouter key or an exhausted budget -> show the consent-gated Puter route.
+      // No OpenRouter key or an exhausted budget -> use anonymous BlockRun.
       if (!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || this.budgetLeft() <= 0 || this._orBurned) {
-        this.engine = "puter";
+        this.engine = "blockrun";
       }
     },
 
@@ -84,7 +76,7 @@
       /* ---------- agent skills: equip the turn ----------------------------
          Active skill chips from the prompt well append their instruction
          blocks to the system prompt of EVERY engine hop (OpenRouter,
-         pollinations, puter, deepinfra, local micro core) — one injection
+         BlockRun, community gateways, deepinfra, local micro core) — one injection
          point covers the whole transport chain. */
       if (global.PIKSkills && PIKSkills.promptBlock().length) {
         var skillBlock = PIKSkills.promptBlock();
@@ -139,17 +131,14 @@
 
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
       var isQwen = String(opts.model || CFG.SUGGESTED_MODEL || "").indexOf("qwen") !== -1;
-      var usePuterDefault = !!CFG.NO_KEY_MODEL &&
+      var useBlockRunDefault = !!CFG.NO_KEY_MODEL &&
         (opts.model === CFG.NO_KEY_MODEL || (!hasKey && !isQwen));
-      var wantOR = hasKey && !usePuterDefault && !this._orBurned && this.budgetLeft() > 0;
-      if (usePuterDefault && !settings.allowPuterUsage) {
-        throw new Error("GPT-5.6 Luna via Puter is the no-OpenRouter-key default. Enable “Allow Puter AI usage” in Settings first. Puter applies your monthly free allowance and may use purchased credits after it runs out.");
-      }
+      var wantOR = hasKey && !useBlockRunDefault && !this._orBurned && this.budgetLeft() > 0;
 
       /* ---------- optional Qwen 3.8 27B gateway route ----------------------
          When selected, Qwen skips OpenRouter and tries the available gateway
-         chain. The Puter hop is skipped unless the user has explicitly
-         enabled Puter usage in Settings. Gateway availability is not promised. */
+         chain. The legacy provider hop is skipped unless the user has explicitly
+         enabled legacy provider usage in Settings. Gateway availability is not promised. */
       if (isQwen && !this._blacklist["qwen-chain"]) {
         try {
           var qr = await this._viaQwen(opts, settings);
@@ -176,33 +165,31 @@
             // burn remaining budget locally so we stop hammering OR this hour
             while (this.budgetLeft() > 0) this._usage.push(Date.now());
             await this._record();
-            this._setEngine("puter", "free-quota");
+            this._setEngine("blockrun", "free-quota");
           } else {
-            this._setEngine("puter", "error:" + (e && e.message));
+            this._setEngine("blockrun", "error:" + (e && e.message));
           }
         }
       } else if (!hasKey) {
-        this._setEngine("puter", "no-key");
+        this._setEngine("blockrun", "no-key");
       } else if (this._orBurned || this.budgetLeft() <= 0) {
-        this._setEngine("puter", "budget-exhausted");
+        this._setEngine("blockrun", "budget-exhausted");
       }
 
       /* ---------- provider fallback chain ----------
-         Puter is user-pays and is attempted only after explicit consent.
-         Legacy Pollinations endpoints are intentionally not called here:
-         current generation requests require a user-authorized key. */
+         BlockRun is public and requires no account or API key. DeepInfra is
+         skipped unless the visitor has configured its own key. */
       var attempts = [
-        { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
+        { fn: this._viaBlockRun.bind(this, opts, settings), name: "blockrun" },
         { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
       ];
       var lastErr = null, ok = false;
       for (var i = 0; i < attempts.length; i++) {
         if (this._blacklist[attempts[i].name]) continue; // known key-gated / dead
+        if (attempts[i].name === "deepinfra-free" && !PIKCrypto.peekSecret(CFG.LS.KEY_DI)) continue;
         try {
           var res = await attempts[i].fn();
           ok = true;
-          /* Remember the last successful Puter route for diagnostics only. */
-          if (attempts[i].name === "puter") this._puterLastGood = true;
           /* every remote completion counts against the daily skill cap */
           if (global.PIKUsage) { try { PIKUsage.record(attempts[i].name); } catch (e) {} }
           this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
@@ -233,8 +220,8 @@
         }
         // friendly message, not a raw 401/503
         var msg = String((lastErr && lastErr.message) || "");
-        if (/401|403/.test(msg)) msg = "AI provider refused the request — check the provider account and selected model, then retry";
-        else if (/503|429|502/.test(msg)) msg = "AI provider is busy or rate-limited — wait a moment and retry, or enable the on-device core in Settings";
+        if (/401|403/.test(msg)) msg = "AI provider refused the request — check the selected model and retry";
+        else if (/503|429|502/.test(msg)) msg = "AI provider is busy or rate-limited — wait a moment and retry";
         else if (/402/.test(msg)) msg = "provider usage allowance is exhausted or the request needs credits — check the provider's usage page or choose another route";
         var err = new Error(msg || "all free engines unavailable");
         err.allEnginesFailed = true;
@@ -245,9 +232,8 @@
     /* ======================================================================
        OPTIONAL QWEN 3.8 27B GATEWAY ROUTE
        ----------------------------------------------------------------------
-       Qwen is not part of the OpenRouter :free catalog. The Puter hop is
-       consent-gated; community gateways are best-effort and may be offline
-       or change access rules. No availability or zero-cost guarantee. */
+       Community gateways are best-effort and may be offline or change
+       access rules. No availability or zero-cost guarantee. */
     async _viaQwen(opts, settings) {
       var self = this;
       var sys = this._sysPrompt(settings);
@@ -258,26 +244,9 @@
       }));
       var lastErr = null;
 
-      /* --- hop 1: Puter Qwen route, only after explicit user consent --- */
-      if (settings && settings.allowPuterUsage) {
-        try {
-          var qwenOpts = Object.assign({}, opts, {
-            model: CFG.QWEN_MODEL || "qwen/qwen3.8-27b"
-          });
-          var qwenPuter = await this._viaPuter(qwenOpts, settings);
-          qwenPuter.engine = "qwen-puter";
-          qwenPuter.model = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
-          return qwenPuter;
-        } catch (e) {
-          if (e && e.name === "AbortError") throw e;
-          lastErr = e;
-        }
-      }
-
-      /* --- hops 2-4: plain OpenAI-compatible POSTs, streamed ---
-         Honesty note: these community gateways can be unavailable or change
-         access rules. OpenRouter app routing is used only when its key exists;
-         Puter is tried only after the user's explicit usage consent. */
+      /* --- public OpenAI-compatible community gateways, streamed ---
+         These gateways can be unavailable or change access rules. OpenRouter
+         app routing is used only when its key exists. */
       var orKey = "";
       try { orKey = PIKCrypto.peekSecret(CFG.LS.KEY_OR) || ""; } catch (e) {}
       var gateways = (CFG.QWEN_GATEWAYS || []).filter(function (g) {
@@ -383,7 +352,7 @@
       return this._consumeSSE(res, opts, { engine: "openrouter", model: model, digest: meta.digest });
     },
 
-    /* ---------- Legacy Pollinations helper (authorized key may be required) - */
+    /* ---------- Legacy legacy text provider helper (authorized key may be required) - */
     /* unified system prompt getter — `DEFAULTS` is module-private to
        nexus-settings.js, so referencing it here used to throw a ReferenceError
        on every keyless hop whenever settings.systemPrompt was empty. */
@@ -395,44 +364,24 @@
       return sp || "You are PIK NEXUS, an elite autonomous agentic coding partner. Every response must be top-tier: lead with a direct answer, then structured markdown depth; emit COMPLETE runnable code in fenced blocks with the file path on the info string (```src/app.js\\ncode\\n```) so the workbench writes it into the project tree; reason exhaustively but present only the distilled result; never truncate files, never pad, never reveal secrets.";
     },
 
-    async _viaPollinations(opts, settings, endpoint, engineName) {
-      endpoint = endpoint || CFG.POLLINATIONS_URL;
-      var sys = this._sysPrompt(settings);
-      var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
-        // flatten multimodal parts to text for keyless endpoints
+    /* ---------- BlockRun anonymous GPT-OSS 20B endpoint ------------------
+       Its published quick-start requires no account, login, or API key.
+       The hosted GPT-OSS 20B model advertises a 128K context window. */
+    async _viaBlockRun(opts, settings) {
+      var messages = [{ role: "system", content: this._sysPrompt(settings) }].concat((opts.messages || []).map(function (m) {
         if (typeof m.content === "string") return m;
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
         return { role: m.role, content: txt };
       }));
-      var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
-      /* validate the model against the live catalog — an unknown model name
-         makes the strict OpenAI-compatible endpoint answer HTTP 400. Fall back
-         to the keyless default instead of poisoning every hop in the chain. */
-      if (CFG.POLLI_MODELS && CFG.POLLI_MODELS.length && CFG.POLLI_MODELS.indexOf(model) === -1) {
-        model = CFG.POLLINATIONS_DEFAULT_MODEL;
-      }
-      /* "max" is NOT a valid reasoning_effort on the free endpoint — sending
-         it produced HTTP 400. CFG.THINKING_MAP clamps max -> high now, but
-         double-guard here so any stale value can never poison the request. */
-      var effort = CFG.THINKING_MAP[opts.thinking] || "medium";
-      if (["low", "medium", "high"].indexOf(effort) === -1) effort = "high";
-      /* Max thinking on free models: when the endpoint accepts no native
-         reasoning_effort ladder at the requested level, ask the model to run
-         its full internal chain-of-thought anyway (reasoning tokens stream
-         back into the THINKING trace, never into the visible answer). */
-      if (opts.thinking === "max") {
-        messages[0] = { role: "system", content: messages[0].content +
-          "\n- MAX REASONING MODE: think through the problem exhaustively step by step internally before answering. Keep all extended reasoning inside your internal chain-of-thought; the final visible answer must stay concise and well-formatted." };
-      }
       var body = {
-        model: model, messages: messages, stream: true,
-        private: true, referrer: "pik.nexus",
-        reasoning_effort: effort
+        model: CFG.BLOCKRUN_MODEL || "nvidia/gpt-oss-20b",
+        messages: messages,
+        stream: true,
+        max_tokens: CFG.BLOCKRUN_MAX_OUTPUT_TOKENS || 8192
       };
       if (typeof opts.temperature === "number") body.temperature = opts.temperature;
       var meta = await this.digest(body);
-
-      var res = await fetch(endpoint, {
+      var res = await fetch(CFG.BLOCKRUN_CHAT_URL || "https://blockrun.ai/api/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
         body: JSON.stringify(body),
@@ -441,118 +390,31 @@
       if (!res.ok) {
         var errText = "";
         try { errText = await res.text(); } catch (e) {}
-        var err = new Error(engineName + " HTTP " + res.status + " " + errText.slice(0, 160));
+        var err = new Error("BlockRun HTTP " + res.status + " " + errText.slice(0, 200));
         err.status = res.status;
         throw err;
       }
-
       var ctype = res.headers.get("content-type") || "";
-      if (ctype.indexOf("event-stream") !== -1) {
-        return this._consumeSSE(res, opts, { engine: engineName, model: model, digest: meta.digest, usedFallback: true });
+      if (ctype.indexOf("event-stream") !== -1 && res.body) {
+        return this._consumeSSE(res, opts, {
+          engine: "blockrun", model: body.model, digest: meta.digest, usedFallback: true
+        });
       }
       var json = await res.json();
       var choice = (json.choices && json.choices[0]) || {};
       var msg = choice.message || {};
-      var text = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content || "");
-      var reasoning = msg.reasoning || msg.reasoning_content || json.reasoning || "";
-      /* a native tool call is a complete answer on its own — it carries no
-         content, so treating it as "empty" discarded the call and surfaced the
-         private reasoning instead */
-      var nativeCalls = Array.isArray(msg.tool_calls)
-        ? msg.tool_calls.map(function (tc) {
-            var fn = tc.function || {};
-            return { id: tc.id || "", name: fn.name || "", args: fn.arguments || "" };
-          }).filter(function (c) { return c.name || c.args; })
-        : [];
-      if (text === "" && !nativeCalls.length && reasoning) text = reasoning;
-      if (text === "" && !nativeCalls.length) throw new Error(engineName + " empty response");
+      var text = typeof msg.content === "string" ? msg.content : "";
+      var toolCalls = (msg.tool_calls || []).map(function (tc) {
+        var fn = tc.function || {};
+        var args = fn.arguments == null ? "" : fn.arguments;
+        return { id: tc.id || "", name: fn.name || "", args: typeof args === "string" ? args : JSON.stringify(args) };
+      });
+      if (!text && !toolCalls.length) throw new Error("BlockRun returned an empty response.");
       if (text && opts.onDelta) { try { opts.onDelta(text, false); } catch (e) {} }
       return {
-        text: text, reasoning: reasoning,
-        toolCalls: nativeCalls,
-        finishReason: choice.finish_reason || "",
-        engine: engineName, model: json.model || model,
-        digest: meta.digest, usedFallback: true
-      };
-    },
-
-    /* ---------- Legacy Pollinations GET compatibility helper --------------
-       This is not part of the default no-key provider chain.                 */
-    async _viaPolliGet(opts, settings) {
-      var flat = opts.messages.filter(function (m) { return m.role !== "system"; });
-      var last = flat[flat.length - 1];
-      var prompt = last ? (typeof last.content === "string" ? last.content
-        : (last.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n")) : "";
-      if (!prompt) throw new Error("polli-get empty prompt");
-      /* include a compact transcript so multi-turn still works over GET */
-      var ctx = flat.slice(-6, -1).map(function (m) {
-        var c = typeof m.content === "string" ? m.content
-          : (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
-        return (m.role === "user" ? "User: " : "Assistant: ") + c.slice(0, 2000);
-      }).join("\n");
-      var full = ctx ? ctx + "\nUser: " + prompt : prompt;
-      var sys = this._sysPrompt(settings);
-      var model = settings.polliModel || CFG.POLLINATIONS_DEFAULT_MODEL;
-      /* The system prompt used to be sliced to 2000 chars here. It is ~4.8k,
-         and the AGENT TOOLS contract sits near the end of it — so this hop
-         silently told the model nothing about WEBSEARCH/WEBGET and could never
-         produce a tool call. Raised to cover the whole default prompt. */
-      var u = CFG.POLLINATIONS_GET_URL + encodeURIComponent(full.slice(0, 24000)) +
-        "?model=" + encodeURIComponent(model) + "&system=" + encodeURIComponent(sys.slice(0, 6000)) + "&json=false";
-      var meta = await this.digest({ url: u });
-      var res = await fetch(u, { signal: opts.signal });
-      if (!res.ok) {
-        var e = new Error("polli-get HTTP " + res.status);
-        e.status = res.status;
-        throw e;
-      }
-      var text = (await res.text() || "").trim();
-      if (!text || text.length < 2) throw new Error("polli-get empty response");
-
-      /* Despite json=false this endpoint returns a JSON envelope whenever the
-         model answers with reasoning and/or tool calls:
-           {"role":"assistant","reasoning":"…","tool_calls":[{…}],"content":"…"}
-         The old code passed that straight through as the answer, so the user
-         was shown raw JSON. Unwrap it into the same shape the streaming path
-         produces, so the agent loop can act on the tool calls. */
-      var reasoning = "";
-      var toolCalls = [];
-      if (/^[\[{]/.test(text)) {
-        try {
-          var parsed = JSON.parse(text);
-          var msg = Array.isArray(parsed) ? parsed[0] : parsed;
-          if (msg && typeof msg === "object") {
-            var content = msg.content != null ? msg.content
-              : (msg.message != null ? msg.message : "");
-            if (typeof content !== "string") content = JSON.stringify(content);
-            reasoning = msg.reasoning || msg.reasoning_content || "";
-            if (Array.isArray(msg.tool_calls)) {
-              toolCalls = msg.tool_calls.map(function (tc) {
-                var fn = tc.function || {};
-                var args = fn.arguments != null ? fn.arguments
-                  : (tc.arguments != null ? tc.arguments : "");
-                return {
-                  id: tc.id || "",
-                  name: fn.name || tc.name || "",
-                  args: typeof args === "string" ? args : JSON.stringify(args)
-                };
-              }).filter(function (c) { return c.name || c.args; });
-            }
-            if (content || toolCalls.length || reasoning) text = String(content || "");
-          }
-        } catch (eNotJson) { /* not an envelope after all — keep the raw text */ }
-      }
-
-      if (!text && !toolCalls.length) {
-        /* a tool call with no prose is a complete answer on its own */
-        if (reasoning) text = reasoning;
-        else throw new Error("polli-get empty response");
-      }
-      if (text && opts.onDelta) { try { opts.onDelta(text, false); } catch (er) {} }
-      return {
-        text: text, reasoning: reasoning, toolCalls: toolCalls,
-        finishReason: toolCalls.length ? "tool_calls" : "",
-        engine: "polli-get", model: model, digest: meta.digest, usedFallback: true
+        text: text, reasoning: msg.reasoning || msg.reasoning_content || "",
+        toolCalls: toolCalls, finishReason: choice.finish_reason || (toolCalls.length ? "tool_calls" : "stop"),
+        engine: "blockrun", model: json.model || body.model, digest: meta.digest, usedFallback: true
       };
     },
 
@@ -613,173 +475,6 @@
       return { text: text, reasoning: msg.reasoning || "", engine: "deepinfra-free", model: CFG.DEEPINFRA_MODEL, digest: meta.digest, usedFallback: true };
     },
 
-    /* ---------- Puter.js consent-gated user-pays provider ----------------
-       Loads https://js.puter.com/v2/ on demand. It needs no OpenRouter key,
-       but uses the user's monthly Puter allowance and may use purchased
-       credits after it runs out. The caller must enable explicit consent.
-
-       CSP note: nexus.html's script-src does not whitelist js.puter.com, so
-       a plain <script src> injection is blocked ("Loading the script ...
-       violates the following Content Security Policy directive"). We relax
-       ONLY script-src-elem (script-src keeps its 'unsafe-eval' fallback for
-       everything else) before injecting, and restore the original policy
-       once the SDK has loaded or failed. */
-    _puterPromise: null,
-    _puterMetadataPromise: null,
-    _cspRelaxed: false,
-    _relaxCSPForPuter() {
-      try {
-        var metas = Array.prototype.slice.call(document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]'));
-        if (!metas.length) return;
-        var m = metas[0];
-        this._cspOriginal = m.getAttribute("content");
-        var cur = this._cspOriginal || "";
-        if (/script-src-elem/.test(cur)) return; // already handled explicitly
-        this._cspRelaxed = true;
-        m.setAttribute("content", cur + "; script-src-elem 'self' 'unsafe-inline' https://js.puter.com");
-      } catch (e) { /* never let CSP plumbing break the chain */ }
-    },
-    _restoreCSP() {
-      try {
-        if (!this._cspRelaxed || !this._cspOriginal) return;
-        var m = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-        if (m) m.setAttribute("content", this._cspOriginal);
-        this._cspRelaxed = false;
-      } catch (e) {}
-    },
-    _syncPuterModelMetadata(pt) {
-      if (!pt || !pt.ai || typeof pt.ai.listModels !== "function" ||
-          !global.PIKModels || typeof PIKModels.applyPuterModelMetadata !== "function") {
-        return Promise.resolve(pt);
-      }
-      if (this._puterMetadataPromise) return this._puterMetadataPromise;
-      this._puterMetadataPromise = Promise.resolve().then(function () {
-        return pt.ai.listModels();
-      }).then(function (catalog) {
-        PIKModels.applyPuterModelMetadata(catalog);
-        return pt;
-      }).catch(function (error) {
-        console.warn("[PIK Puter] model metadata unavailable; using conservative context budget:", error && error.message);
-        return pt;
-      });
-      return this._puterMetadataPromise;
-    },
-
-    ensurePuter() {
-      if (global.puter && global.puter.ai) return this._syncPuterModelMetadata(global.puter);
-      if (this._puterPromise) return this._puterPromise;
-      this._puterPromise = new Promise((function (resolve, reject) {
-        this._relaxCSPForPuter();
-        var done = function (fn, arg) { this._restoreCSP(); fn(arg); }.bind(this);
-        var s = document.createElement("script");
-        s.src = CFG.PUTER_CDN;
-        s.async = true;
-        s.onload = function () {
-          if (global.puter && global.puter.ai) {
-            PIKRouter._syncPuterModelMetadata(global.puter).then(resolve, reject);
-          } else done(reject, new Error("puter loaded but puter.ai missing"));
-        };
-        s.onerror = function () {
-          PIKRouter._puterPromise = null;
-          done(reject, new Error("puter CDN unreachable (CSP or network)"));
-        };
-        document.head.appendChild(s);
-      }).bind(this));
-      return this._puterPromise;
-    },
-
-    async _viaPuter(opts, settings) {
-      if (!settings || !settings.allowPuterUsage) {
-        throw new Error("Puter usage is disabled. Enable “Allow Puter AI usage” in Settings before using this provider.");
-      }
-      var pt = await this.ensurePuter();
-      var sys = this._sysPrompt(settings);
-      var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
-        if (typeof m.content === "string") return m;
-        var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
-        return { role: m.role, content: txt };
-      }));
-
-      var requested = String(opts.model || "");
-      var model = requested.indexOf("qwen") !== -1
-        ? (CFG.QWEN_MODEL || "qwen/qwen3.8-27b")
-        : (CFG.PUTER_DEFAULT_MODEL || "gpt-5.6-luna");
-      var kw = { model: model, stream: true, signal: opts.signal };
-      if (model === "gpt-5.6-luna") {
-        /* Pin the requested provider: do not silently reroute a user-pays
-           request to another vendor when the selected OpenAI provider fails. */
-        kw.provider = "openai";
-        kw.fallback = false;
-      }
-      var effort = String(opts.thinking || "high").toLowerCase();
-      if (model.indexOf("openai/") === 0 || model === "gpt-5.6-luna") {
-        kw.reasoning_effort = effort === "max" ? "xhigh" : (effort === "medium" ? "medium" : effort === "low" ? "low" : "high");
-        /* GPT reasoning models ignore sampling controls when reasoning is on. */
-      } else {
-        kw.temperature = typeof opts.temperature === "number" ? opts.temperature : 0.7;
-        if (effort === "max" || effort === "high") kw.mode = "thinking";
-      }
-
-      var stream = await pt.ai.chat(messages, false, kw);
-      if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
-        throw new Error("Puter did not return a streaming response.");
-      }
-
-      var full = "", reason = "", toolCalls = [];
-      for await (var part of stream) {
-        if (opts.signal && opts.signal.aborted) {
-          var ab = new Error("aborted"); ab.name = "AbortError"; throw ab;
-        }
-        if (!part) continue;
-
-        if (part.type === "error") {
-          throw new Error("Puter stream error: " + String(part.message || "unknown provider error"));
-        }
-        if (part.type === "text") {
-          var textDelta = String(part.text || "");
-          if (textDelta) {
-            full += textDelta;
-            if (opts.onDelta) opts.onDelta(textDelta, false);
-          }
-        } else if (part.type === "reasoning") {
-          var reasoningDelta = String(part.reasoning || part.text || "");
-          if (reasoningDelta) {
-            reason += reasoningDelta;
-            if (opts.onDelta) opts.onDelta(reasoningDelta, true);
-          }
-        } else if (part.type === "tool_use") {
-          toolCalls.push({
-            id: String(part.id || "puter-tool-" + toolCalls.length),
-            name: String(part.name || ""),
-            args: JSON.stringify(part.input == null ? {} : part.input)
-          });
-        } else if (part.type == null) {
-          /* Backward compatibility with older Puter chunk shapes. */
-          var legacy = part.delta != null ? String(part.delta)
-            : (part.cached != null && !part.cached) ? String(part.message || "")
-            : (part.text != null ? String(part.text) : "");
-          if (legacy) {
-            full += legacy;
-            if (opts.onDelta) opts.onDelta(legacy, false);
-          }
-          if (part.reasoning) {
-            var legacyReason = String(part.reasoning);
-            reason += legacyReason;
-            if (opts.onDelta) opts.onDelta(legacyReason, true);
-          }
-        }
-      }
-
-      if (!full && !toolCalls.length && reason) full = reason;
-      if (!full && !toolCalls.length) throw new Error("Puter returned an empty response.");
-      return {
-        text: full, reasoning: reason, toolCalls: toolCalls,
-        finishReason: toolCalls.length ? "tool_calls" : "stop",
-        engine: "puter", model: model, digest: "",
-        usedFallback: true
-      };
-    },
-
     /* ---------- shared SSE reader ---------- */
     async _consumeSSE(res, opts, base) {
       var reader = res.body.getReader();
@@ -795,7 +490,7 @@
          below then displayed the model's PRIVATE reasoning as if it were the
          answer. That is why NEXUS replied with things like "Need to search."
          instead of actually searching. Verified against
-         text.pollinations.ai/openai (gpt-oss-20b) on 2026-10-25. */
+         the OpenAI-compatible streaming endpoint. */
       var toolCalls = {};   /* index -> {id, name, args} */
       var finishReason = "";
 
@@ -814,16 +509,7 @@
           try { obj = JSON.parse(data); } catch (e) { continue; }   /* partial frame */
           if (!obj) continue;
 
-          /* Upstream error frames. Pollinations terminates a broken stream with
-               data: {"error":{"message":"…","type":"upstream_error","code":"usage_missing"}}
-             rather than closing it cleanly. This used to be ignored, so the
-             router returned whatever partial text had arrived — which is how a
-             truncated stream surfaced the model's private reasoning ("Need to
-             search.") as if it were the answer. Throwing here lets the fallback
-             chain do its job and move on to the next engine.
-             Observed live 2026-10-25; the free tier is also rate limited to
-             roughly one reply per 30s per IP, which answers HTTP 402
-             FREE_LIMIT and is handled by the !res.ok path in the caller. */
+          /* Upstream error frames must throw so the fallback chain can retry another provider. */
           if (obj.error) {
             var em = obj.error;
             var eUp = new Error((base.engine || "stream") + " upstream error: " +
