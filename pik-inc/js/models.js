@@ -51,6 +51,7 @@
           });
         }
         free.unshift(Models.noKeyDefault());
+        free.sort(function (a, b) { return (Number(b.ctx) || 0) - (Number(a.ctx) || 0); });
         this.all = free;
         this.byId = {};
         var _s = this;
@@ -206,7 +207,8 @@
           suggested: r[0] === (CFG.QWEN_MODEL || CFG.SUGGESTED_MODEL)
         };
       });
-      snapshot.unshift(Models.noKeyDefault());
+      snapshot.push(Models.noKeyDefault());
+      snapshot.sort(function (a, b) { return (Number(b.ctx) || 0) - (Number(a.ctx) || 0); });
       return snapshot;
     }
   };
