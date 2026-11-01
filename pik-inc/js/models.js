@@ -83,7 +83,7 @@
         tools: true,
         noKeyDefault: true,
         requiresOpenRouterKey: false,
-        desc: "OpenAI GPT-5.6 Luna served through Puter.js. No OpenRouter key is needed. Nexus caps the total context at 256K (128K input plus up to 128K output). Puter applies your monthly free allowance; purchased credits may be used after it runs out. This is not the ChatGPT Free subscription.",
+        desc: "OpenAI GPT-5.6 Luna served through Puter.js. No OpenRouter key is needed. Nexus caps the total context at 256K (128K input plus up to 128K output). Puter applies your monthly free allowance; purchased credits may be used after it runs out. This is not the ChatGPT Free subscription. Use only if eligible under Puter's terms and local age/consent rules.",
         logo: Models.logoUrl("puter"),
         suggested: false
       };
