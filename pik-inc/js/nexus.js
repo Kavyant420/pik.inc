@@ -454,11 +454,11 @@
         pill.dataset.engine = PIKRouter.engine;
         pill.querySelector("span").textContent = PIKRouter.engine.toUpperCase();
         var eng = PIKRouter.engine;
-        budget.textContent = (eng === "pollinations" || eng === "polli-alt" || eng === "polli-get")
-          ? "anonymous inference · BlockRun GPT-OSS 20B"
+        budget.textContent = eng === "blockrun"
+          ? "anonymous inference · BlockRun GPT-OSS 20B · 128K context"
           : eng === "deepinfra-free"
-            ? "free-tier failover · deepinfra public API"
-            : "BlockRun anonymous · no login or API key";
+            ? "DeepInfra · configured API key"
+            : "OpenRouter · configured API key";
       }
       paint();
       document.addEventListener("pik:engine", paint);
