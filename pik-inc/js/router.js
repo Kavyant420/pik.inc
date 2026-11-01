@@ -630,6 +630,7 @@
        everything else) before injecting, and restore the original policy
        once the SDK has loaded or failed. */
     _puterPromise: null,
+    _puterMetadataPromise: null,
     _cspRelaxed: false,
     _relaxCSPForPuter() {
       try {
@@ -651,8 +652,26 @@
         this._cspRelaxed = false;
       } catch (e) {}
     },
+    _syncPuterModelMetadata(pt) {
+      if (!pt || !pt.ai || typeof pt.ai.listModels !== "function" ||
+          !global.PIKModels || typeof PIKModels.applyPuterModelMetadata !== "function") {
+        return Promise.resolve(pt);
+      }
+      if (this._puterMetadataPromise) return this._puterMetadataPromise;
+      this._puterMetadataPromise = Promise.resolve().then(function () {
+        return pt.ai.listModels();
+      }).then(function (catalog) {
+        PIKModels.applyPuterModelMetadata(catalog);
+        return pt;
+      }).catch(function (error) {
+        console.warn("[PIK Puter] model metadata unavailable; using conservative context budget:", error && error.message);
+        return pt;
+      });
+      return this._puterMetadataPromise;
+    },
+
     ensurePuter() {
-      if (global.puter && global.puter.ai) return Promise.resolve(global.puter);
+      if (global.puter && global.puter.ai) return this._syncPuterModelMetadata(global.puter);
       if (this._puterPromise) return this._puterPromise;
       this._puterPromise = new Promise((function (resolve, reject) {
         this._relaxCSPForPuter();
@@ -661,8 +680,9 @@
         s.src = CFG.PUTER_CDN;
         s.async = true;
         s.onload = function () {
-          if (global.puter && global.puter.ai) done(resolve, global.puter);
-          else done(reject, new Error("puter loaded but puter.ai missing"));
+          if (global.puter && global.puter.ai) {
+            PIKRouter._syncPuterModelMetadata(global.puter).then(resolve, reject);
+          } else done(reject, new Error("puter loaded but puter.ai missing"));
         };
         s.onerror = function () {
           PIKRouter._puterPromise = null;
@@ -688,8 +708,14 @@
       var requested = String(opts.model || "");
       var model = requested.indexOf("qwen") !== -1
         ? (CFG.QWEN_MODEL || "qwen/qwen3.8-27b")
-        : (CFG.PUTER_DEFAULT_MODEL || "openai/gpt-5.6-luna");
+        : (CFG.PUTER_DEFAULT_MODEL || "gpt-5.6-luna");
       var kw = { model: model, stream: true, signal: opts.signal };
+      if (model === "gpt-5.6-luna") {
+        /* Pin the requested provider: do not silently reroute a user-pays
+           request to another vendor when the selected OpenAI provider fails. */
+        kw.provider = "openai";
+        kw.fallback = false;
+      }
       var effort = String(opts.thinking || "high").toLowerCase();
       if (model.indexOf("openai/") === 0) {
         kw.reasoning_effort = effort === "max" ? "xhigh" : (effort === "medium" ? "medium" : effort === "low" ? "low" : "high");
