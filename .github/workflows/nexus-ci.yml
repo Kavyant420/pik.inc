@@ -6,6 +6,7 @@ on:
       - nexus-hardening-2026-11-01
     paths:
       - "pik-inc/**"
+      - "pikinc-site/**"
       - "tests/**"
       - "package.json"
       - "package-lock.json"
