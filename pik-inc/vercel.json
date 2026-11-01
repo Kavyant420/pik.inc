@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/_fallback"
+      "destination": "/api/_fallback?path=$1"
     }
   ]
 }
