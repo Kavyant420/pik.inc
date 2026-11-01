@@ -82,6 +82,8 @@
 
       wrap.innerHTML = this.list.slice(0, 80).map(function (m, i) {
         var badges = ['<span class="nx-badge nx-badge--ctx">' + fmtCtx(m.ctx) + " ctx</span>"];
+        if (m.noKeyDefault) badges.unshift('<span class="nx-badge nx-badge--sug">NO OR KEY</span>');
+        else if (m.requiresOpenRouterKey) badges.push('<span class="nx-badge">OR KEY REQUIRED</span>');
         if (m.reasoning) badges.push('<span class="nx-badge nx-badge--think">reasoning' +
           (m.efforts && m.efforts.indexOf("max") !== -1 ? " · MAX" : "") + "</span>");
         if (m.vision) badges.push('<span class="nx-badge">vision</span>');
@@ -131,7 +133,23 @@
       this._syncChip();
     },
 
-    pick: function (id) {
+    pick: async function (id) {
+      var model = PIKModels.get(id);
+      if (model && model.requiresOpenRouterKey) {
+        var hasKey = false;
+        try {
+          hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
+        } catch (e) { hasKey = false; }
+        if (!hasKey) {
+          this.setSelected(CFG.NO_KEY_MODEL);
+          this.hide();
+          if (window.PIKToasts) PIKToasts.show({
+            type: "info", title: "OpenRouter key required",
+            text: "Selected GPT-5.6 Luna via Puter instead. Enable Puter usage in Settings to send messages."
+          });
+          return;
+        }
+      }
       this.setSelected(id);
       this.hide();
       if (window.PIKToasts) PIKToasts.show({ type: "info", title: "Model armed", text: id });
