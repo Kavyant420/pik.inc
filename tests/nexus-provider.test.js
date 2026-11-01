@@ -53,12 +53,18 @@ function makeSandbox() {
   console.log("\nno-OpenRouter default model");
   var fallback = M.noKeyDefault();
   eq("default id", fallback.id, "puter/openai-gpt-5.6-luna");
-  eq("model context cap", fallback.ctx, 256000);
+  eq("conservative context before live metadata", fallback.ctx, 32768);
   eq("output reserve ceiling", fallback.maxOut, 128000);
   eq("does not require OpenRouter", fallback.requiresOpenRouterKey, false);
   ok("model description discloses Puter allowance", /monthly free allowance/.test(fallback.desc));
   ok("description clearly distinguishes this from ChatGPT Free", /not the ChatGPT Free subscription/.test(fallback.desc));
   ok("offline catalog also includes the no-key model", M._offline().some(function (m) { return m.id === id; }));
+  ok("live Puter catalogue applies its context metadata", M.applyPuterModelMetadata([
+    { id: "gpt-5.6-luna", provider: "openai", context: 512000, max_tokens: 160000 }
+  ]));
+  eq("provider context is capped at the app's 256K ceiling", M.get(id).ctx, 256000);
+  eq("provider output is capped at 128K", M.get(id).maxOut, 128000);
+  ok("model is marked as metadata verified", M.get(id).metadataVerified === true);
 
   var mobileHtml = fs.readFileSync(path.join(ROOT, "nexus-mobile.html"), "utf8");
   var desktopHtml = fs.readFileSync(path.join(ROOT, "nexus.html"), "utf8");
@@ -106,7 +112,9 @@ function makeSandbox() {
     onDelta: function (text, reasoning) { deltas.push((reasoning ? "reason:" : "text:") + text); }
   }, { systemPrompt: "System", allowPuterUsage: true });
 
-  eq("routes to GPT-5.6 Luna", captured.options.model, "openai/gpt-5.6-luna");
+  eq("routes to GPT-5.6 Luna", captured.options.model, "gpt-5.6-luna");
+  eq("pins the intended provider", captured.options.provider, "openai");
+  eq("prevents silent vendor rerouting", captured.options.fallback, false);
   eq("live mode remains enabled", captured.testMode, false);
   eq("options are passed in the documented third argument", captured.options.stream, true);
   eq("reasoning effort passed", captured.options.reasoning_effort, "high");
