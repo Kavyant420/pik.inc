@@ -58,6 +58,15 @@ function makeSandbox() {
   eq("does not require OpenRouter", fallback.requiresOpenRouterKey, false);
   ok("model description discloses Puter allowance", /monthly free allowance/.test(fallback.desc));
   ok("description clearly distinguishes this from ChatGPT Free", /not the ChatGPT Free subscription/.test(fallback.desc));
+  ok("offline catalog also includes the no-key model", M._offline().some(function (m) { return m.id === id; }));
+
+  var mobileHtml = fs.readFileSync(path.join(ROOT, "nexus-mobile.html"), "utf8");
+  var desktopHtml = fs.readFileSync(path.join(ROOT, "nexus.html"), "utf8");
+  var mobileCss = fs.readFileSync(path.join(ROOT, "css", "47-nexus-mobile.css"), "utf8");
+  ok("mobile settings disclose Puter allowance consent", /data-set="allowPuterUsage"/.test(mobileHtml));
+  ok("desktop settings disclose Puter allowance consent", /data-set="allowPuterUsage"/.test(desktopHtml));
+  ok("picker copy advertises the 256K app context cap", /256K app context cap/.test(mobileHtml));
+  ok("keyboard focus remains visible", /:focus-visible/.test(mobileCss));
 
   console.log("\ncontext window is model-aware");
   M.byId[id] = fallback;
