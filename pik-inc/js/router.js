@@ -1,13 +1,13 @@
 /* ============================================================================
    PIK//NEXUS — router.js
-   Chat transport with a full no-key fallback chain (verified 2026-10-25):
-     1. OpenRouter (user key) while the rolling free-budget window has room
-     2. any 429 / rate-limit / quota error from OpenRouter => permanent switch
-        for this session ("free tier over") — we never hammer it again
-     3. text.pollinations.ai  (keyless, free)          -> engine "pollinations"
-     4. Puter.js              (keyless, free)          -> engine "puter"
-     5. text.pollinations.ai GET endpoint (keyless)    -> engine "polli-get"
-     6. DeepInfra (ONLY when the visitor saved a key)  -> engine "deepinfra-free"
+   Chat transport with explicit provider routing:
+     1. OpenRouter models when the visitor has configured an OpenRouter key
+     2. Puter GPT-5.6 Luna only after the visitor opts in to its user-pays
+        allowance (monthly free allowance first; purchased credits may apply)
+     3. DeepInfra only when the visitor has configured a DeepInfra key
+     4. PIK MicroEngine when enabled as an on-device fallback
+   Legacy Pollinations helpers remain for compatibility but are not treated
+   as an anonymous, free inference service.
    NOTE: "polli-alt" (universal.pollinations.ai) is no longer a hop — that host
    does not resolve and was removed from POLLINATIONS_CHAIN; the doc line above
    used to still advertise it. "cohere-free" was likewise removed: api.cohere.com
@@ -182,46 +182,25 @@
             // burn remaining budget locally so we stop hammering OR this hour
             while (this.budgetLeft() > 0) this._usage.push(Date.now());
             await this._record();
-            this._setEngine("pollinations", "free-quota");
+            this._setEngine("puter", "free-quota");
           } else {
-            this._setEngine("pollinations", "error:" + (e && e.message));
+            this._setEngine("puter", "error:" + (e && e.message));
           }
         }
       } else if (!hasKey) {
-        this._setEngine(usePuterDefault ? "puter" : "pollinations", "no-key");
+        this._setEngine("puter", "no-key");
       } else if (this._orBurned || this.budgetLeft() <= 0) {
-        this._setEngine("pollinations", "budget-exhausted");
+        this._setEngine("puter", "budget-exhausted");
       }
 
       /* ---------- provider fallback chain ----------
-         Puter is a user-pays provider and is only attempted after explicit
-         consent. Pollinations legacy routes remain best-effort fallbacks for
-         existing deployments; current generation endpoints require a
-         user-authorized key. DeepInfra is attempted only with its own key. */
-      var attempts;
-      /* The no-key default is explicitly Puter GPT-5.6 Luna. Do not send
-         unauthenticated requests to Pollinations: generation now requires a
-         user-authorized key. If Puter fails, the normal local-core fallback
-         below is used when enabled. */
-      if (usePuterDefault) {
-        attempts = [
-          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" }
-        ];
-      } else if (this._puterLastGood) {
-        attempts = [
-          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
-          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
-          { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
-          { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
-        ];
-      } else {
-        attempts = [
-          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
-          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
-          { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
-          { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
-        ];
-      }
+         Puter is user-pays and is attempted only after explicit consent.
+         Legacy Pollinations endpoints are intentionally not called here:
+         current generation requests require a user-authorized key. */
+      var attempts = [
+        { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
+        { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
+      ];
       var lastErr = null, ok = false;
       for (var i = 0; i < attempts.length; i++) {
         if (this._blacklist[attempts[i].name]) continue; // known key-gated / dead
