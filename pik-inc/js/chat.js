@@ -198,7 +198,7 @@
     },
 
     modelId: function () {
-      return this.els.modelchip.dataset.model || CFG.SUGGESTED_MODEL;
+      return this.els.modelchip.dataset.model || CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL;
     },
 
     /* ---------- model-aware context window ----------
