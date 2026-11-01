@@ -2,7 +2,7 @@
    PIK//NEXUS — router._consumeSSE tests (offline, deterministic, zero deps)
 
    The SSE consumer is where the agent either works or silently doesn't. These
-   tests replay captured stream shapes from text.pollinations.ai and assert:
+   tests replay OpenAI-compatible SSE stream shapes and assert:
      - streamed tool_calls fragments are reassembled into whole calls
      - finish_reason is surfaced
      - upstream error frames throw (so the fallback chain can fail over)
@@ -53,7 +53,7 @@ function makeSandbox() {
      the marker sits near the end, where the real AGENT TOOLS contract lives. */
   var LONG_SYS = "PREAMBLE. " + "x".repeat(4000) + " TAILMARKER_WEBSEARCH";
   sb.__LONG_SYS = LONG_SYS;
-  sb.NexusSettings = { get: function () { return Promise.resolve({ polliModel: "openai-fast", systemPrompt: LONG_SYS }); },
+  sb.NexusSettings = { get: function () { return Promise.resolve({ systemPrompt: LONG_SYS }); },
                        hasKey: function () { return Promise.resolve(false); } };
   sb.PIKModels = { get: function () { return null; }, logoFor: function () { return null; } };
   var ctx = vm.createContext(sb);
@@ -111,7 +111,7 @@ var DONE = "[DONE]";
       chunk({ content: "world." }),
       finish("stop"), DONE
     ]),
-    {}, { engine: "pollinations", model: "openai-fast", digest: "d" }
+    {}, { engine: "blockrun", model: "openai-fast", digest: "d" }
   );
   eq("content is concatenated", r1.text, "Hello world.");
   eq("finish_reason surfaced", r1.finishReason, "stop");
@@ -121,7 +121,7 @@ var DONE = "[DONE]";
   console.log("\nstreamed content split mid-frame across chunks");
   var r2 = await R._consumeSSE(
     sseResponse([chunk({ content: "ABCDEFGHIJ" }), chunk({ content: "KLMNOP" }), finish("stop"), DONE], 7),
-    {}, { engine: "pollinations" }
+    {}, { engine: "blockrun" }
   );
   eq("reassembled despite 7-byte chunks", r2.text, "ABCDEFGHIJKLMNOP");
 
@@ -132,7 +132,7 @@ var DONE = "[DONE]";
       chunk({ content: "The answer is 4." }),
       finish("stop"), DONE
     ]),
-    {}, { engine: "pollinations" }
+    {}, { engine: "blockrun" }
   );
   eq("reasoning accumulated separately", r3.reasoning, "Let me think.");
   eq("content is NOT polluted by reasoning", r3.text, "The answer is 4.");
@@ -143,7 +143,7 @@ var DONE = "[DONE]";
      fallback displayed private chain-of-thought as the answer. */
   var r4 = await R._consumeSSE(
     sseResponse([chunk({ reasoning: "Need" }), chunk({ reasoning: " to" }), chunk({ reasoning: " search." }), DONE]),
-    {}, { engine: "pollinations" }
+    {}, { engine: "blockrun" }
   );
   eq("reasoning-only stream still yields the text fallback (no tool call present)", r4.text, "Need to search.");
   eq("but reasoning is preserved separately for the THINKING panel", r4.reasoning, "Need to search.");
@@ -164,7 +164,7 @@ var DONE = "[DONE]";
         tool_calls: [{ index: 0, function: { arguments: " routing\"}" } }] } }] }),
       finish("tool_calls"), DONE
     ], 40),
-    {}, { engine: "pollinations" }
+    {}, { engine: "blockrun" }
   );
   eq("one tool call reassembled", r5.toolCalls.length, 1);
   eq("tool name captured", r5.toolCalls[0].name, "WEBSEARCH");
@@ -185,7 +185,7 @@ var DONE = "[DONE]";
         { index: 1, function: { arguments: "{\"url\":\"https://x.example\"}" } } ] } }] }),
       finish("tool_calls"), DONE
     ]),
-    {}, { engine: "pollinations" }
+    {}, { engine: "blockrun" }
   );
   eq("both calls captured", r6.toolCalls.length, 2);
   eq("names in index order", r6.toolCalls.map(function (c) { return c.name; }), ["WEBSEARCH", "WEBGET"]);
@@ -201,7 +201,7 @@ var DONE = "[DONE]";
         JSON.stringify({ error: { message: "Chat Completions provider returned invalid or omitted terminal usage", type: "upstream_error", code: "usage_missing" } }),
         DONE
       ]),
-      {}, { engine: "pollinations" }
+      {}, { engine: "blockrun" }
     );
   } catch (e) { threw = e; }
   ok("error frame throws so the chain fails over", !!threw, "it returned normally instead");
@@ -213,7 +213,7 @@ var DONE = "[DONE]";
   try {
     await R._consumeSSE(
       sseResponse([JSON.stringify({ error: { message: "Free limit reached", code: "FREE_LIMIT" } }), DONE]),
-      {}, { engine: "pollinations" }
+      {}, { engine: "blockrun" }
     );
   } catch (e) { threw2 = e; }
   eq("FREE_LIMIT becomes 429", threw2 && threw2.status, 429);
@@ -221,7 +221,7 @@ var DONE = "[DONE]";
   console.log("\nmalformed frames are skipped without killing the stream");
   var r7 = await R._consumeSSE(
     sseResponse([chunk({ content: "good " }), "{not json at all", chunk({ content: "still good" }), finish("stop"), DONE]),
-    {}, { engine: "pollinations" }
+    {}, { engine: "blockrun" }
   );
   eq("survives a malformed frame", r7.text, "good still good");
 
@@ -230,79 +230,10 @@ var DONE = "[DONE]";
   await R._consumeSSE(
     sseResponse([chunk({ reasoning: "R" }), chunk({ content: "C" }), finish("stop"), DONE]),
     { onDelta: function (d, isReasoning) { deltas.push((isReasoning ? "reason:" : "text:") + d); } },
-    { engine: "pollinations" }
+    { engine: "blockrun" }
   );
   eq("reasoning and content deltas are flagged distinctly", deltas, ["reason:R", "text:C"]);
 
-
-  console.log("\npolli-get: JSON envelope unwrapping (REGRESSION)");
-  /* The GET hop asks for json=false but receives a JSON envelope whenever the
-     model emits reasoning or tool calls. It used to be shown to the user raw. */
-  function stubFetchText(body) {
-    var captured = {};
-    sb.fetch = function (url, o) {
-      captured.url = String(url);
-      return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(body); } });
-    };
-    return captured;
-  }
-
-  var cap1 = stubFetchText(JSON.stringify({
-    role: "assistant",
-    reasoning: "The user wants a search first.",
-    content: "Onion routing is a technique for anonymous communication.",
-    tool_calls: [{ id: "call_1", type: "function",
-                   function: { name: "WEBSEARCH", arguments: JSON.stringify({ query: "onion routing" }) } }]
-  }));
-  var g1 = await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }], signal: undefined },
-                                { polliModel: "openai-fast", systemPrompt: sb.__LONG_SYS });
-  eq("content extracted, not raw JSON", g1.text, "Onion routing is a technique for anonymous communication.");
-  ok("no JSON braces leak into the answer", g1.text.indexOf("{") === -1);
-  eq("reasoning separated out", g1.reasoning, "The user wants a search first.");
-  eq("tool call surfaced", g1.toolCalls.length, 1);
-  eq("tool name", g1.toolCalls[0].name, "WEBSEARCH");
-  eq("tool args preserved", g1.toolCalls[0].args, '{"query":"onion routing"}');
-  eq("tool call id preserved", g1.toolCalls[0].id, "call_1");
-  eq("finishReason marks a tool turn", g1.finishReason, "tool_calls");
-  eq("engine reported", g1.engine, "polli-get");
-
-  console.log("\npolli-get: tool call with no prose is still a valid answer");
-  stubFetchText(JSON.stringify({ role: "assistant", reasoning: "searching", content: "",
-    tool_calls: [{ function: { name: "WEBGET", arguments: '{"url":"https://a.example"}' } }] }));
-  var g2 = await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }] }, { polliModel: "openai-fast" });
-  eq("no exception thrown for empty content", g2.toolCalls.length, 1);
-  eq("text empty rather than the reasoning", g2.text, "");
-
-  console.log("\npolli-get: plain text still passes through untouched");
-  stubFetchText("Just a normal sentence answer.");
-  var g3 = await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }] }, { polliModel: "openai-fast" });
-  eq("plain text preserved", g3.text, "Just a normal sentence answer.");
-  eq("no tool calls invented", g3.toolCalls.length, 0);
-
-  console.log("\npolli-get: a brace-shaped but invalid body is not mangled");
-  stubFetchText("{not really json, just prose starting with a brace");
-  var g4 = await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }] }, { polliModel: "openai-fast" });
-  ok("falls back to raw text", g4.text.indexOf("{not really json") === 0, g4.text);
-
-  console.log("\npolli-get: the system prompt is no longer truncated at 2000 chars");
-  var cap5 = stubFetchText("ok");
-  await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }] },
-                       { polliModel: "openai-fast", systemPrompt: sb.__LONG_SYS });
-  ok("the tail of the system prompt reaches the request",
-     decodeURIComponent(cap5.url).indexOf("TAILMARKER_WEBSEARCH") !== -1,
-     "the AGENT TOOLS contract was being cut off, so this hop could never call a tool");
-
-  console.log("\npolli-get: empty and HTTP failures still throw");
-  stubFetchText("");
-  var threwEmpty = false;
-  try { await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }] }, { polliModel: "openai-fast" }); }
-  catch (e) { threwEmpty = /empty response/.test(e.message); }
-  ok("empty response throws", threwEmpty);
-  sb.fetch = function () { return Promise.resolve({ ok: false, status: 402, text: function () { return Promise.resolve("FREE_LIMIT"); } }); };
-  var threw402 = null;
-  try { await R._viaPolliGet({ messages: [{ role: "user", content: "hi" }] }, { polliModel: "openai-fast" }); }
-  catch (e) { threw402 = e; }
-  ok("HTTP failure throws with the status", threw402 && threw402.status === 402, threw402 && threw402.message);
 
   console.log("\n" + (fail === 0 ? "ALL PASS" : "FAILURES") + ": " + pass + " passed, " + fail + " failed\n");
   process.exit(fail === 0 ? 0 : 1);
