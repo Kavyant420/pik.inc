@@ -43,7 +43,7 @@
             modality: "text->text", vision: false, video: false, audio: false,
             reasoning: true, efforts: ["xhigh", "medium", "low", "none"],
             defaultEffort: "xhigh", mandatoryReasoning: false, tools: true,
-            desc: "NEXUS default flagship. Runs FREE with no API key through the keyless gateway chain: Puter.js -> OpenRouter app route -> Glider -> Jaiowr.",
+            desc: "Optional Qwen3.8 27B gateway route. Availability and limits depend on the configured upstream gateway.",
             logo: Models.logoUrl("qwen"),
             suggested: true
           });
