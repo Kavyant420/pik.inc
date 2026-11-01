@@ -57,7 +57,7 @@ function makeSandbox() {
   eq("output reserve ceiling", fallback.maxOut, 128000);
   eq("does not require OpenRouter", fallback.requiresOpenRouterKey, false);
   ok("model description discloses Puter allowance", /monthly free allowance/.test(fallback.desc));
-  ok("model description does not claim ChatGPT Free", !/ChatGPT Free subscription/.test(fallback.desc) ? false : true);
+  ok("description clearly distinguishes this from ChatGPT Free", /not the ChatGPT Free subscription/.test(fallback.desc));
 
   console.log("\ncontext window is model-aware");
   M.byId[id] = fallback;
