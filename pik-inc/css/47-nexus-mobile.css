@@ -82,9 +82,15 @@ body {
   tap-highlight-color: transparent !important;
 }
 
-*:focus {
+/* Preserve visible keyboard focus while suppressing the tap flash. */
+*:focus:not(:focus-visible) {
   outline: none !important;
   box-shadow: none !important;
+}
+:focus-visible {
+  outline: 2px solid rgba(220, 226, 235, .9) !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(220, 226, 235, .14) !important;
 }
 
 * {
