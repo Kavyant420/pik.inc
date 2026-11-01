@@ -1,4 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/nexus", "destination": "/nexus.html" },
+    { "source": "/nexus/", "destination": "/nexus.html" },
+    { "source": "/nexus-mobile", "destination": "/nexus-mobile.html" }
+  ]
 }
