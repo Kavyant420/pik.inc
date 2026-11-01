@@ -375,7 +375,7 @@
     <div class="nx-picker__list" data-nx="pickerlist"></div>
     <div class="nx-picker__foot">
       <span><kbd>↑↓</kbd> navigate</span><span><kbd>Enter</kbd> select</span><span><kbd>Esc</kbd> close</span>
-      <span style="margin-left:auto">default: Qwen 3.8 27B · 1M ctx · free, no API key</span>
+      <span style="margin-left:auto">No-key default: GPT-5.6 Luna via Puter · 256K app context cap · allowance applies</span>
     </div>
   </div>
 </div>
@@ -396,7 +396,12 @@
       <div class="nx-keyrow">
         <input type="password" data-key="openrouter" placeholder="stored — fingerprint none" autocomplete="off">
       </div>
-      <small>Free models work without a key. Stored encrypted with AES-256-GCM derived from a device secret; only the SHA-256 fingerprint is ever displayed.</small>
+      <small>OpenRouter’s free models still require an OpenRouter key. Without one, Nexus selects GPT-5.6 Luna through Puter.</small>
+    </div>
+
+    <div class="nx-field" style="display:flex;align-items:flex-start;gap:12px">
+      <label class="nx-toggle"><input type="checkbox" data-set="allowPuterUsage"><i></i></label>
+      <span style="font-size:.8rem;line-height:1.5">Allow GPT-5.6 Luna via Puter. Your monthly free allowance applies; after it runs out, requests may use purchased credits on your Puter account. This is not the ChatGPT Free subscription. <strong>Off by default.</strong></span>
     </div>
 
     <div class="nx-field">
