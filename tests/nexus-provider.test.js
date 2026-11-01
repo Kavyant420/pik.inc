@@ -78,8 +78,8 @@ function makeSandbox() {
   var deltas = [];
   sb.puter = {
     ai: {
-      chat: function (messages, options) {
-        captured = { messages: messages, options: options };
+      chat: function (messages, testMode, options) {
+        captured = { messages: messages, testMode: testMode, options: options };
         return (async function* () {
           yield { type: "reasoning", reasoning: "thinking" };
           yield { type: "text", text: "Hello " };
@@ -98,7 +98,8 @@ function makeSandbox() {
   }, { systemPrompt: "System", allowPuterUsage: true });
 
   eq("routes to GPT-5.6 Luna", captured.options.model, "openai/gpt-5.6-luna");
-  eq("streaming enabled", captured.options.stream, true);
+  eq("live mode remains enabled", captured.testMode, false);
+  eq("options are passed in the documented third argument", captured.options.stream, true);
   eq("reasoning effort passed", captured.options.reasoning_effort, "high");
   eq("sampling temperature omitted for reasoning model", captured.options.temperature, undefined);
   eq("text chunks combined", result.text, "Hello from Luna.");
