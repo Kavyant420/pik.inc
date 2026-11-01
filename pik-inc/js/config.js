@@ -19,7 +19,7 @@
     OR_MODELS_URL: "https://openrouter.ai/api/v1/models",
     OR_CHAT_URL: "https://openrouter.ai/api/v1/chat/completions",
 
-    /* ---- Pollinations primary (keyless, free — no API key ever needed) --- */
+    /* ---- Legacy Pollinations endpoints (not used as anonymous fallbacks) -- */
     POLLINATIONS_URL: "https://text.pollinations.ai/openai",
     POLLINATIONS_MODELS_URL: "https://text.pollinations.ai/models",
     POLLINATIONS_DEFAULT_MODEL: "openai-fast",
