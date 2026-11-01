@@ -1,8 +1,8 @@
 /* ============================================================================
    PIK//NEXUS — models.js
    Live catalog from OpenRouter, filtered to :free variants and ordered by
-   context length (high -> low), exactly matching the requested view:
-   https://openrouter.ai/models?variant=free&order=context-high-to-low
+   context length. These models still require an OpenRouter API key; the
+   no-key default is a separate, explicitly opt-in Puter GPT-5.6 Luna entry.
    The catalog endpoint is public; no API key is needed to list models.
    ========================================================================= */
 (function (global) {
