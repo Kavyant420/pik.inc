@@ -72,8 +72,10 @@
         id: CFG.NO_KEY_MODEL,
         name: "GPT-5.6 Luna · Puter",
         provider: "puter",
-        ctx: 256000,
-        maxOut: 128000,
+        /* Conservative until Puter exposes live model metadata. The 256K
+           value is an application ceiling, not a provider guarantee. */
+        ctx: 32768,
+        maxOut: 8192,
         modality: "text->text",
         vision: false, video: false, audio: false,
         reasoning: true,
@@ -83,10 +85,37 @@
         tools: true,
         noKeyDefault: true,
         requiresOpenRouterKey: false,
-        desc: "OpenAI GPT-5.6 Luna served through Puter.js. No OpenRouter key is needed. Nexus caps the total context at 256K (128K input plus up to 128K output). Puter applies your monthly free allowance; purchased credits may be used after it runs out. This is not the ChatGPT Free subscription. Use only if eligible under Puter's terms and local age/consent rules.",
+        desc: "GPT-5.6 Luna through Puter.js; no OpenRouter key is needed. Nexus has a 256K app-side ceiling, but the actual model context and output limits are read from Puter's live model catalogue when available. Until then Nexus uses a conservative 32K context budget. Puter is user-pays: an included allowance may apply, and charges may apply depending on the account. This is not the ChatGPT Free subscription. Use only if eligible under Puter's terms and local age/consent rules.",
         logo: Models.logoUrl("puter"),
         suggested: false
       };
+    },
+
+    applyPuterModelMetadata(catalog) {
+      if (!Array.isArray(catalog)) return false;
+      var model = catalog.find(function (m) {
+        if (!m) return false;
+        var id = String(m.id || "");
+        var aliases = Array.isArray(m.aliases) ? m.aliases : [];
+        return id === "gpt-5.6-luna" || id === "openai/gpt-5.6-luna" ||
+          aliases.indexOf("gpt-5.6-luna") !== -1 ||
+          aliases.indexOf("openai/gpt-5.6-luna") !== -1;
+      });
+      if (!model) return false;
+      var cap = Number(CFG.APP_CONTEXT_CAP_TOKENS) || 256000;
+      var context = Number(model.context || model.context_length || 0);
+      var output = Number(model.max_tokens || model.max_output_tokens || model.max_completion_tokens || 0);
+      var target = this.byId[CFG.NO_KEY_MODEL];
+      if (!target) target = this.noKeyDefault();
+      if (context > 0) target.ctx = Math.min(cap, context);
+      if (output > 0) target.maxOut = Math.min(Number(CFG.APP_CONTEXT_OUTPUT_RESERVE_TOKENS) || 128000, output);
+      target.metadataVerified = context > 0 || output > 0;
+      this.byId[CFG.NO_KEY_MODEL] = target;
+      var index = this.all.findIndex(function (m) { return m.id === CFG.NO_KEY_MODEL; });
+      if (index >= 0) this.all[index] = target;
+      else this.all.unshift(target);
+      this._emit();
+      return true;
     },
 
     _normalize(m) {
