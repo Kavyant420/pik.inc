@@ -1,8 +1,7 @@
 /* ============================================================================
    PIK//NEXUS — nexus-picker.js
-   Model selection overlay: live :free catalog from OpenRouter ordered by
-   context high->low (the exact view the user asked for), provider logos via
-   CDN, search, keyboard nav, and the suggested Qwen 3.8 27B pinned.
+   Model selection overlay: live OpenRouter :free catalog ordered by context,
+   plus a no-key Puter GPT-5.6 Luna fallback. OpenRouter entries require a key.
    ========================================================================= */
 (function (global) {
   "use strict";
