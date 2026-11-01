@@ -177,7 +177,6 @@
     /* ---------- offline snapshot (live data captured Oct 2026, ctx desc) ---------- */
     _offline() {
       var raw = [
-        ["blockrun/gpt-oss-20b", "GPT-OSS 20B · BlockRun", 128000, "text->text", ["low", "medium", "high"]],
         ["qwen/qwen3.8-27b", "Qwen: Qwen3.8 27B", 1000000, "text->text", ["xhigh", "medium", "low", "none"]],
         ["thinkingmachines/inkling:free","Thinking Machines: Inkling (free)",1048576,"text+image+audio->text",["max","xhigh","high","medium","low","minimal"]],
         ["thinkingmachines/inkling-small:free","Thinking Machines: Inkling Small (free)",1048576,"text+image+audio->text",["max","high","medium","low"]],
