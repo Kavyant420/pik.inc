@@ -1,0 +1,34 @@
+From a94e27750f419a1ef133a6792113e518c3bbfbeb Mon Sep 17 00:00:00 2001
+From: qwen.ai[bot] <qwenlm-intl@service.alibaba.com>
+Date: Sun, 1 Nov 2026 15:47:00 +0000
+Subject: [PATCH] Fix /nexus 404 on Vercel: explicit clean-URL rewrites in vercel.json
+
+---
+diff --git a/pik-inc/vercel.json b/pik-inc/vercel.json
+index 93b624b..3cb9115 100644
+--- a/pik-inc/vercel.json
++++ b/pik-inc/vercel.json
+@@ -1,4 +1,19 @@
+ {
+   "$schema": "https://openapi.vercel.sh/vercel.json",
+-  "cleanUrls": true
++  "cleanUrls": true,
++  "trailingSlash": false,
++  "rewrites": [
++    { "source": "/nexus", "destination": "/nexus.html" },
++    { "source": "/nexus/", "destination": "/nexus.html" },
++    { "source": "/nexus-mobile", "destination": "/nexus-mobile.html" },
++    { "source": "/pikx", "destination": "/pikx.html" },
++    { "source": "/products", "destination": "/products.html" },
++    { "source": "/account", "destination": "/account.html" },
++    { "source": "/settings", "destination": "/settings.html" },
++    { "source": "/security", "destination": "/security.html" },
++    { "source": "/privacy-policy", "destination": "/privacy-policy.html" },
++    { "source": "/terms-of-service", "destination": "/terms-of-service.html" },
++    { "source": "/wireless-communication", "destination": "/wireless-communication.html" },
++    { "source": "/products/:slug", "destination": "/products/:slug.html" }
++  ]
+ }
+-- 
+2.43.0
+

@@ -1,4 +1,10 @@
-_tmp/
+# Ignore only the root-level /_tmp/ scratch dir (Vercel treats a leading slash
+# as repo-root-relative). Without the leading slash, gitignore matches ANY
+# directory named _tmp at any depth — including pikinc-site/_tmp, which is the
+# Vercel project's configured Root Directory. When that folder was ignored,
+# it contained no tracked files, so GitHub/Vercel didn't see it and builds
+# failed with: 'The specified Root Directory "pikinc-site" does not exist.'
+/_tmp/
 node_modules/
 npm-debug.log*
 .DS_Store
