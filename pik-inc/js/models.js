@@ -30,11 +30,9 @@
           .map(function (m) { return Models._normalize(m); })
           .sort(function (a, b) { return b.ctx - a.ctx; });
         this.all = free;
-        /* PIN THE DEFAULT: Qwen 3.8 27B (qwen/qwen3.8-27b) is NEXUS's default
-           flagship and must always be selectable, even when the live :free
-           catalog filter drops it. Synthesize its record from the verified
-           endpoint probe (1M ctx, reasoning xhigh/medium/low/none) and keep
-           it first in the list so suggest() never misses. */
+        /* Keep the optional Qwen gateway model selectable even when the
+           OpenRouter :free catalog omits it. It is not the no-key default;
+           gateway availability and limits are provider-dependent. */
         var qid = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
         var hasQ = free.some(function (m) { return m.id === qid; });
         if (!hasQ) {
