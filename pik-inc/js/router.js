@@ -201,11 +201,8 @@
         try {
           var res = await attempts[i].fn();
           ok = true;
-          /* remember which free provider answered so the NEXT request starts
-             with the other one (automatic round-robin between puter and
-             pollinations — a dead/rate-limited provider is skipped first) */
+          /* Remember the last successful Puter route for diagnostics only. */
           if (attempts[i].name === "puter") this._puterLastGood = true;
-          else if (attempts[i].name.indexOf("polli") === 0 || attempts[i].name === "pollinations") this._puterLastGood = false;
           /* every remote completion counts against the daily skill cap */
           if (global.PIKUsage) { try { PIKUsage.record(attempts[i].name); } catch (e) {} }
           this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
@@ -214,10 +211,8 @@
           if (e && e.name === "AbortError") throw e;
           lastErr = e;
           var st = e && e.status;
-          /* 401/403/404 = permanently dead or key-gated this session -> blacklist.
-             402/503 from pollinations are transient (quota rotation / cold
-             instances) — blacklisting them would kill the whole free chain for
-             the rest of the session, so we just move to the next hop. */
+          /* 401/403/404 = permanently unavailable or key-gated this session.
+             Other provider errors remain retryable on the next user turn. */
           if (st === 401 || st === 403 || st === 404) this._blacklist[attempts[i].name] = true;
         }
       }
@@ -238,9 +233,9 @@
         }
         // friendly message, not a raw 401/503
         var msg = String((lastErr && lastErr.message) || "");
-        if (/401|403/.test(msg)) msg = "free engines unreachable (auth refused) — check your connection and retry";
-        else if (/503|429|502/.test(msg)) msg = "the free AI providers are busy/rate-limited right now — wait a few seconds and send again (or boot the on-device core in Settings)";
-        else if (/402/.test(msg)) msg = "pollinations quota exhausted for this model — trying again shortly usually works, or switch the free model in Settings";
+        if (/401|403/.test(msg)) msg = "AI provider refused the request — check the provider account and selected model, then retry";
+        else if (/503|429|502/.test(msg)) msg = "AI provider is busy or rate-limited — wait a moment and retry, or enable the on-device core in Settings";
+        else if (/402/.test(msg)) msg = "provider usage allowance is exhausted or the request needs credits — check the provider's usage page or choose another route";
         var err = new Error(msg || "all free engines unavailable");
         err.allEnginesFailed = true;
         throw err;
