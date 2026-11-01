@@ -12,8 +12,8 @@
    Qwen community gateways are optional and their availability can change.
    Puter requests (including Qwen-through-Puter) are blocked unless the user
    explicitly enables the Puter usage consent in Settings.
-   Every keyless engine is tried in order until one answers; the first token
-   of reasoning streams straight into the live THINKING panel.
+   Consent-gated Puter and optional on-device inference are used when a keyed
+   OpenRouter route is unavailable; reasoning streams into the THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
    a local audit ledger so you can verify exactly what left the machine.
    ========================================================================= */
@@ -37,9 +37,9 @@
         if (saved && saved.burned) this._orBurned = true;
       } catch (e) {}
       this._prune();
-      // budget already spent in this window -> start on the keyless engine
+      // No OpenRouter key or an exhausted budget -> show the consent-gated Puter route.
       if (!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || this.budgetLeft() <= 0 || this._orBurned) {
-        this.engine = "pollinations";
+        this.engine = "puter";
       }
     },
 
@@ -248,18 +248,11 @@
     },
 
     /* ======================================================================
-       QWEN 3.8 27B FREE GATEWAY CHAIN (default NEXUS flagship)
+       OPTIONAL QWEN 3.8 27B GATEWAY ROUTE
        ----------------------------------------------------------------------
-       qwen/qwen3.8-27b is a 1M-context reasoning model served by ten hosts.
-       These are EVERY zero-cost / zero-API-key gateway we found across the
-       internet that fronts it (probed live Oct 26 2026). They are tried in
-       order; first one to stream wins:
-         1. puter-qwen      js.puter.com SDK — keyless, account-sponsored
-         2. openrouter-app  public app route — keyless for this model id
-         3. glider-qwen     api.glider.ai — free community inference, no key
-         4. jaiowr-qwen     ai.jaiowr9f.com — free community inference, no key
-       If all four are rate-limited we fall through to the generic free chain
-       (pollinations gpt-oss-20b etc.) so NEXUS never dead-ends. */
+       Qwen is not part of the OpenRouter :free catalog. The Puter hop is
+       consent-gated; community gateways are best-effort and may be offline
+       or change access rules. No availability or zero-cost guarantee. */
     async _viaQwen(opts, settings) {
       var self = this;
       var sys = this._sysPrompt(settings);
@@ -395,7 +388,7 @@
       return this._consumeSSE(res, opts, { engine: "openrouter", model: model, digest: meta.digest });
     },
 
-    /* ---------- Pollinations (keyless) — streamed w/ non-stream fallback --- */
+    /* ---------- Legacy Pollinations helper (authorized key may be required) - */
     /* unified system prompt getter — `DEFAULTS` is module-private to
        nexus-settings.js, so referencing it here used to throw a ReferenceError
        on every keyless hop whenever settings.systemPrompt was empty. */
@@ -488,9 +481,8 @@
       };
     },
 
-    /* ---------- Pollinations simple GET endpoint (keyless last resort) -----
-       https://text.pollinations.ai/{prompt}?model=...&system=... returns the
-       completion as plain text. No streaming, but bulletproof CORS-wise.     */
+    /* ---------- Legacy Pollinations GET compatibility helper --------------
+       This is not part of the default no-key provider chain.                 */
     async _viaPolliGet(opts, settings) {
       var flat = opts.messages.filter(function (m) { return m.role !== "system"; });
       var last = flat[flat.length - 1];
@@ -626,11 +618,10 @@
       return { text: text, reasoning: msg.reasoning || "", engine: "deepinfra-free", model: CFG.DEEPINFRA_MODEL, digest: meta.digest, usedFallback: true };
     },
 
-    /* ---------- Puter.js free keyless provider (no API key, ever) ----------
-       Loads https://js.puter.com/v2/ on demand and calls puter.ai.chat with
-       stream:true. Supports reasoning models (gpt-5-nano / claude / deepseek
-       via mode:"thinking") depending on what the free tier exposes; we pass
-       max thinking as temperature 1 + a thinking-mode hint where supported.
+    /* ---------- Puter.js consent-gated user-pays provider ----------------
+       Loads https://js.puter.com/v2/ on demand. It needs no OpenRouter key,
+       but uses the user's monthly Puter allowance and may use purchased
+       credits after it runs out. The caller must enable explicit consent.
 
        CSP note: nexus.html's script-src does not whitelist js.puter.com, so
        a plain <script src> injection is blocked ("Loading the script ...
