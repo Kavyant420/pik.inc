@@ -1,8 +1,8 @@
 /* ============================================================================
    PIK//NEXUS — nexus-settings.js
    Persisted app settings (AES-256-GCM at rest via crypto.js) + the Settings
-   drawer logic: keys, system prompt for the pollinations fallback, thinking
-   default, temperature, privacy toggles.
+   drawer logic: keys, provider-consent settings, system prompt, thinking
+   default, temperature, and privacy toggles.
    ========================================================================= */
 (function (global) {
   "use strict";
