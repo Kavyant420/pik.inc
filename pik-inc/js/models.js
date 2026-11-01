@@ -41,6 +41,7 @@
           free.unshift({
             id: qid, name: "Qwen: Qwen3.8 27B", provider: "qwen",
             ctx: CFG.QWEN_CTX || 1000000, maxOut: 262144,
+            requiresOpenRouterKey: false,
             modality: "text->text", vision: false, video: false, audio: false,
             reasoning: true, efforts: ["xhigh", "medium", "low", "none"],
             defaultEffort: "xhigh", mandatoryReasoning: false, tools: true,
@@ -82,6 +83,7 @@
         mandatoryReasoning: false,
         tools: true,
         noKeyDefault: true,
+        requiresOpenRouterKey: false,
         desc: "OpenAI GPT-5.6 Luna served through Puter.js. No OpenRouter key is needed. Nexus caps the total context at 256K (128K input plus up to 128K output). Puter applies your monthly free allowance; purchased credits may be used after it runs out. This is not the ChatGPT Free subscription.",
         logo: Models.logoUrl("puter"),
         suggested: false
@@ -98,6 +100,7 @@
         id: m.id,
         name: m.name || m.id,
         provider: provider,
+        requiresOpenRouterKey: true,
         ctx: m.context_length || 0,
         maxOut: tp.max_completion_tokens || 0,
         modality: arch.modality || "text->text",
@@ -197,6 +200,7 @@
           video: r[3].indexOf("video") !== -1, audio: r[3].indexOf("audio") !== -1,
           reasoning: r[4].length > 0, efforts: r[4], defaultEffort: null,
           mandatoryReasoning: false, tools: true,
+          requiresOpenRouterKey: r[0] !== "qwen/qwen3.8-27b",
           desc: "Offline snapshot of the free catalog (context-ordered).",
           logo: Models.logoUrl(provider),
           suggested: r[0] === (CFG.QWEN_MODEL || CFG.SUGGESTED_MODEL)
