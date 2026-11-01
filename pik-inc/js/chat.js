@@ -146,7 +146,7 @@
         var keyless = engine !== "openrouter";
         if (window.PIKToasts) PIKToasts.show({
           type: keyless ? "warn" : "info",
-          title: keyless ? "Switched to free keyless engine" : "Back on OpenRouter",
+          title: keyless ? "Switched provider" : "Back on OpenRouter",
           text: keyless
             ? "OpenRouter free tier exhausted or no key set \u2014 NEXUS now runs on " + engine +
               " (no API key needed)" + (reason ? ", reason: " + reason : "") + "."
