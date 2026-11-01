@@ -717,7 +717,7 @@
         kw.fallback = false;
       }
       var effort = String(opts.thinking || "high").toLowerCase();
-      if (model.indexOf("openai/") === 0) {
+      if (model.indexOf("openai/") === 0 || model === "gpt-5.6-luna") {
         kw.reasoning_effort = effort === "max" ? "xhigh" : (effort === "medium" ? "medium" : effort === "low" ? "low" : "high");
         /* GPT reasoning models ignore sampling controls when reasoning is on. */
       } else {
