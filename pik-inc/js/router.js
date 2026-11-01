@@ -150,12 +150,10 @@
         throw new Error("GPT-5.6 Luna via Puter is the no-OpenRouter-key default. Enable “Allow Puter AI usage” in Settings first. Puter applies your monthly free allowance and may use purchased credits after it runs out.");
       }
 
-      /* ---------- QWEN 3.8 27B: default NEXUS flagship, free keyless chain ---
-         When the selected model is Qwen 3.8 27B we skip the keyed OpenRouter
-         hop entirely and run the dedicated zero-key gateway chain first
-         (puter → openrouter-app → glider → jaiowr). If every Qwen gateway is
-         rate-limited we transparently fall through to the generic free chain
-         below so the user always gets an answer. */
+      /* ---------- optional Qwen 3.8 27B gateway route ----------------------
+         When selected, Qwen skips OpenRouter and tries the available gateway
+         chain. The Puter hop is skipped unless the user has explicitly
+         enabled Puter usage in Settings. Gateway availability is not promised. */
       if (isQwen && !this._blacklist["qwen-chain"]) {
         try {
           var qr = await this._viaQwen(opts, settings);
@@ -276,39 +274,26 @@
       }));
       var lastErr = null;
 
-      /* --- hop 1: Puter keyless tier, explicit Qwen model id --- */
-      try {
-        var pt = await this.ensurePuter();
-        var kw = { stream: true, model: CFG.QWEN_MODEL || "qwen/qwen3.8-27b" };
-        if (typeof opts.temperature === "number") kw.temperature = opts.temperature;
-        if (opts.signal) kw.signal = opts.signal;
-        var it = pt.ai.chat(messages, kw);
-        if (!it) throw new Error("puter empty iterator");
-        var full = "", reason = "";
-        for await (const part of it) {
-          if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
-          if (!part) continue;
-          var d = (part.delta != null) ? String(part.delta)
-                : (part.cached != null && !part.cached) ? String(part.message || "") : "";
-          if (!d && typeof part === "string") d = part;
-          if (!d) continue;
-          if (part.type === "reasoning" || part.reasoning) { reason += d; if (opts.onDelta) opts.onDelta(d, true); }
-          else { full += d; if (opts.onDelta) opts.onDelta(d, false); }
+      /* --- hop 1: Puter Qwen route, only after explicit user consent --- */
+      if (settings && settings.allowPuterUsage) {
+        try {
+          var qwenOpts = Object.assign({}, opts, {
+            model: CFG.QWEN_MODEL || "qwen/qwen3.8-27b"
+          });
+          var qwenPuter = await this._viaPuter(qwenOpts, settings);
+          qwenPuter.engine = "qwen-puter";
+          qwenPuter.model = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
+          return qwenPuter;
+        } catch (e) {
+          if (e && e.name === "AbortError") throw e;
+          lastErr = e;
         }
-        if (!full && reason) full = reason;
-        if (!full) throw new Error("puter qwen empty response");
-        return { text: full, reasoning: reason, engine: "qwen-puter", model: CFG.QWEN_MODEL, digest: "", usedFallback: false };
-      } catch (e) {
-        if (e && e.name === "AbortError") throw e;
-        lastErr = e;
       }
 
       /* --- hops 2-4: plain OpenAI-compatible POSTs, streamed ---
-         Honesty note (probed live Oct 26 2026): the openrouter-app hop needs
-         a user-supplied free key (bare POST -> HTTP 401), glider answers
-         403 Forbidden today, jaiowr is currently offline. They are kept in
-         the chain because they are zero-cost when they come back; puter is
-         the verified working keyless Qwen path right now. */
+         Honesty note: these community gateways can be unavailable or change
+         access rules. OpenRouter app routing is used only when its key exists;
+         Puter is tried only after the user's explicit usage consent. */
       var orKey = "";
       try { orKey = PIKCrypto.peekSecret(CFG.LS.KEY_OR) || ""; } catch (e) {}
       var gateways = (CFG.QWEN_GATEWAYS || []).filter(function (g) {
