@@ -45,7 +45,7 @@
             defaultEffort: "xhigh", mandatoryReasoning: false, tools: true,
             desc: "Optional Qwen3.8 27B gateway route. Availability and limits depend on the configured upstream gateway.",
             logo: Models.logoUrl("qwen"),
-            suggested: true
+            suggested: false
           });
         }
         free.unshift(Models.noKeyDefault());
