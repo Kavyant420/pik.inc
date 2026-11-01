@@ -76,6 +76,16 @@
        free Puter account sponsors the call. NEXUS treats it as a first-class
        engine and auto-redirects between it and Pollinations on any failure. */
     PUTER_CDN: "https://js.puter.com/v2/",
+    /* No-OpenRouter-key default. This is OpenAI GPT-5.6 Luna served by Puter,
+       NOT the ChatGPT Free subscription/API. Puter applies each user's free
+       monthly allowance and may consume purchased credits after that. The
+       Settings opt-in is required before the first request. */
+    NO_KEY_MODEL: "puter/openai-gpt-5.6-luna",
+    PUTER_DEFAULT_MODEL: "openai/gpt-5.6-luna",
+    /* Total app-side context cap. The rolling history reserves up to 128k
+       tokens for output; character counting is a conservative estimate. */
+    APP_CONTEXT_CAP_TOKENS: 256000,
+    APP_CONTEXT_OUTPUT_RESERVE_TOKENS: 128000,
 
     /* ---- Logo CDNs -------------------------------------------------------- */
     LOGO_SI: "https://cdn.jsdelivr.net/npm/simple-icons@14/icons/",   // svg monochrome set
