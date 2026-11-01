@@ -23,13 +23,11 @@
     POLLINATIONS_URL: "https://text.pollinations.ai/openai",
     POLLINATIONS_MODELS_URL: "https://text.pollinations.ai/models",
     POLLINATIONS_DEFAULT_MODEL: "openai-fast",
-    /* simple GET endpoint — returns plain text, no streaming, very reliable */
+    /* Legacy GET endpoint retained for compatibility; not a default fallback. */
     POLLINATIONS_GET_URL: "https://text.pollinations.ai/",
-    /* openai-compatible chat backends tried in order when the primary one is
-       down or rate-limited — all keyless / free */
-    /* NOTE: universal.pollinations.ai was removed — it does not resolve
-       (net::ERR_NAME_NOT_RESOLVED) and only produced console noise. The chain
-       now contains real, keyless hosts only. */
+    /* Legacy endpoint list. Current Pollinations generation requires a
+       user-authorized key; these endpoints are not used for anonymous default
+       inference. */
     POLLINATIONS_CHAIN: [
       "https://text.pollinations.ai/openai"
     ],
@@ -71,10 +69,10 @@
     GH_AUTH_URL: "https://github.com/login/oauth/authorize",
     GH_API: "https://api.github.com",
 
-    /* ---- Puter.js (free, keyless provider — loaded on demand via CDN) ----
-       window.puter.ai.chat(...) requires NO API key and no signup; the user's
-       free Puter account sponsors the call. NEXUS treats it as a first-class
-       engine and auto-redirects between it and Pollinations on any failure. */
+    /* ---- Puter.js (loaded on demand; user-pays provider) ------------------
+       No OpenRouter API key is required, but usage is billed against the
+       user's monthly free allowance and may consume purchased credits after
+       that. Nexus requires explicit opt-in before making Puter requests. */
     PUTER_CDN: "https://js.puter.com/v2/",
     /* No-OpenRouter-key default. This is OpenAI GPT-5.6 Luna served by Puter,
        NOT the ChatGPT Free subscription/API. Puter applies each user's free
