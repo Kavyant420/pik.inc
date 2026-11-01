@@ -136,9 +136,8 @@
       var wantOR = hasKey && !useBlockRunDefault && !this._orBurned && this.budgetLeft() > 0;
 
       /* ---------- optional Qwen 3.8 27B gateway route ----------------------
-         When selected, Qwen skips OpenRouter and tries the available gateway
-         chain. The legacy provider hop is skipped unless the user has explicitly
-         enabled legacy provider usage in Settings. Gateway availability is not promised. */
+         When selected, Qwen skips OpenRouter and tries the configured public
+         community gateways. Gateway availability is not promised. */
       if (isQwen && !this._blacklist["qwen-chain"]) {
         try {
           var qr = await this._viaQwen(opts, settings);
