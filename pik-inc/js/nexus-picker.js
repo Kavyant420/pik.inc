@@ -49,7 +49,7 @@
       PIKModels.onChange(function () { self._render(self._filtered()); self._syncChip(); });
 
       /* suggested model as initial selection */
-      this.setSelected(CFG.SUGGESTED_MODEL, true);
+      this.setSelected(CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL, true);
       this._syncChip();
     },
 
@@ -122,8 +122,8 @@
     currentId: function () {
       try {
         var id = (this.els && this.els.chip && this.els.chip.dataset) ? this.els.chip.dataset.model : null;
-        return id || CFG.SUGGESTED_MODEL;
-      } catch (e) { return CFG.SUGGESTED_MODEL; }
+        return id || CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL;
+      } catch (e) { return CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL; }
     },
 
     setSelected: function (id, silent) {
