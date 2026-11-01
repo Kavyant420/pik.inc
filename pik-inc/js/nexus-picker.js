@@ -1,7 +1,7 @@
 /* ============================================================================
    PIK//NEXUS — nexus-picker.js
    Model selection overlay: live OpenRouter :free catalog ordered by context,
-   plus a no-key Puter GPT-5.6 Luna fallback. OpenRouter entries require a key.
+   plus the no-login BlockRun GPT-OSS 20B default. OpenRouter entries require a key.
    ========================================================================= */
 (function (global) {
   "use strict";
@@ -81,7 +81,7 @@
 
       wrap.innerHTML = this.list.slice(0, 80).map(function (m, i) {
         var badges = ['<span class="nx-badge nx-badge--ctx">' + fmtCtx(m.ctx) + " ctx</span>"];
-        if (m.noKeyDefault) badges.unshift('<span class="nx-badge nx-badge--sug">NO OR KEY</span>');
+        if (m.noKeyDefault) badges.unshift('<span class="nx-badge nx-badge--sug">NO LOGIN</span>');
         else if (m.requiresOpenRouterKey) badges.push('<span class="nx-badge">OR KEY REQUIRED</span>');
         if (m.reasoning) badges.push('<span class="nx-badge nx-badge--think">reasoning' +
           (m.efforts && m.efforts.indexOf("max") !== -1 ? " · MAX" : "") + "</span>");
@@ -144,7 +144,7 @@
           this.hide();
           if (window.PIKToasts) PIKToasts.show({
             type: "info", title: "OpenRouter key required",
-            text: "Selected GPT-5.6 Luna via Puter instead. Enable Puter usage in Settings to send messages."
+            text: "Selected GPT-OSS 20B via BlockRun instead. It advertises a 128K context window and needs no login or API key."
           });
           return;
         }

@@ -11,7 +11,6 @@
 
   var DEFAULTS = {
     model: CFG.SUGGESTED_MODEL,
-    allowPuterUsage: false,           // explicit consent: Puter may use paid credits after free allowance
     thinking: "high",                 // low | medium | high | max
     temperature: 0.7,
     systemPrompt:
@@ -56,7 +55,6 @@
       "- Use plain markdown instead: '- [ ]' / '- [x]' checkboxes, 'PASS'/'FAIL' words, ASCII arrows (->).\n" +
       "- For icons, logos and imagery ALWAYS reference CDN URLs (e.g. https://cdn.jsdelivr.net/npm/simple-icons@14/icons/{slug}.svg or https://www.google.com/s2/favicons?domain={host}&sz=64) — never inline emoji as decoration.\n" +
       "- Match the user's language and intent exactly; follow every instruction in the prompt literally.",
-    polliModel: CFG.POLLINATIONS_DEFAULT_MODEL, // best free reasoning model on pollinations
     showReasoningByDefault: true,
     auditLedger: true,
     orAppUrl: "",
@@ -117,7 +115,6 @@
 
       this.get().then(function (s) {
         var sp = $("[data-set='systemPrompt']"); if (sp) sp.value = s.systemPrompt;
-        var pm = $("[data-set='polliModel']"); if (pm) pm.value = s.polliModel;
         var tp = $("[data-set='temperature']");
         if (tp) {
           tp.value = s.temperature;
@@ -125,7 +122,6 @@
         }
         var sr = $("[data-set='showReasoning']"); if (sr) sr.checked = s.showReasoningByDefault;
         var au = $("[data-set='audit']"); if (au) au.checked = s.auditLedger;
-        var pu = $("[data-set='allowPuterUsage']"); if (pu) pu.checked = !!s.allowPuterUsage;
       });
 
       root.addEventListener("input", function (ev) {

@@ -1,12 +1,10 @@
 /* Nexus provider + context regressions (offline, deterministic, zero deps). */
 "use strict";
-
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
 var ROOT = path.join(__dirname, "..", "pik-inc");
 var pass = 0, fail = 0;
-
 function eq(label, actual, expected) {
   var a = JSON.stringify(actual), e = JSON.stringify(expected);
   if (a === e) { pass++; console.log("  ok   " + label); }
@@ -23,7 +21,8 @@ function makeSandbox() {
     RegExp: RegExp, Error: Error, Math: Math, Date: Date,
     encodeURIComponent: encodeURIComponent, parseInt: parseInt, isFinite: isFinite,
     TextDecoder: TextDecoder, TextEncoder: TextEncoder, Blob: Blob, Uint8Array: Uint8Array,
-    document: { dispatchEvent: function () { return true; } }
+    document: { dispatchEvent: function () { return true; } },
+    fetch: function () { return Promise.reject(new Error("unexpected network request")); }
   };
   sb.window = sb; sb.global = sb;
   sb.CustomEvent = function (type, init) { this.type = type; this.detail = init && init.detail; };
@@ -33,7 +32,7 @@ function makeSandbox() {
   };
   sb.NexusSettings = {
     systemPrompt: "Fallback system prompt.",
-    get: function () { return Promise.resolve({ systemPrompt: "Test system prompt.", allowPuterUsage: true }); },
+    get: function () { return Promise.resolve({ systemPrompt: "Test system prompt." }); },
     hasKey: function () { return Promise.resolve(false); }
   };
   var ctx = vm.createContext(sb);
@@ -42,127 +41,84 @@ function makeSandbox() {
   });
   return sb;
 }
-
+function sseResponse(lines) {
+  var payload = lines.map(function (l) { return "data: " + l + "\n\n"; }).join("");
+  var bytes = Buffer.from(payload, "utf8"), pos = 0;
+  return {
+    ok: true, status: 200,
+    headers: { get: function () { return "text/event-stream; charset=utf-8"; } },
+    body: { getReader: function () { return { read: function () {
+      if (pos >= bytes.length) return Promise.resolve({ done: true });
+      var slice = bytes.subarray(pos, pos + 32); pos += 32;
+      return Promise.resolve({ done: false, value: new Uint8Array(slice) });
+    } }; } }
+  };
+}
 (async function run() {
-  var sb = makeSandbox();
-  var CFG = sb.PIK_CONFIG;
-  var M = sb.PIKModels;
-  var R = sb.PIKRouter;
-  var id = CFG.NO_KEY_MODEL;
+  var sb = makeSandbox(), CFG = sb.PIK_CONFIG, M = sb.PIKModels, R = sb.PIKRouter, id = CFG.NO_KEY_MODEL;
+  console.log("\nno-login default model and context");
+  var model = M.noKeyDefault();
+  eq("default model id", model.id, "blockrun/gpt-oss-20b");
+  eq("default model context", model.ctx, 128000);
+  eq("conservative max output", model.maxOut, 8192);
+  eq("no OpenRouter key required", model.requiresOpenRouterKey, false);
+  ok("metadata is explicitly verified", model.metadataVerified === true);
+  ok("description discloses anonymous endpoint", /no account, login, or API key/i.test(model.desc));
+  ok("offline catalog includes the default model", M._offline().some(function (m) { return m.id === id; }));
+  ok("offline catalog excludes models below 128K", M._offline().every(function (m) { return m.ctx >= 128000; }));
+  eq("configured minimum context", CFG.MIN_CONTEXT_TOKENS, 128000);
+  eq("configured app context ceiling", CFG.APP_CONTEXT_CAP_TOKENS, 128000);
 
-  console.log("\nno-OpenRouter default model");
-  var fallback = M.noKeyDefault();
-  eq("default id", fallback.id, "puter/openai-gpt-5.6-luna");
-  eq("conservative context before live metadata", fallback.ctx, 32768);
-  eq("conservative output reserve before live metadata", fallback.maxOut, 8192);
-  eq("does not require OpenRouter", fallback.requiresOpenRouterKey, false);
-  ok("model description discloses Puter allowance", /included allowance/.test(fallback.desc));
-  ok("description clearly distinguishes this from ChatGPT Free", /not the ChatGPT Free subscription/.test(fallback.desc));
-  ok("offline catalog also includes the no-key model", M._offline().some(function (m) { return m.id === id; }));
-  ok("live Puter catalogue applies its context metadata", M.applyPuterModelMetadata([
-    { id: "gpt-5.6-luna", provider: "openai", context: 512000, max_tokens: 160000 }
-  ]));
-  eq("provider context is capped at the app's 256K ceiling", M.get(id).ctx, 256000);
-  eq("provider output is capped at 128K", M.get(id).maxOut, 128000);
-  ok("model is marked as metadata verified", M.get(id).metadataVerified === true);
+  var mobile = fs.readFileSync(path.join(ROOT, "nexus-mobile.html"), "utf8");
+  var desktop = fs.readFileSync(path.join(ROOT, "nexus.html"), "utf8");
+  var css = fs.readFileSync(path.join(ROOT, "css", "47-nexus-mobile.css"), "utf8");
+  ok("desktop contains no removed provider references", !/puter/i.test(desktop));
+  ok("mobile contains no removed provider references", !/puter/i.test(mobile));
+  ok("desktop advertises 128K no-login default", /No-login default: GPT-OSS 20B via BlockRun · 128K context/.test(desktop));
+  ok("mobile advertises 128K no-login default", /No-login default: GPT-OSS 20B via BlockRun · 128K context/.test(mobile));
+  ok("keyboard focus remains visible", /:focus-visible/.test(css));
 
-  var mobileHtml = fs.readFileSync(path.join(ROOT, "nexus-mobile.html"), "utf8");
-  var desktopHtml = fs.readFileSync(path.join(ROOT, "nexus.html"), "utf8");
-  var mobileCss = fs.readFileSync(path.join(ROOT, "css", "47-nexus-mobile.css"), "utf8");
-  ok("mobile settings disclose Puter allowance consent", /data-set="allowPuterUsage"/.test(mobileHtml));
-  ok("desktop settings disclose Puter allowance consent", /data-set="allowPuterUsage"/.test(desktopHtml));
-  ok("picker copy advertises the 256K app context cap", /256K app context cap/.test(mobileHtml));
-  ok("keyboard focus remains visible", /:focus-visible/.test(mobileCss));
-
-  eq("chat model ID falls back to the no-key model", sb.PIKChat.modelId.call({
+  eq("chat model ID defaults to the no-login model", sb.PIKChat.modelId.call({
     els: { modelchip: { dataset: { model: "" } } }
   }), id);
 
-  console.log("\nno-key default routing requires explicit consent");
-  var originalGet = sb.NexusSettings.get;
-  sb.NexusSettings.get = function () {
-    return Promise.resolve({ systemPrompt: "Test", allowPuterUsage: false });
+  console.log("\nBlockRun request uses the public endpoint without credentials");
+  var captured = null, deltas = [];
+  sb.fetch = function (url, init) {
+    captured = { url: url, init: init, body: JSON.parse(init.body) };
+    return Promise.resolve(sseResponse([
+      JSON.stringify({ choices: [{ index: 0, delta: { content: "Hello " } }] }),
+      JSON.stringify({ choices: [{ index: 0, delta: { content: "from GPT-OSS." } }] }),
+      JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: "stop" }] }),
+      "[DONE]"
+    ]));
   };
-  var noConsent = null;
-  try {
-    await R.chat({ model: id, messages: [{ role: "user", content: "Hello" }] });
-  } catch (e) { noConsent = e; }
-  ok("no OpenRouter key selects the Puter default but does not send without consent",
-    !!noConsent && /Enable/.test(noConsent.message));
-  sb.NexusSettings.get = originalGet;
+  var result = await R._viaBlockRun({
+    model: id, messages: [{ role: "user", content: "Hi" }],
+    thinking: "high", temperature: 0.4,
+    onDelta: function (text, reasoning) { deltas.push((reasoning ? "reason:" : "text:") + text); }
+  }, { systemPrompt: "System" });
+  eq("uses BlockRun URL", captured.url, "https://blockrun.ai/api/v1/chat/completions");
+  eq("uses hosted GPT-OSS model", captured.body.model, "nvidia/gpt-oss-20b");
+  eq("streaming enabled", captured.body.stream, true);
+  eq("output allowance is distinct from context window", captured.body.max_tokens, 8192);
+  ok("does not send an Authorization header", !/authorization/i.test(Object.keys(captured.init.headers).join(" ")));
+  eq("assistant response assembled", result.text, "Hello from GPT-OSS.");
+  eq("engine identified", result.engine, "blockrun");
+  eq("stream deltas reported", deltas, ["text:Hello ", "text:from GPT-OSS."]);
 
   console.log("\ncontext window is model-aware");
-  M.byId[id] = fallback;
+  M.byId[id] = model;
   var history = [
     { role: "user", content: "a".repeat(100000) },
     { role: "assistant", content: "b".repeat(100000) },
     { role: "user", content: "c".repeat(200000) }
   ];
   var selected = sb.PIKChat.contextWindow.call({
-    modelId: function () { return id; },
-    history: history
+    modelId: function () { return id; }, history: history
   });
-  eq("keeps the newest turn when the 128K input budget is reached", selected.length, 1);
+  eq("keeps newest turn when the 120K input budget is reached", selected.length, 1);
   eq("newest message preserved", selected[0].content.length, 200000);
-
-  console.log("\nPuter current streaming chunk format");
-  var captured = null;
-  var deltas = [];
-  sb.puter = {
-    ai: {
-      chat: function (messages, testMode, options) {
-        captured = { messages: messages, testMode: testMode, options: options };
-        return (async function* () {
-          yield { type: "reasoning", reasoning: "thinking" };
-          yield { type: "text", text: "Hello " };
-          yield { type: "text", text: "from Luna." };
-          yield { type: "tool_use", id: "tool-1", name: "WEBSEARCH", input: { query: "Nexus" } };
-          yield { type: "usage", usage: { input_tokens: 10, output_tokens: 5 } };
-        })();
-      }
-    }
-  };
-  var result = await R._viaPuter({
-    model: id,
-    messages: [{ role: "user", content: "Hi" }],
-    thinking: "high",
-    onDelta: function (text, reasoning) { deltas.push((reasoning ? "reason:" : "text:") + text); }
-  }, { systemPrompt: "System", allowPuterUsage: true });
-
-  eq("routes to GPT-5.6 Luna", captured.options.model, "gpt-5.6-luna");
-  eq("pins the intended provider", captured.options.provider, "openai");
-  eq("prevents silent vendor rerouting", captured.options.fallback, false);
-  eq("live mode remains enabled", captured.testMode, false);
-  eq("options are passed in the documented third argument", captured.options.stream, true);
-  eq("reasoning effort passed", captured.options.reasoning_effort, "high");
-  eq("sampling temperature omitted for reasoning model", captured.options.temperature, undefined);
-  eq("text chunks combined", result.text, "Hello from Luna.");
-  eq("reasoning kept separate", result.reasoning, "thinking");
-  eq("tool-use chunk mapped to agent tool call", result.toolCalls, [
-    { id: "tool-1", name: "WEBSEARCH", args: "{\"query\":\"Nexus\"}" }
-  ]);
-  eq("stream deltas reported", deltas, ["reason:thinking", "text:Hello ", "text:from Luna."]);
-
-  console.log("\nPuter consent gate");
-  var denied = null;
-  try {
-    await R._viaPuter({ model: id, messages: [{ role: "user", content: "Hi" }] },
-      { systemPrompt: "System", allowPuterUsage: false });
-  } catch (e) { denied = e; }
-  ok("Puter request rejected when consent is off", !!denied && /disabled/.test(denied.message));
-
-  console.log("\nPuter stream errors are not swallowed");
-  sb.puter.ai.chat = function () {
-    return (async function* () {
-      yield { type: "error", message: "upstream unavailable" };
-    })();
-  };
-  var streamError = null;
-  try {
-    await R._viaPuter({ model: id, messages: [{ role: "user", content: "Hi" }] },
-      { systemPrompt: "System", allowPuterUsage: true });
-  } catch (e) { streamError = e; }
-  ok("typed stream error is surfaced", !!streamError && /upstream unavailable/.test(streamError.message));
 
   console.log("\n" + (fail === 0 ? "ALL PASS" : "FAILURES") + ": " + pass + " passed, " + fail + " failed");
   process.exit(fail === 0 ? 0 : 1);

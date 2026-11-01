@@ -39,7 +39,7 @@
       });
       /* Resolve the startup model from the credentials actually present.
          OpenRouter's :free models still require an OpenRouter key; without
-         one, the UI defaults to the explicitly opt-in Puter GPT-5.6 Luna model. */
+         one, the UI defaults to the public BlockRun GPT-OSS 20B model. */
       NexusSettings.get().then(async function (s) {
         var hasOR = await NexusSettings.hasKey("openrouter");
         var selected = hasOR ? (s.model || CFG.SUGGESTED_MODEL) : CFG.NO_KEY_MODEL;
@@ -454,11 +454,11 @@
         pill.dataset.engine = PIKRouter.engine;
         pill.querySelector("span").textContent = PIKRouter.engine.toUpperCase();
         var eng = PIKRouter.engine;
-        budget.textContent = (eng === "pollinations" || eng === "polli-alt" || eng === "polli-get")
-          ? "free-tier failover · pollinations.ai"
+        budget.textContent = eng === "blockrun"
+          ? "anonymous inference · BlockRun GPT-OSS 20B · 128K context"
           : eng === "deepinfra-free"
-            ? "free-tier failover · deepinfra public API"
-            : "openrouter free tier · key optional";
+            ? "DeepInfra · configured API key"
+            : "OpenRouter · configured API key";
       }
       paint();
       document.addEventListener("pik:engine", paint);
