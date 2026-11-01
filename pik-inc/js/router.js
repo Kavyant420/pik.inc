@@ -8,14 +8,10 @@
      4. PIK MicroEngine when enabled as an on-device fallback
    Legacy Pollinations helpers remain for compatibility but are not treated
    as an anonymous, free inference service.
-   NOTE: "polli-alt" (universal.pollinations.ai) is no longer a hop — that host
-   does not resolve and was removed from POLLINATIONS_CHAIN; the doc line above
-   used to still advertise it. "cohere-free" was likewise removed: api.cohere.com
-   requires an API key for every model and always answered HTTP 401 from the
-   browser. DeepInfra is key-gated for the same reason — an unauthenticated POST
-   to it answers 401 "missing API key", so it is skipped unless LS.KEY_DI is set.
-   In practice, for a visitor with no keys at all, the working engines are
-   pollinations -> puter -> polli-get.
+   Legacy Pollinations helpers are not part of the default provider chain.
+   Qwen community gateways are optional and their availability can change.
+   Puter requests (including Qwen-through-Puter) are blocked unless the user
+   explicitly enables the Puter usage consent in Settings.
    Every keyless engine is tried in order until one answers; the first token
    of reasoning streams straight into the live THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
