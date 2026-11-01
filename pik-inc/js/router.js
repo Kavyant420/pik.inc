@@ -142,7 +142,9 @@
       }
 
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
-      var usePuterDefault = !!CFG.NO_KEY_MODEL && (!hasKey || opts.model === CFG.NO_KEY_MODEL);
+      var isQwen = String(opts.model || CFG.SUGGESTED_MODEL || "").indexOf("qwen") !== -1;
+      var usePuterDefault = !!CFG.NO_KEY_MODEL &&
+        (opts.model === CFG.NO_KEY_MODEL || (!hasKey && !isQwen));
       var wantOR = hasKey && !usePuterDefault && !this._orBurned && this.budgetLeft() > 0;
       if (usePuterDefault && !settings.allowPuterUsage) {
         throw new Error("GPT-5.6 Luna via Puter is the no-OpenRouter-key default. Enable “Allow Puter AI usage” in Settings first. Puter applies your monthly free allowance and may use purchased credits after it runs out.");
@@ -154,7 +156,6 @@
          (puter → openrouter-app → glider → jaiowr). If every Qwen gateway is
          rate-limited we transparently fall through to the generic free chain
          below so the user always gets an answer. */
-      var isQwen = String(opts.model || CFG.SUGGESTED_MODEL || "").indexOf("qwen") !== -1;
       if (isQwen && !this._blacklist["qwen-chain"]) {
         try {
           var qr = await this._viaQwen(opts, settings);
@@ -192,11 +193,11 @@
         this._setEngine("pollinations", "budget-exhausted");
       }
 
-      /* ---------- free keyless pair: puter + pollinations ----------
-         The two free providers are tried in a rotating order (whoever answered
-         last goes to the back) so NEXUS auto-redirects between puter and
-         pollinations on rate-limits, empty replies or network errors — no API
-         key is ever needed for either. Remaining hops stay as safety nets. */
+      /* ---------- provider fallback chain ----------
+         Puter is a user-pays provider and is only attempted after explicit
+         consent. Pollinations legacy routes remain best-effort fallbacks for
+         existing deployments; current generation endpoints require a
+         user-authorized key. DeepInfra is attempted only with its own key. */
       var attempts;
       /* The no-key default is explicitly Puter GPT-5.6 Luna. Do not send
          unauthenticated requests to Pollinations: generation now requires a
@@ -722,6 +723,9 @@
     },
 
     async _viaPuter(opts, settings) {
+      if (!settings || !settings.allowPuterUsage) {
+        throw new Error("Puter usage is disabled. Enable “Allow Puter AI usage” in Settings before using this provider.");
+      }
       var pt = await this.ensurePuter();
       var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
