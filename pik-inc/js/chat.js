@@ -215,7 +215,6 @@
       var modelOutput = info && Number(info.maxOut) > 0 ? Number(info.maxOut) : 8192;
       var outputReserve = Math.min(configuredReserve, modelOutput, Math.floor(totalCap / 2));
       var inputBudgetTokens = Math.max(2048, totalCap - outputReserve);
-      var charBudget = inputBudgetTokens * 2; // conservative ~2 chars/token heuristic
       var MAXMSG = 400;
       var h = this.history || [];
       var out = [], used = 0;
