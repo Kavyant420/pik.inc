@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PIK Inc</title>
+  <!-- Redirect shim: if the Vercel project's Root Directory is "pikinc-site",
+       this file guarantees pikinc.vercel.app serves PIK content instead of a
+       repo-root listing 404. Normally the root vercel.json outputDirectory
+       (../pik-inc) supersedes this, and pik-inc/index.html is served. -->
+  <meta http-equiv="refresh" content="0; url=/nexus" />
+  <link rel="canonical" href="/nexus" />
+  <script>
+    // Preserve any path/query when redirecting into the deployed app.
+    var p = location.pathname.replace(/^\/+/, "");
+    location.replace(p ? "/" + p : "/nexus");
+  </script>
+</head>
+<body>
+  <p><a href="/nexus">PIK Nexus</a></p>
+</body>
+</html>
