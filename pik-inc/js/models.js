@@ -1,9 +1,8 @@
 /* ============================================================================
    PIK//NEXUS — models.js
-   Live catalog from OpenRouter, filtered to :free variants and ordered by
-   context length. These models still require an OpenRouter API key; the
-   no-key default is a separate, explicitly opt-in Puter GPT-5.6 Luna entry.
-   The catalog endpoint is public; no API key is needed to list models.
+   Live catalog from OpenRouter, filtered to :free variants with at least
+   128K context. OpenRouter generation still requires a key; the no-key
+   default is BlockRun's public GPT-OSS 20B endpoint (128K context).
    ========================================================================= */
 (function (global) {
   "use strict";
@@ -26,7 +25,10 @@
         if (!res.ok) throw new Error("catalog HTTP " + res.status);
         var json = await res.json();
         var free = (json.data || [])
-          .filter(function (m) { return m.id && m.id.indexOf(":free") !== -1; })
+          .filter(function (m) {
+            return m.id && m.id.indexOf(":free") !== -1 &&
+              Number(m.context_length || 0) >= (CFG.MIN_CONTEXT_TOKENS || 128000);
+          })
           .map(function (m) { return Models._normalize(m); })
           .sort(function (a, b) { return b.ctx - a.ctx; });
         this.all = free;
@@ -70,52 +72,24 @@
     noKeyDefault() {
       return {
         id: CFG.NO_KEY_MODEL,
-        name: "GPT-5.6 Luna · Puter",
-        provider: "puter",
-        /* Conservative until Puter exposes live model metadata. The 256K
-           value is an application ceiling, not a provider guarantee. */
-        ctx: 32768,
-        maxOut: 8192,
+        name: "GPT-OSS 20B · BlockRun",
+        provider: "blockrun",
+        ctx: CFG.BLOCKRUN_CONTEXT_TOKENS || 128000,
+        maxOut: CFG.BLOCKRUN_MAX_OUTPUT_TOKENS || 8192,
         modality: "text->text",
         vision: false, video: false, audio: false,
         reasoning: true,
-        efforts: ["low", "medium", "high", "xhigh"],
+        efforts: ["low", "medium", "high"],
         defaultEffort: "high",
         mandatoryReasoning: false,
         tools: true,
         noKeyDefault: true,
         requiresOpenRouterKey: false,
-        desc: "GPT-5.6 Luna through Puter.js; no OpenRouter key is needed. Nexus has a 256K app-side ceiling, but the actual model context and output limits are read from Puter's live model catalogue when available. Until then Nexus uses a conservative 32K context budget. Puter is user-pays: an included allowance may apply, and charges may apply depending on the account. This is not the ChatGPT Free subscription. Use only if eligible under Puter's terms and local age/consent rules.",
-        logo: Models.logoUrl("puter"),
-        suggested: false
+        metadataVerified: true,
+        desc: "GPT-OSS 20B through BlockRun's public OpenAI-compatible endpoint. No account, login, or API key is required by its published quick-start. Advertised 128K context; anonymous service availability and rate limits may vary.",
+        logo: Models.logoUrl("blockrun"),
+        suggested: true
       };
-    },
-
-    applyPuterModelMetadata(catalog) {
-      if (!Array.isArray(catalog)) return false;
-      var model = catalog.find(function (m) {
-        if (!m) return false;
-        var id = String(m.id || "");
-        var aliases = Array.isArray(m.aliases) ? m.aliases : [];
-        return id === "gpt-5.6-luna" || id === "openai/gpt-5.6-luna" ||
-          aliases.indexOf("gpt-5.6-luna") !== -1 ||
-          aliases.indexOf("openai/gpt-5.6-luna") !== -1;
-      });
-      if (!model) return false;
-      var cap = Number(CFG.APP_CONTEXT_CAP_TOKENS) || 256000;
-      var context = Number(model.context || model.context_length || 0);
-      var output = Number(model.max_tokens || model.max_output_tokens || model.max_completion_tokens || 0);
-      var target = this.byId[CFG.NO_KEY_MODEL];
-      if (!target) target = this.noKeyDefault();
-      if (context > 0) target.ctx = Math.min(cap, context);
-      if (output > 0) target.maxOut = Math.min(Number(CFG.APP_CONTEXT_OUTPUT_RESERVE_TOKENS) || 128000, output);
-      target.metadataVerified = context > 0 || output > 0;
-      this.byId[CFG.NO_KEY_MODEL] = target;
-      var index = this.all.findIndex(function (m) { return m.id === CFG.NO_KEY_MODEL; });
-      if (index >= 0) this.all[index] = target;
-      else this.all.unshift(target);
-      this._emit();
-      return true;
     },
 
     _normalize(m) {
@@ -166,10 +140,11 @@
     /* ---------- helpers ---------- */
     get(id) { return this.byId[id] || null; },
 
-    /* CDN logo for ANY engine name (puter, pollinations, deepinfra-free…) —
+    /* CDN logo for ANY engine name (blockrun, pollinations, deepinfra-free…) —
        used by chat.js so every avatar is an icon from the CDN, never emoji. */
     logoFor(engineOrProvider) {
       var p = String(engineOrProvider || "").toLowerCase();
+      if (p === "blockrun") return CFG.LOGO_FAVICON + "blockrun.ai&sz=64";
       if (p === "polli-alt" || p === "polli-get") p = "pollinations";
       if (p === "deepinfra-free") p = "deepseek";
       if (p === "openrouter") return CFG.LOGO_SI + "openrouter.svg";
@@ -202,6 +177,7 @@
     /* ---------- offline snapshot (live data captured Oct 2026, ctx desc) ---------- */
     _offline() {
       var raw = [
+        ["blockrun/gpt-oss-20b", "GPT-OSS 20B · BlockRun", 128000, "text->text", ["low", "medium", "high"]],
         ["qwen/qwen3.8-27b", "Qwen: Qwen3.8 27B", 1000000, "text->text", ["xhigh", "medium", "low", "none"]],
         ["thinkingmachines/inkling:free","Thinking Machines: Inkling (free)",1048576,"text+image+audio->text",["max","xhigh","high","medium","low","minimal"]],
         ["thinkingmachines/inkling-small:free","Thinking Machines: Inkling Small (free)",1048576,"text+image+audio->text",["max","high","medium","low"]],
@@ -220,7 +196,7 @@
         ["nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free","NVIDIA: Nemotron 3 Nano Omni (free)",256000,"text+image+audio->text",[]],
         ["liquid/lfm-2.5-2.6b:free","Liquid: LFM2.5-2.6B (free)",65536,"text->text",[]]
       ];
-      var snapshot = raw.map(function (r) {
+      var snapshot = raw.filter(function (r) { return r[2] >= (CFG.MIN_CONTEXT_TOKENS || 128000); }).map(function (r) {
         var provider = r[0].split("/")[0];
         return {
           id: r[0], name: r[1], provider: provider, ctx: r[2], maxOut: 0,
