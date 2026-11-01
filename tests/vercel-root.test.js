@@ -22,6 +22,7 @@ ok("fallback streams the matching Git ref", /VERCEL_GIT_COMMIT_REF/.test(fallbac
 ok("fallback allows Nexus mobile page", /"nexus-mobile\.html"/.test(fallback));
 ok("fallback rejects path traversal", /p\.indexOf\("\.\."\)/.test(fallback));
 ok("search API exports a handler", /module\.exports\s*=/.test(search));
-ok("site entry redirects to PIKX", /url=\/pikx/.test(index));
+ok("site root renders the PIK Inc homepage", /PIK — Security-first product studio/.test(index));
+ok("site root does not force-redirect visitors to PIKX", !/window\.location\.replace\(["\']\/pikx/.test(index) && !/http-equiv=["\']refresh["\'][^>]*url=\/pikx/i.test(index));
 console.log("\n" + (fail ? "FAILURES" : "ALL PASS") + ": " + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);
