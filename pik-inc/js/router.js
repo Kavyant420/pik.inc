@@ -727,7 +727,7 @@
         if (effort === "max" || effort === "high") kw.mode = "thinking";
       }
 
-      var stream = await pt.ai.chat(messages, kw);
+      var stream = await pt.ai.chat(messages, false, kw);
       if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
         throw new Error("Puter did not return a streaming response.");
       }
