@@ -142,8 +142,8 @@
       }
 
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
-      var wantOR = hasKey && !this._orBurned && this.budgetLeft() > 0;
-      var usePuterDefault = !!CFG.NO_KEY_MODEL && opts.model === CFG.NO_KEY_MODEL;
+      var usePuterDefault = !!CFG.NO_KEY_MODEL && (!hasKey || opts.model === CFG.NO_KEY_MODEL);
+      var wantOR = hasKey && !usePuterDefault && !this._orBurned && this.budgetLeft() > 0;
       if (usePuterDefault && !settings.allowPuterUsage) {
         throw new Error("GPT-5.6 Luna via Puter is the no-OpenRouter-key default. Enable “Allow Puter AI usage” in Settings first. Puter applies your monthly free allowance and may use purchased credits after it runs out.");
       }
