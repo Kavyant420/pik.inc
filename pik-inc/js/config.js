@@ -79,7 +79,7 @@
        monthly allowance and may consume purchased credits after that. The
        Settings opt-in is required before the first request. */
     NO_KEY_MODEL: "puter/openai-gpt-5.6-luna",
-    PUTER_DEFAULT_MODEL: "openai/gpt-5.6-luna",
+    PUTER_DEFAULT_MODEL: "gpt-5.6-luna",
     /* Total app-side context cap. The rolling history reserves up to 128k
        tokens for output; character counting is a conservative estimate. */
     APP_CONTEXT_CAP_TOKENS: 256000,
