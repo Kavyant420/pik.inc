@@ -11,6 +11,7 @@
 
   var DEFAULTS = {
     model: CFG.SUGGESTED_MODEL,
+    allowPuterUsage: false,           // explicit consent: Puter may use paid credits after free allowance
     thinking: "high",                 // low | medium | high | max
     temperature: 0.7,
     systemPrompt:
@@ -124,6 +125,7 @@
         }
         var sr = $("[data-set='showReasoning']"); if (sr) sr.checked = s.showReasoningByDefault;
         var au = $("[data-set='audit']"); if (au) au.checked = s.auditLedger;
+        var pu = $("[data-set='allowPuterUsage']"); if (pu) pu.checked = !!s.allowPuterUsage;
       });
 
       root.addEventListener("input", function (ev) {
