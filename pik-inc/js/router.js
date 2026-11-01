@@ -143,6 +143,10 @@
 
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
       var wantOR = hasKey && !this._orBurned && this.budgetLeft() > 0;
+      var usePuterDefault = !!CFG.NO_KEY_MODEL && opts.model === CFG.NO_KEY_MODEL;
+      if (usePuterDefault && !settings.allowPuterUsage) {
+        throw new Error("GPT-5.6 Luna via Puter is the no-OpenRouter-key default. Enable “Allow Puter AI usage” in Settings first. Puter applies your monthly free allowance and may use purchased credits after it runs out.");
+      }
 
       /* ---------- QWEN 3.8 27B: default NEXUS flagship, free keyless chain ---
          When the selected model is Qwen 3.8 27B we skip the keyed OpenRouter
@@ -183,7 +187,7 @@
           }
         }
       } else if (!hasKey) {
-        this._setEngine("pollinations", "no-key");
+        this._setEngine(usePuterDefault ? "puter" : "pollinations", "no-key");
       } else if (this._orBurned || this.budgetLeft() <= 0) {
         this._setEngine("pollinations", "budget-exhausted");
       }
@@ -194,10 +198,15 @@
          pollinations on rate-limits, empty replies or network errors — no API
          key is ever needed for either. Remaining hops stay as safety nets. */
       var attempts;
-      /* polli-alt was removed from the chain: POLLINATIONS_CHAIN now has a
-         single real endpoint, and duplicating it only produced a second
-         identical 503/402 round-trip of console noise per turn. */
-      if (this._puterLastGood) {
+      /* The no-key default is explicitly Puter GPT-5.6 Luna. Do not send
+         unauthenticated requests to Pollinations: generation now requires a
+         user-authorized key. If Puter fails, the normal local-core fallback
+         below is used when enabled. */
+      if (usePuterDefault) {
+        attempts = [
+          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" }
+        ];
+      } else if (this._puterLastGood) {
         attempts = [
           { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
           { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
@@ -720,28 +729,79 @@
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
         return { role: m.role, content: txt };
       }));
-      var kw = { stream: true, temperature: typeof opts.temperature === "number" ? opts.temperature : 0.7 };
-      if (opts.thinking === "max" || opts.thinking === "high") kw.mode = "thinking";
-      /* NEXUS default flagship: ask Puter's keyless tier for Qwen 3.8 27B
-         specifically; puter falls back to its own best free model internally
-         if that id is unavailable on the anonymous tier. */
-      if (String(opts.model || "").indexOf("qwen") !== -1) kw.model = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
-      var it = pt.ai.chat(messages, kw);
-      if (!it) throw new Error("puter empty iterator");
-      var full = "", reason = "";
-      for await (const part of it) {
-        if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
-        if (!part) continue;
-        var d = (part && part.delta != null) ? String(part.delta)
-              : (part && part.cached != null && !part.cached) ? String(part.message || "") : "";
-        if (!d && typeof part === "string") d = part;
-        if (!d) continue;
-        if (part.type === "reasoning" || part.reasoning) { reason += d; if (opts.onDelta) opts.onDelta(d, true); }
-        else { full += d; if (opts.onDelta) opts.onDelta(d, false); }
+
+      var requested = String(opts.model || "");
+      var model = requested.indexOf("qwen") !== -1
+        ? (CFG.QWEN_MODEL || "qwen/qwen3.8-27b")
+        : (CFG.PUTER_DEFAULT_MODEL || "openai/gpt-5.6-luna");
+      var kw = { model: model, stream: true, signal: opts.signal };
+      var effort = String(opts.thinking || "high").toLowerCase();
+      if (model.indexOf("openai/") === 0) {
+        kw.reasoning_effort = effort === "max" ? "xhigh" : (effort === "medium" ? "medium" : effort === "low" ? "low" : "high");
+        /* GPT reasoning models ignore sampling controls when reasoning is on. */
+      } else {
+        kw.temperature = typeof opts.temperature === "number" ? opts.temperature : 0.7;
+        if (effort === "max" || effort === "high") kw.mode = "thinking";
       }
-      if (!full && reason) full = reason;
-      if (!full) throw new Error("puter empty response");
-      return { text: full, reasoning: reason, engine: "puter", model: "puter-free", digest: "", usedFallback: true };
+
+      var stream = await pt.ai.chat(messages, kw);
+      if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
+        throw new Error("Puter did not return a streaming response.");
+      }
+
+      var full = "", reason = "", toolCalls = [];
+      for await (var part of stream) {
+        if (opts.signal && opts.signal.aborted) {
+          var ab = new Error("aborted"); ab.name = "AbortError"; throw ab;
+        }
+        if (!part) continue;
+
+        if (part.type === "error") {
+          throw new Error("Puter stream error: " + String(part.message || "unknown provider error"));
+        }
+        if (part.type === "text") {
+          var textDelta = String(part.text || "");
+          if (textDelta) {
+            full += textDelta;
+            if (opts.onDelta) opts.onDelta(textDelta, false);
+          }
+        } else if (part.type === "reasoning") {
+          var reasoningDelta = String(part.reasoning || part.text || "");
+          if (reasoningDelta) {
+            reason += reasoningDelta;
+            if (opts.onDelta) opts.onDelta(reasoningDelta, true);
+          }
+        } else if (part.type === "tool_use") {
+          toolCalls.push({
+            id: String(part.id || "puter-tool-" + toolCalls.length),
+            name: String(part.name || ""),
+            args: JSON.stringify(part.input == null ? {} : part.input)
+          });
+        } else if (part.type == null) {
+          /* Backward compatibility with older Puter chunk shapes. */
+          var legacy = part.delta != null ? String(part.delta)
+            : (part.cached != null && !part.cached) ? String(part.message || "")
+            : (part.text != null ? String(part.text) : "");
+          if (legacy) {
+            full += legacy;
+            if (opts.onDelta) opts.onDelta(legacy, false);
+          }
+          if (part.reasoning) {
+            var legacyReason = String(part.reasoning);
+            reason += legacyReason;
+            if (opts.onDelta) opts.onDelta(legacyReason, true);
+          }
+        }
+      }
+
+      if (!full && !toolCalls.length && reason) full = reason;
+      if (!full && !toolCalls.length) throw new Error("Puter returned an empty response.");
+      return {
+        text: full, reasoning: reason, toolCalls: toolCalls,
+        finishReason: toolCalls.length ? "tool_calls" : "stop",
+        engine: "puter", model: model, digest: "",
+        usedFallback: true
+      };
     },
 
     /* ---------- shared SSE reader ---------- */
