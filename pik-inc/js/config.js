@@ -19,33 +19,18 @@
     OR_MODELS_URL: "https://openrouter.ai/api/v1/models",
     OR_CHAT_URL: "https://openrouter.ai/api/v1/chat/completions",
 
-    /* ---- Legacy Pollinations endpoints (not used as anonymous fallbacks) -- */
-    POLLINATIONS_URL: "https://text.pollinations.ai/openai",
-    POLLINATIONS_MODELS_URL: "https://text.pollinations.ai/models",
-    POLLINATIONS_DEFAULT_MODEL: "openai-fast",
-    /* Legacy GET endpoint retained for compatibility; not a default fallback. */
-    POLLINATIONS_GET_URL: "https://text.pollinations.ai/",
-    /* Legacy endpoint list. Current Pollinations generation requires a
-       user-authorized key; these endpoints are not used for anonymous default
-       inference. */
-    POLLINATIONS_CHAIN: [
-      "https://text.pollinations.ai/openai"
-    ],
-    /* Models accepted by text.pollinations.ai's OpenAI endpoint.
-       VERIFIED against GET /models and by live POST on 2026-10-25.
-       The endpoint currently serves exactly one model, "openai-fast"
-       (GPT-OSS 20B Reasoning, tools: true). "openai" is a published ALIAS of
-       it and is kept so existing saved settings keep resolving.
-
-       The previous list (openai-large, openai-reasoning, mistral, llama,
-       deepseek, qwen-coder, trinity, unity, kernel, searchgpt) was never
-       real: each one answers HTTP 404 or hangs until timeout, so selecting
-       any of them in the model picker silently killed the whole turn. The
-       router validates settings.polliModel against THIS list and falls back
-       to POLLINATIONS_DEFAULT_MODEL instead of triggering those HTTP 400/404s. */
-    POLLI_MODELS: [
-      "openai-fast", "openai"
-    ],
+    /* ---- Anonymous inference: BlockRun / GPT-OSS 20B -----------------------
+       Public OpenAI-compatible endpoint. No account, API key, or user login
+       is required by the published quick-start. The hosted model advertises
+       a 128K context window; the app never labels it as larger than that. */
+    BLOCKRUN_CHAT_URL: "https://blockrun.ai/api/v1/chat/completions",
+    BLOCKRUN_MODEL: "nvidia/gpt-oss-20b",
+    BLOCKRUN_CONTEXT_TOKENS: 128000,
+    BLOCKRUN_MAX_OUTPUT_TOKENS: 8192,
+    MIN_CONTEXT_TOKENS: 128000,
+    NO_KEY_MODEL: "blockrun/gpt-oss-20b",
+    APP_CONTEXT_CAP_TOKENS: 128000,
+    APP_CONTEXT_OUTPUT_RESERVE_TOKENS: 8192,
 
     /* ---- DeepInfra inference API ------------------------------------------
        CORRECTED: this endpoint is NOT keyless. A live POST with no
@@ -69,22 +54,6 @@
     GH_AUTH_URL: "https://github.com/login/oauth/authorize",
     GH_API: "https://api.github.com",
 
-    /* ---- Puter.js (loaded on demand; user-pays provider) ------------------
-       No OpenRouter API key is required, but usage is billed against the
-       user's monthly free allowance and may consume purchased credits after
-       that. Nexus requires explicit opt-in before making Puter requests. */
-    PUTER_CDN: "https://js.puter.com/v2/",
-    /* No-OpenRouter-key default. This is OpenAI GPT-5.6 Luna served by Puter,
-       NOT the ChatGPT Free subscription/API. Puter applies each user's free
-       monthly allowance and may consume purchased credits after that. The
-       Settings opt-in is required before the first request. */
-    NO_KEY_MODEL: "puter/openai-gpt-5.6-luna",
-    PUTER_DEFAULT_MODEL: "gpt-5.6-luna",
-    /* Total app-side context ceiling. Actual provider input/output limits
-       are read from its model catalogue and always take precedence. */
-    APP_CONTEXT_CAP_TOKENS: 256000,
-    APP_CONTEXT_OUTPUT_RESERVE_TOKENS: 128000,
-
     /* ---- Logo CDNs -------------------------------------------------------- */
     LOGO_SI: "https://cdn.jsdelivr.net/npm/simple-icons@14/icons/",   // svg monochrome set
     LOGO_FAVICON: "https://www.google.com/s2/favicons?domain=",       // + domain + "&sz=64"
@@ -102,8 +71,7 @@
 
        Every id below is confirmed present and confirmed to carry the ":free"
        suffix, so they are reachable on a free-tier key. OpenRouter still
-       requires a key for these (keyless calls answer 401) — the keyless path
-       is Pollinations, see POLLINATIONS_* above. */
+       requires a key for these (keyless calls answer 401) — the keyless path is the public BlockRun GPT-OSS endpoint configured above. */
     SUGGESTED_MODEL: "nvidia/nemotron-3.5-lightning:free",
     FALLBACK_ORDER: [
       "nvidia/nemotron-3.5-lightning:free",
@@ -123,7 +91,7 @@
       xai: "xai", moonshotai: "moonshotai", perplexity: "perplexity",
       cohere: "cohere", poolside: "poolside", liquid: "liquid",
       thinkingmachines: "thinkingmachines", "dots-studio": "dotsstudio",
-      "xingchen-agi": "xingchen", pollinations: "pollinations", puter: "puter"
+      "xingchen-agi": "xingchen", pollinations: "pollinations"
     },
 
     /* Provider -> brand site (used for favicon fallbacks) */
@@ -134,12 +102,12 @@
       xai: "x.ai", moonshotai: "moonshot.ai", perplexity: "perplexity.ai",
       cohere: "cohere.com", poolside: "poolside.ai", liquid: "www.liquid.ai",
       thinkingmachines: "thinkingmachines.co", "dots-studio": "dots.studio",
-      "xingchen-agi": "teleai.com.cn", pollinations: "pollinations.ai", puter: "puter.com"
+      "xingchen-agi": "teleai.com.cn", blockrun: "blockrun.ai", pollinations: "pollinations.ai"
     },
 
     /* ---- Thinking ladder (UI scale Low -> Medium -> High -> Max) --------- */
     THINKING_LEVELS: ["low", "medium", "high", "max"],
-    /* Max thinking on free models: pollinations' openai-compatible endpoint
+    /* Max thinking on free models: the anonymous GPT-OSS endpoint
        validates reasoning_effort strictly and answers HTTP 400 for unknown
        values like "max" — so "max" maps to its strongest accepted level. */
     THINKING_MAP: {
