@@ -49,6 +49,8 @@
             suggested: true
           });
         }
+        free.unshift(Models.noKeyDefault());
+        this.all = free;
         this.byId = {};
         var _s = this;
         free.forEach(function (m) { _s.byId[m.id] = m; });
@@ -63,6 +65,27 @@
       }
       this._emit();
       return this.all;
+    },
+
+    noKeyDefault() {
+      return {
+        id: CFG.NO_KEY_MODEL,
+        name: "GPT-5.6 Luna · Puter",
+        provider: "puter",
+        ctx: 256000,
+        maxOut: 128000,
+        modality: "text->text",
+        vision: false, video: false, audio: false,
+        reasoning: true,
+        efforts: ["low", "medium", "high", "xhigh"],
+        defaultEffort: "high",
+        mandatoryReasoning: false,
+        tools: true,
+        noKeyDefault: true,
+        desc: "OpenAI GPT-5.6 Luna served through Puter.js. No OpenRouter key is needed. Nexus caps the total context at 256K (128K input plus up to 128K output). Puter applies your monthly free allowance; purchased credits may be used after it runs out. This is not the ChatGPT Free subscription.",
+        logo: Models.logoUrl("puter"),
+        suggested: false
+      };
     },
 
     _normalize(m) {
@@ -125,8 +148,8 @@
     },
 
     suggest() {
-      /* Qwen 3.8 27B is the hard default; only fall back if it vanished */
-      return this.byId[CFG.QWEN_MODEL] || this.byId[CFG.SUGGESTED_MODEL] || this.all[0] || null;
+      return this.byId[CFG.NO_KEY_MODEL] || this.byId[CFG.QWEN_MODEL] ||
+        this.byId[CFG.SUGGESTED_MODEL] || this.all[0] || null;
     },
 
     search(q) {
@@ -166,7 +189,7 @@
         ["nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free","NVIDIA: Nemotron 3 Nano Omni (free)",256000,"text+image+audio->text",[]],
         ["liquid/lfm-2.5-2.6b:free","Liquid: LFM2.5-2.6B (free)",65536,"text->text",[]]
       ];
-      return raw.map(function (r) {
+      var snapshot = raw.map(function (r) {
         var provider = r[0].split("/")[0];
         return {
           id: r[0], name: r[1], provider: provider, ctx: r[2], maxOut: 0,
@@ -179,6 +202,8 @@
           suggested: r[0] === (CFG.QWEN_MODEL || CFG.SUGGESTED_MODEL)
         };
       });
+      snapshot.unshift(Models.noKeyDefault());
+      return snapshot;
     }
   };
 
