@@ -1,0 +1,54 @@
+name: Nexus regression tests
+
+on:
+  push:
+    branches:
+      - nexus-hardening-2026-11-01
+    paths:
+      - "pik-inc/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/nexus-ci.yml"
+  pull_request:
+    paths:
+      - "pik-inc/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/nexus-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run offline regression suite
+        run: npm test
+
+      - name: Check changed runtime modules
+        run: |
+          node --check pik-inc/js/config.js
+          node --check pik-inc/js/models.js
+          node --check pik-inc/js/router.js
+          node --check pik-inc/js/chat.js
+          node --check pik-inc/js/nexus.js
+          node --check pik-inc/js/nexus-settings.js
+          node --check pik-inc/js/nexus-picker.js
+
+      - name: Check patch whitespace
+        run: git diff --check
