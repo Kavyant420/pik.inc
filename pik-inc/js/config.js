@@ -80,8 +80,8 @@
        Settings opt-in is required before the first request. */
     NO_KEY_MODEL: "puter/openai-gpt-5.6-luna",
     PUTER_DEFAULT_MODEL: "gpt-5.6-luna",
-    /* Total app-side context cap. The rolling history reserves up to 128k
-       tokens for output; character counting is a conservative estimate. */
+    /* Total app-side context ceiling. Actual provider input/output limits
+       are read from its model catalogue and always take precedence. */
     APP_CONTEXT_CAP_TOKENS: 256000,
     APP_CONTEXT_OUTPUT_RESERVE_TOKENS: 128000,
 
