@@ -1,8 +1,8 @@
 /* ============================================================================
    PIK//NEXUS — nexus-settings.js
    Persisted app settings (AES-256-GCM at rest via crypto.js) + the Settings
-   drawer logic: keys, system prompt for the pollinations fallback, thinking
-   default, temperature, privacy toggles.
+   drawer logic: keys, provider-consent settings, system prompt, thinking
+   default, temperature, and privacy toggles.
    ========================================================================= */
 (function (global) {
   "use strict";
@@ -11,6 +11,7 @@
 
   var DEFAULTS = {
     model: CFG.SUGGESTED_MODEL,
+    allowPuterUsage: false,           // explicit consent: Puter may use paid credits after free allowance
     thinking: "high",                 // low | medium | high | max
     temperature: 0.7,
     systemPrompt:
@@ -124,6 +125,7 @@
         }
         var sr = $("[data-set='showReasoning']"); if (sr) sr.checked = s.showReasoningByDefault;
         var au = $("[data-set='audit']"); if (au) au.checked = s.auditLedger;
+        var pu = $("[data-set='allowPuterUsage']"); if (pu) pu.checked = !!s.allowPuterUsage;
       });
 
       root.addEventListener("input", function (ev) {

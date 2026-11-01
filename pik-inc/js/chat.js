@@ -146,7 +146,7 @@
         var keyless = engine !== "openrouter";
         if (window.PIKToasts) PIKToasts.show({
           type: keyless ? "warn" : "info",
-          title: keyless ? "Switched to free keyless engine" : "Back on OpenRouter",
+          title: keyless ? "Switched provider" : "Back on OpenRouter",
           text: keyless
             ? "OpenRouter free tier exhausted or no key set \u2014 NEXUS now runs on " + engine +
               " (no API key needed)" + (reason ? ", reason: " + reason : "") + "."
@@ -198,25 +198,33 @@
     },
 
     modelId: function () {
-      return this.els.modelchip.dataset.model || CFG.SUGGESTED_MODEL;
+      return this.els.modelchip.dataset.model || CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL;
     },
 
-    /* ---------- 512k-token context window ----------
-       The free tier budget was raised from 32k to 512k tokens
-       (~2,048,000 chars at ~4 chars/token). Instead of the old hard
-       24-message cap, keep as many recent messages as fit inside a
-       generous char budget, always preserving the newest turn. */
+    /* ---------- model-aware context window ----------
+       The app caps total context at 256K tokens, then reserves the model's
+       advertised output allowance (up to 128K). History is kept newest-first
+       using a conservative character/token estimate; this is a safety budget,
+       not an exact provider tokenizer. The newest turn is always preserved. */
     contextWindow: function () {
-      var BUDGET = 512000 * 4;            // 512k tokens -> ~2M chars
-      var MAXMSG = 400;                   // sanity ceiling on message count
+      var info = global.PIKModels && PIKModels.get(this.modelId());
+      var totalCap = Number(CFG.APP_CONTEXT_CAP_TOKENS) || 256000;
+      var modelCap = info && Number(info.ctx) > 0 ? Number(info.ctx) : 32768;
+      totalCap = Math.max(4096, Math.min(totalCap, modelCap));
+      var configuredReserve = Number(CFG.APP_CONTEXT_OUTPUT_RESERVE_TOKENS) || 128000;
+      var modelOutput = info && Number(info.maxOut) > 0 ? Number(info.maxOut) : 8192;
+      var outputReserve = Math.min(configuredReserve, modelOutput, Math.floor(totalCap / 2));
+      var inputBudgetTokens = Math.max(2048, totalCap - outputReserve);
+      var MAXMSG = 400;
       var h = this.history || [];
       var out = [], used = 0;
       for (var i = h.length - 1; i >= 0; i--) {
         var m = h[i];
         var c = typeof m.content === "string" ? m.content.length : JSON.stringify(m.content || "").length;
-        if (used + c > BUDGET && out.length) break;
+        var estimatedTokens = Math.ceil(c / 2);
+        if (used + estimatedTokens > inputBudgetTokens && out.length) break;
         out.push(m);
-        used += c;
+        used += estimatedTokens;
         if (out.length >= MAXMSG) break;
       }
       return out.reverse();
@@ -304,8 +312,8 @@
       try {
         var res = await PIKRouter.chat({
           model: this.modelId(),
-          /* 512k-token free tier: keep a much larger rolling window
-             (~200 msgs, token-budgeted below) instead of the old 24-msg cap */
+          /* Model-aware rolling context, capped at 256K total tokens with
+             output space reserved instead of the old fixed 512K assumption. */
           messages: this.contextWindow(),
           thinking: this.lastEffort,
           signal: (this.controller = new AbortController()).signal,

@@ -37,8 +37,24 @@
         search: $("[data-nx='search']"),
         list: $("[data-nx='pickerlist']")
       });
-      /* restore saved model once catalog arrives */
-      NexusSettings.get().then(function (s) { if (s.model) PIKPicker.setSelected(s.model, true); });
+      /* Resolve the startup model from the credentials actually present.
+         OpenRouter's :free models still require an OpenRouter key; without
+         one, the UI defaults to the explicitly opt-in Puter GPT-5.6 Luna model. */
+      NexusSettings.get().then(async function (s) {
+        var hasOR = await NexusSettings.hasKey("openrouter");
+        var selected = hasOR ? (s.model || CFG.SUGGESTED_MODEL) : CFG.NO_KEY_MODEL;
+        if (selected) PIKPicker.setSelected(selected, true);
+      });
+      document.addEventListener("pik:keys", async function (ev) {
+        if (!ev.detail || ev.detail.which !== "openrouter") return;
+        if (ev.detail.set) {
+          var saved = await NexusSettings.get();
+          PIKPicker.setSelected(saved.model && saved.model !== CFG.NO_KEY_MODEL
+            ? saved.model : CFG.SUGGESTED_MODEL, true);
+        } else {
+          PIKPicker.setSelected(CFG.NO_KEY_MODEL, true);
+        }
+      });
 
       /* ---------- editor dock ---------- */
       PIKEditor.mount("[data-nx='editor']");

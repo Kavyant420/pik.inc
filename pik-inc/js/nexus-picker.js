@@ -1,8 +1,7 @@
 /* ============================================================================
    PIK//NEXUS — nexus-picker.js
-   Model selection overlay: live :free catalog from OpenRouter ordered by
-   context high->low (the exact view the user asked for), provider logos via
-   CDN, search, keyboard nav, and the suggested Qwen 3.8 27B pinned.
+   Model selection overlay: live OpenRouter :free catalog ordered by context,
+   plus a no-key Puter GPT-5.6 Luna fallback. OpenRouter entries require a key.
    ========================================================================= */
 (function (global) {
   "use strict";
@@ -50,7 +49,7 @@
       PIKModels.onChange(function () { self._render(self._filtered()); self._syncChip(); });
 
       /* suggested model as initial selection */
-      this.setSelected(CFG.SUGGESTED_MODEL, true);
+      this.setSelected(CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL, true);
       this._syncChip();
     },
 
@@ -82,6 +81,8 @@
 
       wrap.innerHTML = this.list.slice(0, 80).map(function (m, i) {
         var badges = ['<span class="nx-badge nx-badge--ctx">' + fmtCtx(m.ctx) + " ctx</span>"];
+        if (m.noKeyDefault) badges.unshift('<span class="nx-badge nx-badge--sug">NO OR KEY</span>');
+        else if (m.requiresOpenRouterKey) badges.push('<span class="nx-badge">OR KEY REQUIRED</span>');
         if (m.reasoning) badges.push('<span class="nx-badge nx-badge--think">reasoning' +
           (m.efforts && m.efforts.indexOf("max") !== -1 ? " · MAX" : "") + "</span>");
         if (m.vision) badges.push('<span class="nx-badge">vision</span>');
@@ -121,8 +122,8 @@
     currentId: function () {
       try {
         var id = (this.els && this.els.chip && this.els.chip.dataset) ? this.els.chip.dataset.model : null;
-        return id || CFG.SUGGESTED_MODEL;
-      } catch (e) { return CFG.SUGGESTED_MODEL; }
+        return id || CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL;
+      } catch (e) { return CFG.NO_KEY_MODEL || CFG.SUGGESTED_MODEL; }
     },
 
     setSelected: function (id, silent) {
@@ -131,7 +132,23 @@
       this._syncChip();
     },
 
-    pick: function (id) {
+    pick: async function (id) {
+      var model = PIKModels.get(id);
+      if (model && model.requiresOpenRouterKey) {
+        var hasKey = false;
+        try {
+          hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
+        } catch (e) { hasKey = false; }
+        if (!hasKey) {
+          this.setSelected(CFG.NO_KEY_MODEL);
+          this.hide();
+          if (window.PIKToasts) PIKToasts.show({
+            type: "info", title: "OpenRouter key required",
+            text: "Selected GPT-5.6 Luna via Puter instead. Enable Puter usage in Settings to send messages."
+          });
+          return;
+        }
+      }
       this.setSelected(id);
       this.hide();
       if (window.PIKToasts) PIKToasts.show({ type: "info", title: "Model armed", text: id });

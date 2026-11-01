@@ -1,23 +1,19 @@
 /* ============================================================================
    PIK//NEXUS — router.js
-   Chat transport with a full no-key fallback chain (verified 2026-10-25):
-     1. OpenRouter (user key) while the rolling free-budget window has room
-     2. any 429 / rate-limit / quota error from OpenRouter => permanent switch
-        for this session ("free tier over") — we never hammer it again
-     3. text.pollinations.ai  (keyless, free)          -> engine "pollinations"
-     4. Puter.js              (keyless, free)          -> engine "puter"
-     5. text.pollinations.ai GET endpoint (keyless)    -> engine "polli-get"
-     6. DeepInfra (ONLY when the visitor saved a key)  -> engine "deepinfra-free"
-   NOTE: "polli-alt" (universal.pollinations.ai) is no longer a hop — that host
-   does not resolve and was removed from POLLINATIONS_CHAIN; the doc line above
-   used to still advertise it. "cohere-free" was likewise removed: api.cohere.com
-   requires an API key for every model and always answered HTTP 401 from the
-   browser. DeepInfra is key-gated for the same reason — an unauthenticated POST
-   to it answers 401 "missing API key", so it is skipped unless LS.KEY_DI is set.
-   In practice, for a visitor with no keys at all, the working engines are
-   pollinations -> puter -> polli-get.
-   Every keyless engine is tried in order until one answers; the first token
-   of reasoning streams straight into the live THINKING panel.
+   Chat transport with explicit provider routing:
+     1. OpenRouter models when the visitor has configured an OpenRouter key
+     2. Puter GPT-5.6 Luna only after the visitor opts in to its user-pays
+        allowance (monthly free allowance first; purchased credits may apply)
+     3. DeepInfra only when the visitor has configured a DeepInfra key
+     4. PIK MicroEngine when enabled as an on-device fallback
+   Legacy Pollinations helpers remain for compatibility but are not treated
+   as an anonymous, free inference service.
+   Legacy Pollinations helpers are not part of the default provider chain.
+   Qwen community gateways are optional and their availability can change.
+   Puter requests (including Qwen-through-Puter) are blocked unless the user
+   explicitly enables the Puter usage consent in Settings.
+   Consent-gated Puter and optional on-device inference are used when a keyed
+   OpenRouter route is unavailable; reasoning streams into the THINKING panel.
    Every outbound payload is SHA-256 digested before send; digests are kept in
    a local audit ledger so you can verify exactly what left the machine.
    ========================================================================= */
@@ -41,9 +37,9 @@
         if (saved && saved.burned) this._orBurned = true;
       } catch (e) {}
       this._prune();
-      // budget already spent in this window -> start on the keyless engine
+      // No OpenRouter key or an exhausted budget -> show the consent-gated Puter route.
       if (!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || this.budgetLeft() <= 0 || this._orBurned) {
-        this.engine = "pollinations";
+        this.engine = "puter";
       }
     },
 
@@ -142,15 +138,18 @@
       }
 
       var hasKey = !!PIKCrypto.peekSecret(CFG.LS.KEY_OR) || await NexusSettings.hasKey("openrouter");
-      var wantOR = hasKey && !this._orBurned && this.budgetLeft() > 0;
-
-      /* ---------- QWEN 3.8 27B: default NEXUS flagship, free keyless chain ---
-         When the selected model is Qwen 3.8 27B we skip the keyed OpenRouter
-         hop entirely and run the dedicated zero-key gateway chain first
-         (puter → openrouter-app → glider → jaiowr). If every Qwen gateway is
-         rate-limited we transparently fall through to the generic free chain
-         below so the user always gets an answer. */
       var isQwen = String(opts.model || CFG.SUGGESTED_MODEL || "").indexOf("qwen") !== -1;
+      var usePuterDefault = !!CFG.NO_KEY_MODEL &&
+        (opts.model === CFG.NO_KEY_MODEL || (!hasKey && !isQwen));
+      var wantOR = hasKey && !usePuterDefault && !this._orBurned && this.budgetLeft() > 0;
+      if (usePuterDefault && !settings.allowPuterUsage) {
+        throw new Error("GPT-5.6 Luna via Puter is the no-OpenRouter-key default. Enable “Allow Puter AI usage” in Settings first. Puter applies your monthly free allowance and may use purchased credits after it runs out.");
+      }
+
+      /* ---------- optional Qwen 3.8 27B gateway route ----------------------
+         When selected, Qwen skips OpenRouter and tries the available gateway
+         chain. The Puter hop is skipped unless the user has explicitly
+         enabled Puter usage in Settings. Gateway availability is not promised. */
       if (isQwen && !this._blacklist["qwen-chain"]) {
         try {
           var qr = await this._viaQwen(opts, settings);
@@ -177,52 +176,33 @@
             // burn remaining budget locally so we stop hammering OR this hour
             while (this.budgetLeft() > 0) this._usage.push(Date.now());
             await this._record();
-            this._setEngine("pollinations", "free-quota");
+            this._setEngine("puter", "free-quota");
           } else {
-            this._setEngine("pollinations", "error:" + (e && e.message));
+            this._setEngine("puter", "error:" + (e && e.message));
           }
         }
       } else if (!hasKey) {
-        this._setEngine("pollinations", "no-key");
+        this._setEngine("puter", "no-key");
       } else if (this._orBurned || this.budgetLeft() <= 0) {
-        this._setEngine("pollinations", "budget-exhausted");
+        this._setEngine("puter", "budget-exhausted");
       }
 
-      /* ---------- free keyless pair: puter + pollinations ----------
-         The two free providers are tried in a rotating order (whoever answered
-         last goes to the back) so NEXUS auto-redirects between puter and
-         pollinations on rate-limits, empty replies or network errors — no API
-         key is ever needed for either. Remaining hops stay as safety nets. */
-      var attempts;
-      /* polli-alt was removed from the chain: POLLINATIONS_CHAIN now has a
-         single real endpoint, and duplicating it only produced a second
-         identical 503/402 round-trip of console noise per turn. */
-      if (this._puterLastGood) {
-        attempts = [
-          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
-          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
-          { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
-          { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
-        ];
-      } else {
-        attempts = [
-          { fn: this._viaPollinations.bind(this, opts, settings, CFG.POLLINATIONS_CHAIN[0], "pollinations"), name: "pollinations" },
-          { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
-          { fn: this._viaPolliGet.bind(this, opts, settings), name: "polli-get" },
-          { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
-        ];
-      }
+      /* ---------- provider fallback chain ----------
+         Puter is user-pays and is attempted only after explicit consent.
+         Legacy Pollinations endpoints are intentionally not called here:
+         current generation requests require a user-authorized key. */
+      var attempts = [
+        { fn: this._viaPuter.bind(this, opts, settings), name: "puter" },
+        { fn: this._viaDeepInfra.bind(this, opts, settings), name: "deepinfra-free" }
+      ];
       var lastErr = null, ok = false;
       for (var i = 0; i < attempts.length; i++) {
         if (this._blacklist[attempts[i].name]) continue; // known key-gated / dead
         try {
           var res = await attempts[i].fn();
           ok = true;
-          /* remember which free provider answered so the NEXT request starts
-             with the other one (automatic round-robin between puter and
-             pollinations — a dead/rate-limited provider is skipped first) */
+          /* Remember the last successful Puter route for diagnostics only. */
           if (attempts[i].name === "puter") this._puterLastGood = true;
-          else if (attempts[i].name.indexOf("polli") === 0 || attempts[i].name === "pollinations") this._puterLastGood = false;
           /* every remote completion counts against the daily skill cap */
           if (global.PIKUsage) { try { PIKUsage.record(attempts[i].name); } catch (e) {} }
           this._setEngine(attempts[i].name, i > 0 ? "chain" : null);
@@ -231,10 +211,8 @@
           if (e && e.name === "AbortError") throw e;
           lastErr = e;
           var st = e && e.status;
-          /* 401/403/404 = permanently dead or key-gated this session -> blacklist.
-             402/503 from pollinations are transient (quota rotation / cold
-             instances) — blacklisting them would kill the whole free chain for
-             the rest of the session, so we just move to the next hop. */
+          /* 401/403/404 = permanently unavailable or key-gated this session.
+             Other provider errors remain retryable on the next user turn. */
           if (st === 401 || st === 403 || st === 404) this._blacklist[attempts[i].name] = true;
         }
       }
@@ -255,9 +233,9 @@
         }
         // friendly message, not a raw 401/503
         var msg = String((lastErr && lastErr.message) || "");
-        if (/401|403/.test(msg)) msg = "free engines unreachable (auth refused) — check your connection and retry";
-        else if (/503|429|502/.test(msg)) msg = "the free AI providers are busy/rate-limited right now — wait a few seconds and send again (or boot the on-device core in Settings)";
-        else if (/402/.test(msg)) msg = "pollinations quota exhausted for this model — trying again shortly usually works, or switch the free model in Settings";
+        if (/401|403/.test(msg)) msg = "AI provider refused the request — check the provider account and selected model, then retry";
+        else if (/503|429|502/.test(msg)) msg = "AI provider is busy or rate-limited — wait a moment and retry, or enable the on-device core in Settings";
+        else if (/402/.test(msg)) msg = "provider usage allowance is exhausted or the request needs credits — check the provider's usage page or choose another route";
         var err = new Error(msg || "all free engines unavailable");
         err.allEnginesFailed = true;
         throw err;
@@ -265,18 +243,11 @@
     },
 
     /* ======================================================================
-       QWEN 3.8 27B FREE GATEWAY CHAIN (default NEXUS flagship)
+       OPTIONAL QWEN 3.8 27B GATEWAY ROUTE
        ----------------------------------------------------------------------
-       qwen/qwen3.8-27b is a 1M-context reasoning model served by ten hosts.
-       These are EVERY zero-cost / zero-API-key gateway we found across the
-       internet that fronts it (probed live Oct 26 2026). They are tried in
-       order; first one to stream wins:
-         1. puter-qwen      js.puter.com SDK — keyless, account-sponsored
-         2. openrouter-app  public app route — keyless for this model id
-         3. glider-qwen     api.glider.ai — free community inference, no key
-         4. jaiowr-qwen     ai.jaiowr9f.com — free community inference, no key
-       If all four are rate-limited we fall through to the generic free chain
-       (pollinations gpt-oss-20b etc.) so NEXUS never dead-ends. */
+       Qwen is not part of the OpenRouter :free catalog. The Puter hop is
+       consent-gated; community gateways are best-effort and may be offline
+       or change access rules. No availability or zero-cost guarantee. */
     async _viaQwen(opts, settings) {
       var self = this;
       var sys = this._sysPrompt(settings);
@@ -287,39 +258,26 @@
       }));
       var lastErr = null;
 
-      /* --- hop 1: Puter keyless tier, explicit Qwen model id --- */
-      try {
-        var pt = await this.ensurePuter();
-        var kw = { stream: true, model: CFG.QWEN_MODEL || "qwen/qwen3.8-27b" };
-        if (typeof opts.temperature === "number") kw.temperature = opts.temperature;
-        if (opts.signal) kw.signal = opts.signal;
-        var it = pt.ai.chat(messages, kw);
-        if (!it) throw new Error("puter empty iterator");
-        var full = "", reason = "";
-        for await (const part of it) {
-          if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
-          if (!part) continue;
-          var d = (part.delta != null) ? String(part.delta)
-                : (part.cached != null && !part.cached) ? String(part.message || "") : "";
-          if (!d && typeof part === "string") d = part;
-          if (!d) continue;
-          if (part.type === "reasoning" || part.reasoning) { reason += d; if (opts.onDelta) opts.onDelta(d, true); }
-          else { full += d; if (opts.onDelta) opts.onDelta(d, false); }
+      /* --- hop 1: Puter Qwen route, only after explicit user consent --- */
+      if (settings && settings.allowPuterUsage) {
+        try {
+          var qwenOpts = Object.assign({}, opts, {
+            model: CFG.QWEN_MODEL || "qwen/qwen3.8-27b"
+          });
+          var qwenPuter = await this._viaPuter(qwenOpts, settings);
+          qwenPuter.engine = "qwen-puter";
+          qwenPuter.model = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
+          return qwenPuter;
+        } catch (e) {
+          if (e && e.name === "AbortError") throw e;
+          lastErr = e;
         }
-        if (!full && reason) full = reason;
-        if (!full) throw new Error("puter qwen empty response");
-        return { text: full, reasoning: reason, engine: "qwen-puter", model: CFG.QWEN_MODEL, digest: "", usedFallback: false };
-      } catch (e) {
-        if (e && e.name === "AbortError") throw e;
-        lastErr = e;
       }
 
       /* --- hops 2-4: plain OpenAI-compatible POSTs, streamed ---
-         Honesty note (probed live Oct 26 2026): the openrouter-app hop needs
-         a user-supplied free key (bare POST -> HTTP 401), glider answers
-         403 Forbidden today, jaiowr is currently offline. They are kept in
-         the chain because they are zero-cost when they come back; puter is
-         the verified working keyless Qwen path right now. */
+         Honesty note: these community gateways can be unavailable or change
+         access rules. OpenRouter app routing is used only when its key exists;
+         Puter is tried only after the user's explicit usage consent. */
       var orKey = "";
       try { orKey = PIKCrypto.peekSecret(CFG.LS.KEY_OR) || ""; } catch (e) {}
       var gateways = (CFG.QWEN_GATEWAYS || []).filter(function (g) {
@@ -425,7 +383,7 @@
       return this._consumeSSE(res, opts, { engine: "openrouter", model: model, digest: meta.digest });
     },
 
-    /* ---------- Pollinations (keyless) — streamed w/ non-stream fallback --- */
+    /* ---------- Legacy Pollinations helper (authorized key may be required) - */
     /* unified system prompt getter — `DEFAULTS` is module-private to
        nexus-settings.js, so referencing it here used to throw a ReferenceError
        on every keyless hop whenever settings.systemPrompt was empty. */
@@ -518,9 +476,8 @@
       };
     },
 
-    /* ---------- Pollinations simple GET endpoint (keyless last resort) -----
-       https://text.pollinations.ai/{prompt}?model=...&system=... returns the
-       completion as plain text. No streaming, but bulletproof CORS-wise.     */
+    /* ---------- Legacy Pollinations GET compatibility helper --------------
+       This is not part of the default no-key provider chain.                 */
     async _viaPolliGet(opts, settings) {
       var flat = opts.messages.filter(function (m) { return m.role !== "system"; });
       var last = flat[flat.length - 1];
@@ -656,11 +613,10 @@
       return { text: text, reasoning: msg.reasoning || "", engine: "deepinfra-free", model: CFG.DEEPINFRA_MODEL, digest: meta.digest, usedFallback: true };
     },
 
-    /* ---------- Puter.js free keyless provider (no API key, ever) ----------
-       Loads https://js.puter.com/v2/ on demand and calls puter.ai.chat with
-       stream:true. Supports reasoning models (gpt-5-nano / claude / deepseek
-       via mode:"thinking") depending on what the free tier exposes; we pass
-       max thinking as temperature 1 + a thinking-mode hint where supported.
+    /* ---------- Puter.js consent-gated user-pays provider ----------------
+       Loads https://js.puter.com/v2/ on demand. It needs no OpenRouter key,
+       but uses the user's monthly Puter allowance and may use purchased
+       credits after it runs out. The caller must enable explicit consent.
 
        CSP note: nexus.html's script-src does not whitelist js.puter.com, so
        a plain <script src> injection is blocked ("Loading the script ...
@@ -669,6 +625,7 @@
        everything else) before injecting, and restore the original policy
        once the SDK has loaded or failed. */
     _puterPromise: null,
+    _puterMetadataPromise: null,
     _cspRelaxed: false,
     _relaxCSPForPuter() {
       try {
@@ -690,8 +647,26 @@
         this._cspRelaxed = false;
       } catch (e) {}
     },
+    _syncPuterModelMetadata(pt) {
+      if (!pt || !pt.ai || typeof pt.ai.listModels !== "function" ||
+          !global.PIKModels || typeof PIKModels.applyPuterModelMetadata !== "function") {
+        return Promise.resolve(pt);
+      }
+      if (this._puterMetadataPromise) return this._puterMetadataPromise;
+      this._puterMetadataPromise = Promise.resolve().then(function () {
+        return pt.ai.listModels();
+      }).then(function (catalog) {
+        PIKModels.applyPuterModelMetadata(catalog);
+        return pt;
+      }).catch(function (error) {
+        console.warn("[PIK Puter] model metadata unavailable; using conservative context budget:", error && error.message);
+        return pt;
+      });
+      return this._puterMetadataPromise;
+    },
+
     ensurePuter() {
-      if (global.puter && global.puter.ai) return Promise.resolve(global.puter);
+      if (global.puter && global.puter.ai) return this._syncPuterModelMetadata(global.puter);
       if (this._puterPromise) return this._puterPromise;
       this._puterPromise = new Promise((function (resolve, reject) {
         this._relaxCSPForPuter();
@@ -700,8 +675,9 @@
         s.src = CFG.PUTER_CDN;
         s.async = true;
         s.onload = function () {
-          if (global.puter && global.puter.ai) done(resolve, global.puter);
-          else done(reject, new Error("puter loaded but puter.ai missing"));
+          if (global.puter && global.puter.ai) {
+            PIKRouter._syncPuterModelMetadata(global.puter).then(resolve, reject);
+          } else done(reject, new Error("puter loaded but puter.ai missing"));
         };
         s.onerror = function () {
           PIKRouter._puterPromise = null;
@@ -713,6 +689,9 @@
     },
 
     async _viaPuter(opts, settings) {
+      if (!settings || !settings.allowPuterUsage) {
+        throw new Error("Puter usage is disabled. Enable “Allow Puter AI usage” in Settings before using this provider.");
+      }
       var pt = await this.ensurePuter();
       var sys = this._sysPrompt(settings);
       var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
@@ -720,28 +699,85 @@
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
         return { role: m.role, content: txt };
       }));
-      var kw = { stream: true, temperature: typeof opts.temperature === "number" ? opts.temperature : 0.7 };
-      if (opts.thinking === "max" || opts.thinking === "high") kw.mode = "thinking";
-      /* NEXUS default flagship: ask Puter's keyless tier for Qwen 3.8 27B
-         specifically; puter falls back to its own best free model internally
-         if that id is unavailable on the anonymous tier. */
-      if (String(opts.model || "").indexOf("qwen") !== -1) kw.model = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
-      var it = pt.ai.chat(messages, kw);
-      if (!it) throw new Error("puter empty iterator");
-      var full = "", reason = "";
-      for await (const part of it) {
-        if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
-        if (!part) continue;
-        var d = (part && part.delta != null) ? String(part.delta)
-              : (part && part.cached != null && !part.cached) ? String(part.message || "") : "";
-        if (!d && typeof part === "string") d = part;
-        if (!d) continue;
-        if (part.type === "reasoning" || part.reasoning) { reason += d; if (opts.onDelta) opts.onDelta(d, true); }
-        else { full += d; if (opts.onDelta) opts.onDelta(d, false); }
+
+      var requested = String(opts.model || "");
+      var model = requested.indexOf("qwen") !== -1
+        ? (CFG.QWEN_MODEL || "qwen/qwen3.8-27b")
+        : (CFG.PUTER_DEFAULT_MODEL || "gpt-5.6-luna");
+      var kw = { model: model, stream: true, signal: opts.signal };
+      if (model === "gpt-5.6-luna") {
+        /* Pin the requested provider: do not silently reroute a user-pays
+           request to another vendor when the selected OpenAI provider fails. */
+        kw.provider = "openai";
+        kw.fallback = false;
       }
-      if (!full && reason) full = reason;
-      if (!full) throw new Error("puter empty response");
-      return { text: full, reasoning: reason, engine: "puter", model: "puter-free", digest: "", usedFallback: true };
+      var effort = String(opts.thinking || "high").toLowerCase();
+      if (model.indexOf("openai/") === 0 || model === "gpt-5.6-luna") {
+        kw.reasoning_effort = effort === "max" ? "xhigh" : (effort === "medium" ? "medium" : effort === "low" ? "low" : "high");
+        /* GPT reasoning models ignore sampling controls when reasoning is on. */
+      } else {
+        kw.temperature = typeof opts.temperature === "number" ? opts.temperature : 0.7;
+        if (effort === "max" || effort === "high") kw.mode = "thinking";
+      }
+
+      var stream = await pt.ai.chat(messages, false, kw);
+      if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
+        throw new Error("Puter did not return a streaming response.");
+      }
+
+      var full = "", reason = "", toolCalls = [];
+      for await (var part of stream) {
+        if (opts.signal && opts.signal.aborted) {
+          var ab = new Error("aborted"); ab.name = "AbortError"; throw ab;
+        }
+        if (!part) continue;
+
+        if (part.type === "error") {
+          throw new Error("Puter stream error: " + String(part.message || "unknown provider error"));
+        }
+        if (part.type === "text") {
+          var textDelta = String(part.text || "");
+          if (textDelta) {
+            full += textDelta;
+            if (opts.onDelta) opts.onDelta(textDelta, false);
+          }
+        } else if (part.type === "reasoning") {
+          var reasoningDelta = String(part.reasoning || part.text || "");
+          if (reasoningDelta) {
+            reason += reasoningDelta;
+            if (opts.onDelta) opts.onDelta(reasoningDelta, true);
+          }
+        } else if (part.type === "tool_use") {
+          toolCalls.push({
+            id: String(part.id || "puter-tool-" + toolCalls.length),
+            name: String(part.name || ""),
+            args: JSON.stringify(part.input == null ? {} : part.input)
+          });
+        } else if (part.type == null) {
+          /* Backward compatibility with older Puter chunk shapes. */
+          var legacy = part.delta != null ? String(part.delta)
+            : (part.cached != null && !part.cached) ? String(part.message || "")
+            : (part.text != null ? String(part.text) : "");
+          if (legacy) {
+            full += legacy;
+            if (opts.onDelta) opts.onDelta(legacy, false);
+          }
+          if (part.reasoning) {
+            var legacyReason = String(part.reasoning);
+            reason += legacyReason;
+            if (opts.onDelta) opts.onDelta(legacyReason, true);
+          }
+        }
+      }
+
+      if (!full && !toolCalls.length && reason) full = reason;
+      if (!full && !toolCalls.length) throw new Error("Puter returned an empty response.");
+      return {
+        text: full, reasoning: reason, toolCalls: toolCalls,
+        finishReason: toolCalls.length ? "tool_calls" : "stop",
+        engine: "puter", model: model, digest: "",
+        usedFallback: true
+      };
     },
 
     /* ---------- shared SSE reader ---------- */
