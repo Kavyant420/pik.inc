@@ -38,9 +38,17 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      - name: Check local Qwen adapter syntax
+        run: node --check pik-inc/js/nexus-qwen-local.js
+
       - name: Build debug APK
         working-directory: android
         run: gradle --no-daemon :app:assembleDebug
+
+      - name: Verify APK signature and package
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | head -n 5
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
