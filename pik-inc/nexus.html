@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PIK//NEXUS — agentic workbench · PIK Inc.</title>
-<meta name="description" content="NEXUS: the free-budget agentic coding workbench. OpenRouter :free models with automatic pollinations.ai failover, an on-device micro-LLM core, a hashed local IDE, integrated terminal, live preview and Nexus Pages hosting.">
+<meta name="description" content="NEXUS: the free-budget agentic coding workbench. OpenRouter :free models (API key required), optional GPT-5.6 Luna via Puter, and an on-device micro-LLM core, a hashed local IDE, integrated terminal, live preview and Nexus Pages hosting.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; frame-src 'self' blob:; worker-src 'self' blob:; child-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self' https://github.com;">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%239ea4ad' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%239ea4ad'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,7 +62,7 @@
     <span class="nx-engine" data-nx="engine" data-engine="openrouter" title="Active inference engine">
       <i></i><span>OPENROUTER</span>
     </span>
-    <span class="nx-top__budget" data-nx="budget">openrouter free tier · key optional</span>
+    <span class="nx-top__budget" data-nx="budget">OpenRouter key · Puter fallback</span>
     <div class="nx-top__spacer"></div>
 
     <div class="nx-orbwrap" style="display:flex;align-items:center;gap:12px" aria-hidden="true">
@@ -140,7 +140,7 @@
         </div>
         <h1 class="nx-glitch" data-text="Think in the field.">Think in the field.</h1>
         <p>NEXUS plans, reasons and writes real files into your workspace.<br>
-           Free budget first — OpenRouter :free, then pollinations.ai failover with your own system prompt.</p>
+           OpenRouter :free models require a key. Without one, choose GPT-5.6 Luna via Puter after enabling its usage allowance in Settings.</p>
         <div class="nx-hero__chips">
           <button class="nx-chip" data-nx="chip" data-chip="Build a small vanilla-JS pomodoro app. Write every file as ```path blocks.">build me a pomodoro app</button>
           <button class="nx-chip" data-nx="chip" data-chip="Refactor the open file for readability, keep behavior identical, emit the full updated file.">refactor open file</button>
@@ -374,7 +374,7 @@
     <div class="nx-field">
       <label>Pollinations fallback — custom system prompt</label>
       <textarea data-set="systemPrompt" spellcheck="false"></textarea>
-      <small>Applied whenever NEXUS fails over past the free OpenRouter budget.</small>
+      <small>Applied to provider fallbacks and local inference.</small>
     </div>
 
     <div class="nx-field">
