@@ -74,6 +74,23 @@ function makeSandbox() {
   ok("picker copy advertises the 256K app context cap", /256K app context cap/.test(mobileHtml));
   ok("keyboard focus remains visible", /:focus-visible/.test(mobileCss));
 
+  eq("chat model ID falls back to the no-key model", sb.PIKChat.modelId.call({
+    els: { modelchip: { dataset: { model: "" } } }
+  }), id);
+
+  console.log("\nno-key default routing requires explicit consent");
+  var originalGet = sb.NexusSettings.get;
+  sb.NexusSettings.get = function () {
+    return Promise.resolve({ systemPrompt: "Test", allowPuterUsage: false });
+  };
+  var noConsent = null;
+  try {
+    await R.chat({ model: id, messages: [{ role: "user", content: "Hello" }] });
+  } catch (e) { noConsent = e; }
+  ok("no OpenRouter key selects the Puter default but does not send without consent",
+    !!noConsent && /Enable/.test(noConsent.message));
+  sb.NexusSettings.get = originalGet;
+
   console.log("\ncontext window is model-aware");
   M.byId[id] = fallback;
   var history = [
