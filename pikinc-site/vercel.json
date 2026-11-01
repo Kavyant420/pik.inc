@@ -2,5 +2,57 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "",
-  "outputDirectory": "../pik-inc"
+  "outputDirectory": "../pik-inc",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/nexus",
+      "destination": "/nexus.html"
+    },
+    {
+      "source": "/nexus/",
+      "destination": "/nexus.html"
+    },
+    {
+      "source": "/nexus-mobile",
+      "destination": "/nexus-mobile.html"
+    },
+    {
+      "source": "/pikx",
+      "destination": "/pikx.html"
+    },
+    {
+      "source": "/products",
+      "destination": "/products.html"
+    },
+    {
+      "source": "/account",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/settings.html"
+    },
+    {
+      "source": "/security",
+      "destination": "/security.html"
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "/privacy-policy.html"
+    },
+    {
+      "source": "/terms-of-service",
+      "destination": "/terms-of-service.html"
+    },
+    {
+      "source": "/wireless-communication",
+      "destination": "/wireless-communication.html"
+    },
+    {
+      "source": "/products/:slug",
+      "destination": "/products/:slug.html"
+    }
+  ]
 }
