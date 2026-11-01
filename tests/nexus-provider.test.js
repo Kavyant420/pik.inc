@@ -54,9 +54,9 @@ function makeSandbox() {
   var fallback = M.noKeyDefault();
   eq("default id", fallback.id, "puter/openai-gpt-5.6-luna");
   eq("conservative context before live metadata", fallback.ctx, 32768);
-  eq("output reserve ceiling", fallback.maxOut, 128000);
+  eq("conservative output reserve before live metadata", fallback.maxOut, 8192);
   eq("does not require OpenRouter", fallback.requiresOpenRouterKey, false);
-  ok("model description discloses Puter allowance", /monthly free allowance/.test(fallback.desc));
+  ok("model description discloses Puter allowance", /included allowance/.test(fallback.desc));
   ok("description clearly distinguishes this from ChatGPT Free", /not the ChatGPT Free subscription/.test(fallback.desc));
   ok("offline catalog also includes the no-key model", M._offline().some(function (m) { return m.id === id; }));
   ok("live Puter catalogue applies its context metadata", M.applyPuterModelMetadata([
