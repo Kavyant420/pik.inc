@@ -17,7 +17,8 @@
     overflow-x: auto;
     position: sticky;
     inset-block-start: calc(var(--pik-header-h) + var(--pik-sp-4));
-    padding-block: 0.25rem;
+    padding: 0.5rem;
+    border-radius: var(--pik-r-lg);
   }
 
   @media (min-width: 900px) {
@@ -50,6 +51,7 @@
     color: var(--pik-ink);
     background: var(--pik-glass-bg-strong);
     border-color: var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset);
   }
 
   .settings-panel {
@@ -81,7 +83,7 @@
 
   .setting-row {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--pik-sp-4);
     padding-block: 0.75rem;
@@ -114,54 +116,65 @@
   }
 
   .swatch {
-    inline-size: 40px;
-    block-size: 40px;
+    inline-size: 42px;
+    block-size: 42px;
     border-radius: var(--pik-r-sm);
-    border: 2px solid transparent;
+    border: 1.5px solid var(--pik-glass-line);
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    transition: transform var(--pik-fast) var(--pik-ease-spring);
+    box-shadow: var(--pik-shadow-inset);
+    transition: transform var(--pik-fast) var(--pik-ease-spring),
+      border-color var(--pik-fast) var(--pik-ease-out),
+      box-shadow var(--pik-fast) var(--pik-ease-out);
   }
 
   .swatch:hover {
-    transform: translateY(-2px) scale(1.04);
+    transform: translateY(-2px) scale(1.05);
+    border-color: var(--pik-glass-line-strong);
   }
 
+  .swatch.is-active,
   .swatch[aria-pressed="true"] {
     border-color: var(--pik-ink);
+    box-shadow:
+      0 0 0 2px var(--pik-space-900),
+      0 0 0 3.5px var(--pik-ink);
   }
 
   .swatch::after {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 55%);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 55%);
+    pointer-events: none;
   }
 
+  /* Monochrome Liquid Glass finish swatches */
+  .swatch--midnight,
+  .swatch--mono {
+    background: linear-gradient(135deg, #171717 0%, #000000 100%);
+  }
   .swatch--aurora {
-    background: linear-gradient(135deg, #c7c7c7, #a1a1a1);
+    background: linear-gradient(135deg, #525252 0%, #141414 100%);
   }
   .swatch--nebula {
-    background: linear-gradient(135deg, #9a9a9a, #ababab);
+    background: linear-gradient(135deg, #383838 0%, #0d0d0d 100%);
   }
   .swatch--ember {
-    background: linear-gradient(135deg, #bdbdbd, #979797);
+    background: linear-gradient(135deg, #787878 0%, #1c1c1c 100%);
   }
   .swatch--tide {
-    background: linear-gradient(135deg, #bebebe, #909090);
-  }
-  .swatch--mono {
-    background: linear-gradient(135deg, #c1c1c1, #979797);
+    background: linear-gradient(135deg, #b8b8b8 0%, #262626 100%);
   }
   .swatch--daylight {
-    background: linear-gradient(135deg, #f1f1f1, #c4c4c4);
+    background: linear-gradient(135deg, #ffffff 0%, #d9d9d9 100%);
   }
 
   .value-readout {
     font-family: var(--pik-font-mono);
     font-size: var(--pik-step--2);
-    color: var(--pik-accent);
+    color: var(--pik-ink);
     min-inline-size: 4ch;
     text-align: end;
   }
@@ -190,7 +203,8 @@
     gap: var(--pik-sp-3);
     align-items: baseline;
     font-size: var(--pik-step--1);
-    padding-block: 0.4rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--pik-r-xs);
     border-block-start: 1px solid var(--pik-glass-line-soft);
   }
 
@@ -206,27 +220,33 @@
   }
 
   .danger-zone {
-    border-color: color-mix(in srgb, var(--pik-red) 30%, var(--pik-glass-line));
+    border-color: var(--pik-glass-line-strong);
   }
 
   .saved-flash {
     position: fixed;
-    inset-block-end: var(--pik-sp-5);
+    inset-block-end: 5.5rem;
     inset-inline-start: 50%;
-    transform: translate(-50%, 20px);
+    transform: translate(-50%, 16px);
     z-index: var(--pik-z-toast);
-    padding: 0.6rem 1.1rem;
+    padding: 0.55rem 1.15rem;
     border-radius: var(--pik-r-pill);
     background: var(--pik-glass-bg-solid);
-    border: 1px solid color-mix(in srgb, var(--pik-lime) 40%, transparent);
+    backdrop-filter: var(--pik-liquid-filter);
+    -webkit-backdrop-filter: var(--pik-liquid-filter);
+    border: 1px solid var(--pik-glass-line-strong);
+    box-shadow: var(--pik-shadow-flat), var(--pik-shadow-inset);
     color: var(--pik-ink);
     font-size: var(--pik-step--1);
+    font-weight: 500;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--pik-med), transform var(--pik-med) var(--pik-ease-out);
+    transition: opacity var(--pik-med) var(--pik-ease-out),
+      transform var(--pik-med) var(--pik-ease-spring);
   }
 
-  .saved-flash.is-on {
+  .saved-flash.is-on,
+  .saved-flash.is-visible {
     opacity: 1;
     transform: translate(-50%, 0);
   }

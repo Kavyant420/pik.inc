@@ -94,10 +94,15 @@ function stripTags(s) {
 function unwrapUrl(href) {
   var h = String(href || "").trim();
   if (!h) return "";
-  if (h.indexOf("//duckduckgo.com/l/?") === 0 || h.indexOf("/l/?") === 0) {
+  if (h.indexOf("//duckduckgo.com/l/?") === 0 || h.indexOf("/l/?") === 0 || /^https?:\/\/(?:www\.)?duckduckgo\.com\/l\/\?/i.test(h)) {
     var m = h.match(/[?&]uddg=([^&]+)/);
     if (m) {
-      try { return decodeURIComponent(m[1]); } catch (e) { /* fall through */ }
+      try {
+        var decoded = decodeURIComponent(m[1]).trim();
+        if (/^https?:\/\//i.test(decoded)) return decoded;
+        if (decoded.indexOf("//") === 0) return "https:" + decoded;
+        return "";
+      } catch (e) { /* fall through */ }
     }
   }
   if (h.indexOf("//") === 0) return "https:" + h;
@@ -197,8 +202,8 @@ function parseDuckHtml(html) {
     var title = stripTags(a[2]);
     if (!title) continue;
 
-    var sn = b.match(/class="[^"]*\bresult__snippet\b[^"]*"[^>]*>([\s\S]*?)<\/a>/);
-    var snippet = sn ? stripTags(sn[1]) : "";
+    var sn = b.match(/<(a|div|span)[^>]*class="[^"]*\bresult__snippet\b[^"]*"[^>]*>([\s\S]*?)<\/\1>/i);
+    var snippet = sn ? stripTags(sn[2]) : "";
 
     out.push({
       title: title.slice(0, 200),
@@ -280,6 +285,8 @@ function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Vary", "Origin");
 }
 

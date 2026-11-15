@@ -24,7 +24,8 @@
     gap: 4px;
     border-radius: var(--pik-r-pill);
     background: var(--pik-glass-bg);
-    border: 1px solid var(--pik-glass-line-soft);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset);
     inline-size: 100%;
   }
 
@@ -34,12 +35,14 @@
     border-radius: var(--pik-r-pill);
     font-family: var(--pik-font-display);
     font-size: var(--pik-step--1);
+    font-weight: 600;
     color: var(--pik-muted);
     transition: color var(--pik-fast), background var(--pik-med) var(--pik-ease-out),
       box-shadow var(--pik-med);
   }
 
-  .auth-tab[aria-selected="true"] {
+  .auth-tab[aria-selected="true"],
+  .auth-tab.is-active {
     background: var(--pik-glass-bg-strong);
     color: var(--pik-ink);
     box-shadow: var(--pik-shadow-inset);
@@ -69,8 +72,8 @@
   }
 
   .strength__bar.is-on {
-    background: var(--sc, var(--pik-accent));
-    transform: scaleY(1.6);
+    background: var(--pik-ink);
+    transform: scaleY(1.5);
   }
 
   .strength__label {
@@ -85,8 +88,9 @@
     gap: 0.5rem;
     padding: 1rem 1.1rem;
     border-radius: var(--pik-r-md);
-    background: color-mix(in srgb, var(--pik-lime) 9%, transparent);
-    border: 1px solid color-mix(in srgb, var(--pik-lime) 30%, transparent);
+    background: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset);
   }
 
   .privacy-banner__title {
@@ -95,7 +99,7 @@
     gap: 0.5rem;
     font-family: var(--pik-font-display);
     font-weight: 600;
-    color: color-mix(in srgb, var(--pik-lime) 88%, white);
+    color: var(--pik-ink);
     font-size: var(--pik-step-0);
   }
 
@@ -108,7 +112,7 @@
     position: relative;
     inline-size: 100%;
     aspect-ratio: 1;
-    max-inline-size: 420px;
+    max-inline-size: 400px;
     margin-inline: auto;
     perspective: 900px;
   }
@@ -121,20 +125,26 @@
     block-size: 46%;
     translate: -50% -50%;
     border-radius: 50%;
-    background-image: radial-gradient(
-        circle at 32% 28%,
-        rgba(255, 255, 255, 0.5),
-        transparent 45%
-      ),
+    background-image:
+      radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.72), transparent 46%),
       conic-gradient(
         from 0deg,
-        color-mix(in srgb, var(--pik-accent) 70%, transparent),
-        color-mix(in srgb, var(--pik-accent-alt) 70%, transparent),
-        color-mix(in srgb, var(--pik-cyan) 70%, transparent),
-        color-mix(in srgb, var(--pik-accent) 70%, transparent)
+        rgba(255, 255, 255, 0.62),
+        rgba(140, 140, 140, 0.25),
+        rgba(235, 235, 235, 0.58),
+        rgba(90, 90, 90, 0.22),
+        rgba(255, 255, 255, 0.62)
       );
-    animation: orb-spin 14s linear infinite;
-    box-shadow: var(--pik-shadow-deep);
+    border: 1px solid var(--pik-glass-line-strong);
+    animation: orb-spin 16s linear infinite;
+    box-shadow: var(--pik-shadow-deep), var(--pik-shadow-inset);
+  }
+
+  [data-theme="daylight"] .identity-orb__core,
+  [data-theme="light"] .identity-orb__core {
+    background-image:
+      radial-gradient(circle at 32% 28%, #ffffff, transparent 48%),
+      conic-gradient(from 0deg, #1f1f1f, #a3a3a3, #2b2b2b, #d4d4d4, #1f1f1f);
   }
 
   @keyframes orb-spin {
@@ -154,7 +164,7 @@
   .identity-orb__ring:nth-child(2) {
     inset: 8%;
     animation-delay: -3s;
-    border-color: color-mix(in srgb, var(--pik-accent) 30%, transparent);
+    border-color: var(--pik-glass-line-strong);
   }
 
   .identity-orb__ring:nth-child(3) {
@@ -177,7 +187,16 @@
     inline-size: 64px;
     block-size: 64px;
     border-radius: var(--pik-r-sm);
-    border: 1px solid var(--pik-glass-line);
+    border: 1px solid var(--pik-glass-line-strong);
+    background: var(--pik-glass-bg-strong);
+    box-shadow: var(--pik-shadow-inset);
+    display: grid;
+    place-items: center;
+    font-family: var(--pik-font-mono);
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    color: var(--pik-ink);
     overflow: hidden;
     flex: none;
   }
@@ -186,10 +205,11 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.35rem 0.7rem 0.35rem 0.4rem;
+    padding: 0.35rem 0.8rem 0.35rem 0.55rem;
     border-radius: var(--pik-r-pill);
     background: var(--pik-glass-bg);
-    border: 1px solid var(--pik-glass-line-soft);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset);
     font-size: var(--pik-step--1);
   }
 

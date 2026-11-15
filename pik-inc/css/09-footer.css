@@ -1,10 +1,15 @@
 @layer pik.footer {
   .site-footer {
     position: relative;
+    z-index: 1;
     margin-block-start: var(--pik-sp-8);
-    padding-block: var(--pik-sp-7) var(--pik-sp-5);
-    border-block-start: 1px solid var(--pik-glass-line-soft);
-    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--pik-space-700) 70%, transparent));
+    padding-block: var(--pik-sp-7) calc(var(--pik-sp-6) + 4.75rem);
+    border-block-start: 1px solid var(--pik-glass-line);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pik-space-800) 55%, transparent),
+      color-mix(in srgb, var(--pik-space-900) 86%, transparent)
+    );
   }
 
   .footer__grid {
@@ -47,7 +52,7 @@
   }
 
   .footer__link:hover {
-    color: var(--pik-accent);
+    color: var(--pik-ink);
     transform: translateX(3px);
   }
 
@@ -79,7 +84,7 @@
 
   .footer__legal-links a:hover {
     color: var(--pik-ink);
-    border-block-end-color: var(--pik-accent);
+    border-block-end-color: var(--pik-ink);
   }
 
   .footer__status {
@@ -88,13 +93,15 @@
     gap: 0.5rem;
     font-family: var(--pik-font-mono);
     letter-spacing: 0.1em;
+    color: var(--pik-muted);
   }
 
   .footer__pulse {
     inline-size: 8px;
     block-size: 8px;
     border-radius: 50%;
-    background: var(--pik-lime);
+    background: var(--pik-ink);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--pik-ink) 65%, transparent);
     animation: footer-pulse 2.4s var(--pik-ease-in-out) infinite;
   }
 

@@ -1,63 +1,85 @@
 :root {
-  --pik-space-900: #05060c;
-  --pik-space-800: #0a0a0a;
+  color-scheme: dark;
+
+  /* Pure Obsidian Void */
+  --pik-space-950: #000000;
+  --pik-space-900: #030303;
+  --pik-space-800: #080808;
   --pik-space-700: #101010;
   --pik-space-600: #181818;
-  --pik-space-500: #212121;
+  --pik-space-500: #222222;
 
-  --pik-ink: #f2f2f2;
-  --pik-ink-soft: #cbcbcb;
-  --pik-muted: #969696;
-  --pik-faint: #666666;
+  /* Crisp Pure White & Liquid Mercury / Silver */
+  --pik-ink: #ffffff;
+  --pik-ink-soft: rgba(255, 255, 255, 0.92);
+  --pik-muted: #9e9e9e;
+  --pik-faint: #6e6e6e;
 
-  --pik-aqua: #c1c1c1;
-  --pik-cyan: #b3b3b3;
-  --pik-violet: #979797;
-  --pik-rose: #a9a9a9;
-  --pik-amber: #cacaca;
-  --pik-lime: #cbcbcb;
-  --pik-red: #8b8b8b;
+  /* Strictly Monochrome Silver/Platinum Semantic Scale */
+  --pik-aqua: #ffffff;
+  --pik-cyan: #e5e5e5;
+  --pik-violet: #cccccc;
+  --pik-rose: #b8b8b8;
+  --pik-amber: #dcdcdc;
+  --pik-lime: #f5f5f5;
+  --pik-red: #cfcfcf;
 
-  --pik-accent: var(--pik-aqua);
-  --pik-accent-alt: var(--pik-violet);
-  --pik-accent-warm: var(--pik-amber);
+  --pik-accent: #ffffff;
+  --pik-accent-alt: #d4d4d4;
+  --pik-accent-warm: #e5e5e5;
 
+  /* iOS 26 Liquid Glass Optical Surfaces */
   --pik-glass-bg: rgba(255, 255, 255, 0.055);
-  --pik-glass-bg-strong: rgba(255, 255, 255, 0.09);
-  --pik-glass-bg-solid: rgba(17,17,17,0.86);
-  --pik-glass-line: rgba(255, 255, 255, 0.14);
-  --pik-glass-line-soft: rgba(255, 255, 255, 0.07);
-  --pik-glass-shine: linear-gradient(140deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 46%);
+  --pik-glass-bg-strong: rgba(255, 255, 255, 0.105);
+  --pik-glass-bg-solid: rgba(8, 8, 8, 0.84);
+  --pik-glass-line: rgba(255, 255, 255, 0.16);
+  --pik-glass-line-strong: rgba(255, 255, 255, 0.28);
+  --pik-glass-line-soft: rgba(255, 255, 255, 0.08);
+  --pik-glass-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.06) 30%,
+    rgba(255, 255, 255, 0) 56%
+  );
+  --pik-fresnel-sheen: radial-gradient(
+    460px circle at var(--cx, var(--mx, 50%)) var(--cy, var(--my, 20%)),
+    rgba(255, 255, 255, 0.13),
+    rgba(255, 255, 255, 0.03) 36%,
+    transparent 68%
+  );
 
-  --pik-blur-sm: 10px;
-  --pik-blur-md: 18px;
-  --pik-blur-lg: 30px;
-  --pik-blur-xl: 46px;
+  --pik-blur-sm: 14px;
+  --pik-blur-md: 28px;
+  --pik-blur-lg: 36px;
+  --pik-blur-xl: 48px;
+  --pik-liquid-filter: blur(28px) saturate(180%) brightness(1.08);
+  --pik-liquid-filter-lg: blur(38px) saturate(190%) brightness(1.1);
 
-  --pik-r-xs: 8px;
-  --pik-r-sm: 12px;
-  --pik-r-md: 18px;
-  --pik-r-lg: 26px;
-  --pik-r-xl: 34px;
+  --pik-r-xs: 10px;
+  --pik-r-sm: 14px;
+  --pik-r-md: 20px;
+  --pik-r-lg: 28px;
+  --pik-r-xl: 36px;
   --pik-r-pill: 999px;
 
-  --pik-shadow-flat: 0 18px 40px -24px rgba(0, 0, 0, 0.85);
-  --pik-shadow-deep: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
-  --pik-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --pik-shadow-flat: 0 20px 50px rgba(0, 0, 0, 0.65);
+  --pik-shadow-deep: 0 32px 76px rgba(0, 0, 0, 0.82);
+  --pik-shadow-inset: inset 0 1px 0.5px rgba(255, 255, 255, 0.45),
+    inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.12);
 
-  --pik-font-display: "Space Grotesk", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
-  --pik-font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --pik-font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --pik-font-body: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
   --pik-font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
 
-  --pik-step--2: 0.68rem;
-  --pik-step--1: 0.82rem;
+  --pik-step--2: 0.7rem;
+  --pik-step--1: 0.84rem;
   --pik-step-0: 1rem;
-  --pik-step-1: 1.18rem;
-  --pik-step-2: 1.45rem;
+  --pik-step-1: 1.16rem;
+  --pik-step-2: 1.44rem;
   --pik-step-3: 1.85rem;
   --pik-step-4: 2.4rem;
   --pik-step-5: 3.2rem;
-  --pik-step-6: 4.4rem;
+  --pik-step-6: 4.35rem;
 
   --pik-sp-1: 0.25rem;
   --pik-sp-2: 0.5rem;
@@ -69,14 +91,14 @@
   --pik-sp-8: 4rem;
   --pik-sp-9: 6rem;
 
-  --pik-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pik-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --pik-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --pik-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --pik-fast: 140ms;
-  --pik-med: 320ms;
-  --pik-slow: 620ms;
+  --pik-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --pik-fast: 160ms;
+  --pik-med: 340ms;
+  --pik-slow: 640ms;
 
-  --pik-header-h: 72px;
+  --pik-header-h: 76px;
   --pik-maxw: 1280px;
   --pik-maxw-text: 760px;
   --pik-z-base: 1;
@@ -87,7 +109,7 @@
 }
 
 [data-density="compact"] {
-  --pik-header-h: 60px;
+  --pik-header-h: 64px;
   --pik-step-0: 0.94rem;
   --pik-step-1: 1.08rem;
   --pik-step-2: 1.3rem;
@@ -100,66 +122,104 @@
 }
 
 [data-density="roomy"] {
-  --pik-header-h: 84px;
+  --pik-header-h: 86px;
   --pik-sp-7: 3.6rem;
   --pik-sp-8: 4.8rem;
   --pik-sp-9: 7.4rem;
 }
 
+/* Monochrome Liquid Mercury Finishes */
 [data-theme="aurora"] {
-  --pik-accent: #c7c7c7;
-  --pik-accent-alt: #a1a1a1;
-  --pik-accent-warm: #dadada;
+  --pik-space-900: #050505;
+  --pik-space-800: #0b0b0b;
+  --pik-accent: #f5f5f5;
+  --pik-accent-alt: #c7c7c7;
+  --pik-accent-warm: #e0e0e0;
+  --pik-glass-bg: rgba(255, 255, 255, 0.068);
+  --pik-glass-bg-strong: rgba(255, 255, 255, 0.12);
 }
 
 [data-theme="nebula"] {
-  --pik-accent: #9a9a9a;
-  --pik-accent-alt: #ababab;
-  --pik-accent-warm: #bdbdbd;
-  --pik-space-900: #060606;
-  --pik-space-800: #0a0a0a;
-  --pik-space-700: #101010;
+  --pik-space-900: #070707;
+  --pik-space-800: #0d0d0d;
+  --pik-space-700: #141414;
+  --pik-accent: #e5e5e5;
+  --pik-accent-alt: #b5b5b5;
+  --pik-accent-warm: #d4d4d4;
 }
 
 [data-theme="ember"] {
-  --pik-accent: #bdbdbd;
-  --pik-accent-alt: #979797;
-  --pik-accent-warm: #dbdbdb;
-  --pik-space-900: #0b0705;
-  --pik-space-800: #0c0c0c;
-  --pik-space-700: #111111;
+  --pik-space-900: #090909;
+  --pik-space-800: #101010;
+  --pik-space-700: #171717;
+  --pik-accent: #ededed;
+  --pik-accent-alt: #bdbdbd;
+  --pik-accent-warm: #dcdcdc;
 }
 
 [data-theme="tide"] {
-  --pik-accent: #bebebe;
-  --pik-accent-alt: #909090;
-  --pik-accent-warm: #d7d7d7;
-  --pik-space-900: #070707;
-  --pik-space-800: #0e0e0e;
-  --pik-space-700: #151515;
+  --pik-space-900: #020202;
+  --pik-space-800: #080808;
+  --pik-space-700: #111111;
+  --pik-accent: #ffffff;
+  --pik-accent-alt: #d8d8d8;
+  --pik-accent-warm: #efefef;
+  --pik-glass-bg: rgba(255, 255, 255, 0.075);
+  --pik-glass-line: rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="daylight"] {
-  --pik-space-900: #ededed;
-  --pik-space-800: #f4f6fb;
+/* Alabaster / Pearl Monochrome Light Liquid Glass */
+[data-theme="daylight"],
+[data-theme="light"] {
+  color-scheme: light;
+  --pik-space-950: #f2f2f2;
+  --pik-space-900: #f5f5f5;
+  --pik-space-800: #fafafa;
   --pik-space-700: #ffffff;
-  --pik-space-600: #e7e7e7;
-  --pik-ink: #171717;
-  --pik-ink-soft: #323232;
-  --pik-muted: #626262;
-  --pik-faint: #898989;
-  --pik-accent: #717171;
-  --pik-accent-alt: #4b4b4b;
-  --pik-accent-warm: #727272;
-  --pik-glass-bg: rgba(255, 255, 255, 0.6);
-  --pik-glass-bg-strong: rgba(255, 255, 255, 0.78);
-  --pik-glass-bg-solid: rgba(255, 255, 255, 0.9);
-  --pik-glass-line: rgba(23,23,23,0.13);
-  --pik-glass-line-soft: rgba(23,23,23,0.07);
-  --pik-glass-shine: linear-gradient(140deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 46%);
-  --pik-shadow-flat: 0 16px 34px -22px rgba(23,23,23,0.32);
-  --pik-shadow-deep: 0 40px 80px -46px rgba(23,23,23,0.36);
-  --pik-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --pik-space-600: #ebebeb;
+  --pik-space-500: #dedede;
+
+  --pik-ink: #0a0a0a;
+  --pik-ink-soft: rgba(10, 10, 10, 0.88);
+  --pik-muted: #525252;
+  --pik-faint: #787878;
+
+  --pik-aqua: #0a0a0a;
+  --pik-cyan: #1f1f1f;
+  --pik-violet: #383838;
+  --pik-rose: #4a4a4a;
+  --pik-amber: #2b2b2b;
+  --pik-lime: #121212;
+  --pik-red: #1f1f1f;
+
+  --pik-accent: #0a0a0a;
+  --pik-accent-alt: #3b3b3b;
+  --pik-accent-warm: #262626;
+
+  --pik-glass-bg: rgba(255, 255, 255, 0.66);
+  --pik-glass-bg-strong: rgba(255, 255, 255, 0.84);
+  --pik-glass-bg-solid: rgba(255, 255, 255, 0.92);
+  --pik-glass-line: rgba(0, 0, 0, 0.12);
+  --pik-glass-line-strong: rgba(0, 0, 0, 0.22);
+  --pik-glass-line-soft: rgba(0, 0, 0, 0.06);
+  --pik-glass-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.35) 34%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  --pik-fresnel-sheen: radial-gradient(
+    460px circle at var(--cx, var(--mx, 50%)) var(--cy, var(--my, 20%)),
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.2) 38%,
+    transparent 68%
+  );
+  --pik-liquid-filter: blur(28px) saturate(160%) brightness(1.03);
+  --pik-liquid-filter-lg: blur(38px) saturate(170%) brightness(1.04);
+  --pik-shadow-flat: 0 18px 44px rgba(0, 0, 0, 0.09);
+  --pik-shadow-deep: 0 28px 68px rgba(0, 0, 0, 0.14);
+  --pik-shadow-inset: inset 0 1px 0.5px rgba(255, 255, 255, 0.96),
+    inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.06);
 }
 
 @media (prefers-reduced-motion: reduce) {

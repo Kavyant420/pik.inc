@@ -94,8 +94,12 @@
   }
 
   function allowBoldOnly(escaped) {
-    return escapeHtml(escaped)
-      .replace(/&lt;b&gt;/g, "<b>").replace(/&lt;\/b&gt;/g, "</b>");
+    var out = escapeHtml(escaped)
+      .replace(/&lt;b&gt;/gi, "<b>").replace(/&lt;\/b&gt;/gi, "</b>");
+    var opens = (out.match(/<b>/g) || []).length;
+    var closes = (out.match(/<\/b>/g) || []).length;
+    while (opens > closes) { out += "</b>"; closes++; }
+    return out;
   }
 
   function dedupe(list) {
@@ -167,12 +171,16 @@
     ).then(function (j) {
       var answer = null;
       if (j && (j.AbstractText || j.Answer || j.Definition)) {
+        var rawImg = String(j.Image || "");
+        var imgUrl = /^https?:\/\//i.test(rawImg)
+          ? rawImg
+          : (rawImg.charAt(0) === "/" && rawImg.charAt(1) !== "/" ? "https://duckduckgo.com" + rawImg : "");
         answer = {
           heading: j.Heading || query,
           text: j.AbstractText || j.Definition || j.Answer || "",
           url: j.AbstractURL || j.DefinitionURL || "",
           source: j.AbstractSource || j.DefinitionSource || "DuckDuckGo",
-          image: (j.Image && /^https?:/.test(j.Image)) ? j.Image : ""
+          image: imgUrl
         };
       }
       return { answer: answer, results: flattenTopics(j && j.RelatedTopics) };
@@ -194,6 +202,11 @@
      */
     async search(query, opts) {
       var o = opts || {};
+      if (o.signal && o.signal.aborted) {
+        var preAbort = new Error("Search aborted");
+        preAbort.name = "AbortError";
+        throw preAbort;
+      }
       var q = String(query || "").trim();
       var started = Date.now();
       if (!q) {
@@ -212,6 +225,12 @@
         viaProxy(q, n, o.signal),
         viaInstantAnswer(q, o.signal)
       ]);
+
+      if (o.signal && o.signal.aborted) {
+        var postAbort = new Error("Search aborted");
+        postAbort.name = "AbortError";
+        throw postAbort;
+      }
 
       var proxy = settled[0].status === "fulfilled" ? settled[0].value : null;
       var ia = settled[1].status === "fulfilled" ? settled[1].value : null;
@@ -258,17 +277,22 @@
     isUrl: function (v) {
       var s = String(v || "").trim();
       if (!s || /\s/.test(s)) return false;
-      return /^https?:\/\//i.test(s) ||
-             /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(s) ||
-             /\.onion\b/i.test(s);
+      if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return /^https?:\/\/\S+/i.test(s);
+      var clean = s.replace(/^\/+/, "");
+      return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|onion)(?::\d{1,5})?(?:[/?#]\S*)?$/i.test(clean) ||
+             /^localhost(?::\d{1,5})?(?:[/?#]\S*)?$/i.test(clean) ||
+             /^(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?(?:[/?#]\S*)?$/.test(clean);
     },
 
     /** Normalises a typed address into an absolute URL. */
     toUrl: function (v) {
       var s = String(v || "").trim();
       if (/^https?:\/\//i.test(s)) return s;
-      if (/\.onion\b/i.test(s)) return "http://" + s.replace(/^\/+/, "");
-      return "https://" + s.replace(/^\/+/, "");
+      var clean = s.replace(/^\/+/, "");
+      if (/\.onion\b/i.test(clean) || /^localhost\b/i.test(clean) || /^127\./.test(clean)) {
+        return "http://" + clean;
+      }
+      return "https://" + clean;
     }
   };
 

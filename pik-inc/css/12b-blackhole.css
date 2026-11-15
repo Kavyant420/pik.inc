@@ -1,0 +1,746 @@
+/* ==========================================================================
+   12b-blackhole.css — 3D Relativistic Black Hole Backdrop, Scroll-Infall
+   Spaghettification Typography & iOS 26 Liquid Glass Monochrome Experience
+   ========================================================================== */
+
+:root {
+  --bh-void: #000000;
+  --bh-obsidian: #050507;
+  --bh-ink: #ffffff;
+  --bh-ink-soft: rgba(255, 255, 255, 0.84);
+  --bh-ink-muted: rgba(255, 255, 255, 0.58);
+  --bh-ink-faint: rgba(255, 255, 255, 0.38);
+  --bh-glass-fill: rgba(14, 14, 18, 0.44);
+  --bh-glass-fill-strong: rgba(20, 20, 26, 0.64);
+  --bh-glass-pill: rgba(255, 255, 255, 0.08);
+  --bh-glass-pill-hover: rgba(255, 255, 255, 0.15);
+  --bh-glass-border: rgba(255, 255, 255, 0.16);
+  --bh-glass-border-strong: rgba(255, 255, 255, 0.30);
+  --bh-glass-bevel:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.44),
+    inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.12),
+    0 24px 60px -18px rgba(0, 0, 0, 0.82);
+  --bh-spring: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Fixed Full-Viewport Relativistic WebGL Canvas ---------- */
+.bh-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+  background-color: var(--bh-void);
+  transform: translateZ(0);
+}
+
+html.has-blackhole-gl body {
+  background-color: var(--bh-void);
+}
+
+html.has-blackhole-gl .page,
+html.has-blackhole-gl .page > .section {
+  background-color: transparent;
+}
+
+html.has-blackhole-gl .fx-root .fx-canvas {
+  display: none !important;
+}
+
+html.has-blackhole-gl .fx-root .fx-gradient {
+  opacity: 0.16;
+}
+
+html.has-blackhole-gl .fx-root .fx-vignette {
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    transparent 36%,
+    rgba(0, 0, 0, 0.52) 100%
+  );
+}
+
+html.has-blackhole-gl[data-theme="daylight"] .bh-canvas {
+  opacity: 0.24;
+  filter: invert(1) grayscale(1) contrast(1.15);
+}
+
+/* ---------- Scroll-Driven Tidal Spaghettification Word Tokens ---------- */
+.bh-text-run {
+  display: inline;
+}
+
+.bh-word {
+  display: inline-block;
+  vertical-align: baseline;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bh-word.is-capturing {
+  will-change: transform, opacity, filter;
+  pointer-events: none;
+}
+
+/* Preserve gradient text clip when 3D transforms create a stacking context */
+.u-gradient .bh-word,
+.bh-gradient .bh-word {
+  background-image: linear-gradient(
+    102deg,
+    #ffffff 6%,
+    #e4e4e7 50%,
+    #9ca3af 96%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Dedicated blackhole.html Experience Layout ---------- */
+body.bh-body {
+  background-color: var(--bh-void);
+  color: var(--bh-ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+  selection-background-color: rgba(255, 255, 255, 0.24);
+}
+
+body.bh-body ::selection {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+/* Scroll Progress Hairline at Top Edge */
+.bh-scroll-track {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 2px;
+  z-index: 60;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.bh-scroll-fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.35),
+    #ffffff 75%,
+    rgba(255, 255, 255, 0.95)
+  );
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.65);
+}
+
+/* ---------- Floating iOS 26 Liquid Glass Top Pill Nav ---------- */
+.bh-topnav-wrap {
+  position: fixed;
+  inset-block-start: 14px;
+  inset-inline: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding-inline: clamp(0.75rem, 3vw, 2rem);
+  pointer-events: none;
+}
+
+.bh-topnav {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 100%;
+  padding: 0.42rem 0.55rem 0.42rem 0.9rem;
+  border-radius: 999px;
+  background: var(--bh-glass-fill);
+  border: 1px solid var(--bh-glass-border);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  box-shadow: var(--bh-glass-bevel);
+  position: relative;
+  isolation: isolate;
+}
+
+.bh-topnav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.03) 42%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bh-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--pik-font-display, "Space Grotesk", sans-serif);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffffff;
+  padding-inline-end: 0.45rem;
+  white-space: nowrap;
+}
+
+.bh-brand__ring {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+}
+
+.bh-brand__sub {
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--bh-ink-muted);
+}
+
+.bh-nav-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  flex: none;
+}
+
+.bh-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.bh-nav-link {
+  padding: 0.4rem 0.78rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--bh-ink-soft);
+  transition:
+    background-color 200ms var(--bh-spring),
+    color 200ms var(--bh-spring),
+    transform 200ms var(--bh-spring);
+  white-space: nowrap;
+}
+
+.bh-nav-link:hover,
+.bh-nav-link[aria-current="page"] {
+  color: #ffffff;
+  background: var(--bh-glass-pill-hover);
+}
+
+.bh-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  margin-inline-start: 0.2rem;
+}
+
+.bh-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--bh-glass-border);
+  background: var(--bh-glass-pill);
+  color: #ffffff;
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  transition:
+    background-color 220ms var(--bh-spring),
+    border-color 220ms var(--bh-spring),
+    transform 220ms var(--bh-spring);
+}
+
+.bh-pill-btn:hover {
+  background: var(--bh-glass-pill-hover);
+  border-color: var(--bh-glass-border-strong);
+  transform: translateY(-1px);
+}
+
+.bh-pill-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.bh-pill-btn--solid {
+  background: #ffffff;
+  color: #050507;
+  border-color: #ffffff;
+  font-family: var(--pik-font-display, "Space Grotesk", sans-serif);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  font-size: 0.78rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 24px -6px rgba(255, 255, 255, 0.36);
+}
+
+.bh-pill-btn--solid:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #ffffff;
+}
+
+.bh-mode-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff, #f5c27a 75%);
+  box-shadow: 0 0 8px rgba(255, 220, 165, 0.8);
+  transition: background 260ms ease, box-shadow 260ms ease;
+}
+
+html[data-bh-mode="mono"] .bh-mode-dot {
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+}
+
+/* ---------- Live iOS 26 Liquid Glass Telemetry HUD ---------- */
+.bh-hud {
+  position: fixed;
+  inset-block-end: 20px;
+  inset-inline-end: 20px;
+  z-index: 45;
+  width: min(332px, calc(100vw - 32px));
+  padding: 0.95rem 1.05rem;
+  border-radius: 24px;
+  background: var(--bh-glass-fill);
+  border: 1px solid var(--bh-glass-border);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  box-shadow: var(--bh-glass-bevel);
+  display: grid;
+  gap: 0.65rem;
+  isolation: isolate;
+}
+
+.bh-hud::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bh-hud__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-block-end: 0.45rem;
+  border-block-end: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bh-hud__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bh-ink-soft);
+}
+
+.bh-hud__pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+  animation: bh-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes bh-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.42;
+    transform: scale(0.82);
+  }
+}
+
+.bh-hud__regime {
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.bh-hud__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.48rem 0.7rem;
+}
+
+.bh-hud__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.bh-hud__metric--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-block-start: 0.25rem;
+  border-block-start: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bh-hud__label {
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bh-ink-faint);
+}
+
+.bh-hud__val {
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.bh-hud__milestones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.28rem;
+  padding-block-start: 0.35rem;
+  border-block-start: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bh-milestone-btn {
+  flex: 1;
+  padding: 0.28rem 0.2rem;
+  border-radius: 999px;
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--bh-ink-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background-color 200ms var(--bh-spring),
+    color 200ms var(--bh-spring),
+    border-color 200ms var(--bh-spring);
+}
+
+.bh-milestone-btn:hover,
+.bh-milestone-btn.is-active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+/* ---------- Scroll Stage & 5 Relativistic Sections ---------- */
+.bh-main {
+  position: relative;
+  z-index: 2;
+  padding-block-start: 96px;
+}
+
+.bh-section {
+  min-height: 106vh;
+  display: flex;
+  align-items: center;
+  padding-block: clamp(4rem, 9vh, 7rem);
+  padding-inline: clamp(1rem, 5vw, 4rem);
+  position: relative;
+}
+
+.bh-section--hero {
+  min-height: 100vh;
+  align-items: flex-end;
+  padding-block-end: clamp(3.5rem, 9vh, 6.5rem);
+}
+
+.bh-section--right {
+  justify-content: flex-end;
+}
+
+.bh-section--left {
+  justify-content: flex-start;
+}
+
+.bh-section--center {
+  justify-content: center;
+}
+
+.bh-card {
+  width: min(540px, 100%);
+  padding: clamp(1.5rem, 3.2vw, 2.35rem);
+  border-radius: 30px;
+  background: var(--bh-glass-fill);
+  border: 1px solid var(--bh-glass-border);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.06);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.06);
+  box-shadow: var(--bh-glass-bevel);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  isolation: isolate;
+}
+
+.bh-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.03) 38%,
+    rgba(255, 255, 255, 0) 68%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bh-card--hero {
+  width: min(620px, 100%);
+  background: rgba(10, 10, 14, 0.38);
+}
+
+.bh-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bh-eyebrow__tag {
+  padding: 0.2rem 0.58rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  letter-spacing: 0.1em;
+}
+
+.bh-title {
+  font-family: var(--pik-font-display, "Space Grotesk", sans-serif);
+  font-size: clamp(2rem, 1.3rem + 2.8vw, 3.35rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.bh-section:not(.bh-section--hero) .bh-title {
+  font-size: clamp(1.7rem, 1.15rem + 2vw, 2.55rem);
+}
+
+.bh-lede {
+  font-size: clamp(0.96rem, 0.9rem + 0.25vw, 1.08rem);
+  line-height: 1.65;
+  color: var(--bh-ink-soft);
+  max-width: 56ch;
+}
+
+.bh-formula-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-block-start: 0.2rem;
+}
+
+.bh-formula {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.36rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.bh-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding-block-start: 0.35rem;
+}
+
+.bh-scroll-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bh-ink-muted);
+}
+
+/* Trailing Singularity Runway so Section 5 spaghettifies completely */
+.bh-horizon-runway {
+  min-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+  padding-block-end: clamp(6.5rem, 14vh, 9rem);
+  text-align: center;
+}
+
+.bh-outro {
+  padding: 1.15rem 1.5rem;
+  border-radius: 999px;
+  background: var(--bh-glass-fill-strong);
+  border: 1px solid var(--bh-glass-border);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: var(--bh-glass-bevel);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem 1rem;
+}
+
+.bh-outro__label {
+  font-family: var(--pik-font-mono, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bh-ink-soft);
+}
+
+/* ---------- Responsive Refinements ---------- */
+@media (max-width: 860px) {
+  .bh-topnav {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 22px;
+    padding: 0.5rem 0.65rem;
+    gap: 0.35rem;
+  }
+
+  .bh-nav-divider {
+    display: none;
+  }
+
+  .bh-hud {
+    inset-inline: 12px;
+    inset-block-end: 12px;
+    width: auto;
+    padding: 0.72rem 0.88rem;
+    border-radius: 20px;
+    gap: 0.45rem;
+  }
+
+  .bh-hud__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem 0.5rem;
+  }
+
+  .bh-hud__metric--wide {
+    grid-column: span 1;
+    flex-direction: column;
+    border-block-start: 0;
+    padding-block-start: 0;
+  }
+
+  .bh-section--hero {
+    align-items: center;
+    padding-block-end: 9rem;
+  }
+
+  .bh-horizon-runway {
+    padding-block-end: 12rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .bh-brand__sub {
+    display: none;
+  }
+
+  .bh-nav-link {
+    padding: 0.34rem 0.56rem;
+    font-size: 0.74rem;
+  }
+
+  .bh-hud__val {
+    font-size: 0.76rem;
+  }
+}
+
+/* ---------- Reduced Motion & Lite Performance ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .bh-word,
+  .bh-word.is-capturing {
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    will-change: auto !important;
+  }
+
+  .bh-hud__pulse {
+    animation: none;
+  }
+}
+
+html[data-perf="lite"] .bh-topnav,
+html[data-perf="lite"] .bh-hud,
+html[data-perf="lite"] .bh-card,
+html[data-perf="lite"] .bh-outro {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(12, 12, 16, 0.82);
+}

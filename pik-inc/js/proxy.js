@@ -192,8 +192,8 @@ const PIKProxy = (() => {
   // ---- Fleet ingestion --------------------------------------------------------
   function parseLines(text) {
     const out = [];
-    text.split(/\r?\n/).forEach(line => {
-      const m = line.trim().match(/^(\d{1,3}(?:\.\d){3}):(\d{2,5})/);
+    String(text || "").split(/\r?\n/).forEach(line => {
+      const m = line.trim().match(/^(\d{1,3}(?:\.\d{1,3}){3}):(\d{2,5})$/);
       if (m) out.push({ host: m[1], port: parseInt(m[2], 10) });
     });
     return out;
@@ -346,7 +346,7 @@ const PIKProxy = (() => {
     for (const gw of GATEWAY_ECHOS) {
       try {
         const txt = await fetchText(gw.url, 9000);
-        const m = txt.match(/(\d{1,3}(?:\.\d){3})/);
+        const m = txt.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
         if (m && m[1] !== "127.0.0.1") {
           state.exitIp = m[1];
           state.exitVia = gw.name;

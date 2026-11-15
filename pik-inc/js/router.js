@@ -61,7 +61,10 @@
     async digest(payloadObj) {
       var canonical = JSON.stringify(payloadObj);
       var d = await PIKCrypto.sha256(canonical);
-      return { digest: d, bytes: new Blob([canonical]).size };
+      var bytes = typeof Blob === "function"
+        ? new Blob([canonical]).size
+        : (typeof TextEncoder === "function" ? new TextEncoder().encode(canonical).length : canonical.length);
+      return { digest: d, bytes: bytes };
     },
 
     /* ---------- public entry ---------- */
@@ -434,7 +437,7 @@
         throw eSkip;
       }
       var sys = this._sysPrompt(settings);
-      var messages = [{ role: "system", content: sys }].concat(opts.messages.map(function (m) {
+      var messages = [{ role: "system", content: sys }].concat((opts.messages || []).map(function (m) {
         if (typeof m.content === "string") return m;
         var txt = (m.content || []).filter(function (p) { return p.type === "text"; }).map(function (p) { return p.text; }).join("\n");
         return { role: m.role, content: txt };

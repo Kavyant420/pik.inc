@@ -5,6 +5,7 @@
   *::before,
   *::after {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
 
   * {
@@ -15,6 +16,7 @@
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
     scroll-padding-top: calc(var(--pik-header-h) + var(--pik-sp-5));
+    background-color: var(--pik-space-950, #000000);
   }
 
   body {
@@ -26,7 +28,14 @@
     line-height: 1.62;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+
+  /* When the 3D WebGL Black Hole canvas is mounted, keep body & page transparent
+     above html's void black so the singularity renders cleanly behind content. */
+  html.has-blackhole-gl body {
+    background-color: transparent;
   }
 
   body.is-locked {
@@ -40,18 +49,18 @@
   h5 {
     font-family: var(--pik-font-display);
     font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    line-height: 1.08;
+    letter-spacing: -0.028em;
     color: var(--pik-ink);
   }
 
   h1 {
-    font-size: clamp(2.1rem, 1.2rem + 4vw, var(--pik-step-6));
+    font-size: clamp(2.15rem, 1.2rem + 4vw, var(--pik-step-6));
     font-weight: 700;
   }
 
   h2 {
-    font-size: clamp(1.7rem, 1.1rem + 2.4vw, var(--pik-step-4));
+    font-size: clamp(1.68rem, 1.1rem + 2.3vw, var(--pik-step-4));
   }
 
   h3 {
@@ -118,14 +127,30 @@
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--pik-accent) 40%, transparent);
+    background: rgba(255, 255, 255, 0.24);
     color: var(--pik-ink);
   }
 
+  [data-theme="daylight"] ::selection,
+  [data-theme="light"] ::selection {
+    background: rgba(0, 0, 0, 0.16);
+    color: var(--pik-ink);
+  }
+
+  :focus {
+    outline: none;
+  }
+
   :focus-visible {
-    outline: 2px solid var(--pik-accent);
+    outline: 1.5px solid var(--pik-ink);
     outline-offset: 3px;
     border-radius: var(--pik-r-xs);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.14);
+  }
+
+  [data-theme="daylight"] :focus-visible,
+  [data-theme="light"] :focus-visible {
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12);
   }
 
   [hidden] {
@@ -148,12 +173,15 @@
     position: fixed;
     inset-block-start: var(--pik-sp-3);
     inset-inline-start: 50%;
-    translate: -50% -200%;
+    translate: -50% -220%;
     z-index: 200;
-    padding: 0.7rem 1.3rem;
+    padding: 0.7rem 1.35rem;
     border-radius: var(--pik-r-pill);
     background: var(--pik-glass-bg-solid);
+    backdrop-filter: var(--pik-liquid-filter);
+    -webkit-backdrop-filter: var(--pik-liquid-filter);
     border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-flat), var(--pik-shadow-inset);
     color: var(--pik-ink);
     transition: translate var(--pik-med) var(--pik-ease-out);
   }
@@ -162,38 +190,3 @@
     translate: -50% 0;
   }
 }
-
-*,
-*::before,
-*::after {
-  -webkit-tap-highlight-color: transparent !important;
-  tap-highlight-color: transparent !important;
-}
-
-*:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* ==========================================================================
-      Global Tap Highlight & Focus Reset
-      ========================================================================== */
-   *,
-   *::before,
-   *::after {
-     -webkit-tap-highlight-color: transparent !important;
-     tap-highlight-color: transparent !important;
-   }
-
-   *:focus {
-     outline: none !important;
-     box-shadow: none !important;
-   }
-
-    
-   *:focus-visible {
-     outline: 2px solid var(--pik-accent) !important;
-     outline-offset: 3px;
-     border-radius: 4px;
-     box-shadow: 0 0 0 4px rgba(79, 227, 193, 0.2) !important;
-   }

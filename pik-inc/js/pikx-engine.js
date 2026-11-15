@@ -1,32 +1,22 @@
-/* ============================================================================
-   PIKX — pikx-engine.js
-   The REAL NEXUS intelligence core + Chrome-grade search engine for the
-   PIKX zero-knowledge browser. Everything here talks to genuinely free,
-   keyless APIs across the internet — no API keys, no accounts, no cost:
+  /* ============================================================================
+     PIKX — pikx-engine.js
+     The REAL NEXUS intelligence core + extended SERP engine for the PIKX
+     zero-knowledge browser. Talks to verified, keyless APIs:
 
-     AI (real inference, streamed):
-       1. https://text.pollinations.ai/openai   OpenAI-compatible SSE stream,
-          keyless, CORS *. — primary reasoning engine ("openai-fast").
-       2. https://text.pollinations.ai/{prompt} plain-GET completion endpoint,
-          keyless — fallback when streaming is blocked/rate-limited.
-       3. https://js.puter.com/v2/  puter.ai.chat — third-party free tier that
-          sponsors calls from the user's free Puter account (no key needed).
-       4. https://corsproxy.io/?url=... → OpenRouter :free models — last-resort
-          relay hop so a dead provider never kills the conversation.
+       AI (real inference, streamed):
+         1. https://blockrun.ai/api/v1/chat/completions  OpenAI-compatible SSE
+            stream (GPT-OSS 20B, 128K context, no login required).
+         2. https://openrouter.ai/api/v1/chat/completions  Used automatically
+            when a free OpenRouter key is configured in localStorage.
+         3. https://text.pollinations.ai/openai + GET fallback  Keyless CORS
+            fallback when primary gateways are unreachable.
 
-     Search results (all keyless, CORS-enabled where possible):
-       - DuckDuckGo Instant Answer API  (topics / definitions / instant answers)
-       - Wikipedia REST + Action API    (summary, extracts, images, links,
-                                         related pages — the "knowledge panel")
-       - DuckDuckGo HTML endpoints      (actual organic web results + news,
-                                         fetched through keyless CORS relays:
-                                         allorigins.win / corsproxy.io)
-       - Wikimedia Commons API          (image gallery tab)
-       - Google s2 favicons CDN         (per-result site icons)
-
-   No redirect ever happens on a search: PIKX fetches, parses and renders the
-   result set inside its own tab, exactly like Chrome does.
-   ========================================================================= */
+       Search results (all keyless, CORS-enabled where possible):
+         - /api/search serverless proxy + DuckDuckGo Instant Answer API
+         - Wikipedia REST + Action API
+         - Wikimedia Commons API
+         - Google s2 favicons CDN
+     ========================================================================= */
 (function (global) {
   "use strict";
 
@@ -111,15 +101,14 @@
      PART 1 — REAL NEXUS AI (streaming, multi-provider failover)
      ============================================================ */
 
+  var BLOCKRUN_CHAT_URL = CFG.BLOCKRUN_CHAT_URL || "https://blockrun.ai/api/v1/chat/completions";
+  var BLOCKRUN_MODEL = CFG.BLOCKRUN_MODEL || "nvidia/gpt-oss-20b";
   var POLLI_CHAT_URL = CFG.POLLINATIONS_URL || "https://text.pollinations.ai/openai";
-  /* QWEN 3.8 27B — NEXUS default flagship inside PIKX, served for free with
-     NO API key through every keyless gateway we found (probed live Oct 26
-     2026): Puter.js tier, OpenRouter public app route, Glider, Jaiowr. */
-  var QWEN_MODEL_ID = CFG.QWEN_MODEL || "qwen/qwen3.8-27b";
+  var OR_MODEL_ID = CFG.SUGGESTED_MODEL || "nvidia/nemotron-3.5-lightning:free";
   var OR_CHAT_URL = CFG.OR_CHAT_URL || "https://openrouter.ai/api/v1/chat/completions";
   var POLLI_GET_URL = CFG.POLLINATIONS_GET_URL || "https://text.pollinations.ai/";
-  var FREE_TIER_TOKEN_LIMIT = 512000; // 512k — raised from 32k per PIK policy
-  var OUT_TOKEN_CAP = 16384;          // per-reply generation ceiling (free tier)
+  var FREE_TIER_TOKEN_LIMIT = CFG.BLOCKRUN_CONTEXT_TOKENS || 128000;
+  var OUT_TOKEN_CAP = CFG.BLOCKRUN_MAX_OUTPUT_TOKENS || 8192;
 
   var SYSTEM_PROMPT =
     "You are PIK NEXUS, the native unrestricted intelligence of the PIKX zero-knowledge browser. " +
@@ -131,36 +120,17 @@
     "NEVER use emoji characters; use plain markdown. Match the user's language.";
 
   var NexusAI = {
-    _puterPromise: null,
     lastEngine: null,
-    _preferPuter: false,
 
-    /* token budget advertised by the UI: 512k context on the free tier */
+    /* token budget advertised by the UI: 128K context on the no-login endpoint */
     tokenLimit: FREE_TIER_TOKEN_LIMIT,
 
-    ensurePuter: function () {
-      if (global.puter && global.puter.ai) return Promise.resolve(global.puter);
-      if (this._puterPromise) return this._puterPromise;
-      this._puterPromise = new Promise(function (resolve, reject) {
-        var s = document.createElement("script");
-        s.src = CFG.PUTER_CDN || "https://js.puter.com/v2/";
-        s.async = true;
-        s.onload = function () {
-          if (global.puter && global.puter.ai) resolve(global.puter);
-          else { NexusAI._puterPromise = null; reject(new Error("puter sdk incomplete")); }
-        };
-        s.onerror = function () { NexusAI._puterPromise = null; reject(new Error("puter CDN unreachable")); };
-        document.head.appendChild(s);
-      });
-      return this._puterPromise;
-    },
-
     /* Build the message array: rolling transcript window kept inside the
-       512k-token free-tier budget (~4 chars/token heuristic). */
+       128K-token context budget (~4 chars/token heuristic, reserving output). */
     _messages: function (history, prompt) {
       var msgs = [{ role: "system", content: SYSTEM_PROMPT }];
       var turns = (history || []).slice(-24);
-      var budgetChars = FREE_TIER_TOKEN_LIMIT * 4;
+      var budgetChars = Math.max(32000, (FREE_TIER_TOKEN_LIMIT - OUT_TOKEN_CAP) * 4);
       var picked = [];
       var size = SYSTEM_PROMPT.length;
       for (var i = turns.length - 1; i >= 0; i--) {
@@ -172,7 +142,38 @@
       return msgs.concat(picked, [{ role: "user", content: prompt }]);
     },
 
-    /* ---- hop 1: pollinations OpenAI-compatible SSE stream (keyless) ---- */
+    /* ---- hop 1: BlockRun GPT-OSS 20B (no-login OpenAI-compatible SSE) ---- */
+    async _viaBlockRun(opts) {
+      var body = {
+        model: BLOCKRUN_MODEL,
+        messages: this._messages(opts.history, opts.prompt),
+        stream: true,
+        max_tokens: OUT_TOKEN_CAP
+      };
+      return this._gatewayPOST(BLOCKRUN_CHAT_URL, body, null, "blockrun-gpt-oss", opts);
+    },
+
+    /* ---- hop 2: OpenRouter (used when visitor has stored a free OR key) -- */
+    async _viaOpenRouter(opts) {
+      var key = "";
+      try { key = localStorage.getItem("pik.nexus.key.openrouter") || ""; } catch (e) {}
+      if (!key) throw new Error("openrouter: no key present");
+      var body = {
+        model: OR_MODEL_ID,
+        messages: this._messages(opts.history, opts.prompt),
+        stream: true,
+        max_tokens: OUT_TOKEN_CAP
+      };
+      return this._gatewayPOST(
+        OR_CHAT_URL,
+        body,
+        { "Authorization": "Bearer " + key, "HTTP-Referer": (global.location && global.location.origin) || "https://pik.inc", "X-Title": "PIKX" },
+        "openrouter-free",
+        opts
+      );
+    },
+
+    /* ---- hop 3: Pollinations OpenAI-compatible SSE stream (keyless) ------ */
     async _viaPollinationsStream(opts) {
       var body = {
         model: "openai-fast",
@@ -182,29 +183,7 @@
         referrer: "pik.pikx",
         max_tokens: OUT_TOKEN_CAP
       };
-      var res = await fetch(POLLI_CHAT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
-        body: JSON.stringify(body),
-        signal: opts.signal
-      });
-      if (!res.ok) {
-        var errText = "";
-        try { errText = await res.text(); } catch (e) {}
-        var er = new Error("pollinations HTTP " + res.status + " " + trimText(errText, 120));
-        er.status = res.status;
-        throw er;
-      }
-      var ctype = res.headers.get("content-type") || "";
-      if (ctype.indexOf("event-stream") !== -1 && res.body) {
-        return this._consumeSSE(res, opts);
-      }
-      var json = await res.json();
-      var msg = (json.choices && json.choices[0] && json.choices[0].message) || {};
-      var text = typeof msg.content === "string" ? msg.content : "";
-      if (!text) throw new Error("pollinations empty non-stream response");
-      if (opts.onDelta) { try { opts.onDelta(text); } catch (e) {} }
-      return { text: text, engine: "pollinations-stream" };
+      return this._gatewayPOST(POLLI_CHAT_URL, body, null, "pollinations-stream", opts);
     },
 
     async _consumeSSE(res, opts) {
@@ -224,6 +203,10 @@
           if (data === "[DONE]") continue;
           try {
             var obj = JSON.parse(data);
+            if (obj && obj.error) {
+              var msg = (typeof obj.error === "string") ? obj.error : (obj.error.message || "stream error");
+              throw new Error(msg);
+            }
             var d = (obj.choices && obj.choices[0] && obj.choices[0].delta) || {};
             if (d.reasoning_content || d.reasoning) {
               reason += String(d.reasoning_content || d.reasoning);
@@ -233,51 +216,32 @@
               full += d.content;
               if (opts.onDelta) { try { opts.onDelta(d.content); } catch (e) {} }
             }
-          } catch (e) { /* partial frame — ignore */ }
+          } catch (e) {
+            if (e && e.message && !/JSON|Unexpected|token/i.test(e.message)) throw e;
+          }
         }
       }
       if (!full && reason) full = reason;
-      if (!full) throw new Error("pollinations stream produced no tokens");
-      return { text: full, reasoning: reason, engine: "pollinations-stream" };
+      if (!full) throw new Error("stream produced no tokens");
+      return { text: full, reasoning: reason, engine: "sse" };
     },
 
-    /* ---- hop 2: pollinations simple GET endpoint (bulletproof CORS) ---- */
+    /* ---- hop 4: Pollinations simple GET endpoint (CORS fallback) --------- */
     async _viaPollinationsGet(opts) {
       var flat = (opts.history || []).slice(-6)
         .map(function (m) { return (m.role === "user" ? "User: " : "Nexus: ") + trimText(m.content, 1200); })
         .join("\n");
       var q = flat ? flat + "\nUser: " + opts.prompt : opts.prompt;
-      var u = POLLI_GET_URL + encodeURIComponent(q.slice(0, 24000)) +
+      var u = POLLI_GET_URL + encodeURIComponent(q.slice(0, 16000)) +
         "?model=openai-fast&system=" + encodeURIComponent(SYSTEM_PROMPT.slice(0, 1200)) + "&json=false&private=true";
-      var txt = await getText(u, 45000);
+      var txt = await getText(u, 30000);
       var text = (txt || "").trim();
       if (text.length < 2) throw new Error("polli-get empty response");
       if (opts.onDelta) { try { opts.onDelta(text); } catch (e) {} }
       return { text: text, engine: "pollinations-get" };
     },
 
-    /* ---- hop 3: puter.js free keyless tier (streamed) ---- */
-    async _viaPuter(opts) {
-      var pt = await this.ensurePuter();
-      var kw = { stream: true, model: QWEN_MODEL_ID }; // Qwen 3.8 27B on puter's free keyless tier
-      if (opts.signal) kw.signal = opts.signal;
-      var it = pt.ai.chat(this._messages(opts.history, opts.prompt), kw);
-      if (!it) throw new Error("puter empty iterator");
-      var full = "";
-      for await (const part of it) {
-        if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
-        var d = (part && part.delta != null) ? String(part.delta)
-              : (typeof part === "string") ? part
-              : (part && part.message && typeof part.message === "string") ? part.message : "";
-        if (!d) continue;
-        full += d;
-        if (opts.onDelta) { try { opts.onDelta(d); } catch (e) {} }
-      }
-      if (!full) throw new Error("puter empty response");
-      return { text: full, engine: "puter-free" };
-    },
-
-    /* ---- generic OpenAI-compatible streaming POST (keyless gateways) ---- */
+    /* ---- generic OpenAI-compatible streaming POST ------------------------ */
     async _gatewayPOST(url, body, headers, engineName, opts) {
       var res = await fetch(url, {
         method: "POST",
@@ -302,53 +266,21 @@
       return { text: txt, engine: engineName };
     },
 
-    /* ---- hop: OpenRouter — qwen/qwen3.8-27b ------------------------------
-       VERIFIED Oct 26 2026: the chat endpoint is NOT keyless (HTTP 401
-       "No cookie auth credentials found"). This hop answers instantly when a
-       free OR key exists in localStorage; without one it fails fast and the
-       chain moves to the next gateway. */
-    async _viaQwenOpenRouter(opts) {
-      var key = "";
-      try { key = localStorage.getItem("pik.nexus.key.openrouter") || ""; } catch (e) {}
-      if (!key) throw new Error("qwen-openrouter: no key present (endpoint requires one)");
-      var body = { model: QWEN_MODEL_ID, messages: this._messages(opts.history, opts.prompt), stream: true };
-      return this._gatewayPOST(OR_CHAT_URL, body,
-        { "Authorization": "Bearer " + key, "HTTP-Referer": location.origin || "https://pik.inc", "X-Title": "PIK NEXUS" },
-        "qwen-openrouter", opts);
-    },
-
-    /* ---- hops: community free inference hosts that serve Qwen3.8-27B ----- */
-    async _viaQwenGlider(opts) {
-      var body = { model: "Qwen/Qwen3.8-27B", messages: this._messages(opts.history, opts.prompt), stream: false };
-      return this._gatewayPOST("https://api.glider.ai/chat/completions", body, null, "qwen-glider", opts);
-    },
-    async _viaQwenJaiowr(opts) {
-      var body = { model: "Qwen3.8-27B", messages: this._messages(opts.history, opts.prompt), stream: false };
-      return this._gatewayPOST("https://ai.jaiowr9f.com/api/openai/chat", body, null, "qwen-jaiowr", opts);
-    },
-
-    /* ---- ask the real model, failing over across free providers ---- */
+    /* ---- ask the real model, failing over across verified providers ------ */
     async ask(opts) {
       opts = opts || {};
       if (!String(opts.prompt || "").trim()) throw new Error("empty prompt");
-      /* Qwen 3.8 27B gateway chain runs FIRST (puter -> openrouter-app ->
-         glider -> jaiowr); pollinations gpt-oss-20b remains as the honest
-         last-resort when every Qwen host is rate-limited. */
-      var hops = [this._viaPuter, this._viaQwenGlider, this._viaQwenJaiowr,
-                  this._viaQwenOpenRouter, this._viaPollinationsStream, this._viaPollinationsGet];
+      var hops = [this._viaBlockRun, this._viaOpenRouter, this._viaPollinationsStream, this._viaPollinationsGet];
       var lastErr = null;
       for (var i = 0; i < hops.length; i++) {
         if (opts.signal && opts.signal.aborted) { var ab = new Error("aborted"); ab.name = "AbortError"; throw ab; }
         try {
           var r = await hops[i].call(this, opts);
           this.lastEngine = r.engine;
-          this._preferPuter = r.engine === "puter-free" ? false : true; // round-robin
-          r.providerLabel = r.engine.indexOf("qwen-openrouter") !== -1 ? "QWEN 3.8 27B · OPENROUTER APP" :
-                            r.engine.indexOf("qwen-glider") !== -1 ? "QWEN 3.8 27B · GLIDER FREE" :
-                            r.engine.indexOf("qwen-jaiowr") !== -1 ? "QWEN 3.8 27B · JAIOWR FREE" :
-                            r.engine.indexOf("puter") !== -1 ? "QWEN 3.8 27B · PUTER FREE TIER" :
-                            r.engine.indexOf("get") !== -1 ? "POLLINATIONS · KEYLESS" :
-                            "POLLINATIONS · OPENAI-FAST";
+          r.providerLabel = r.engine === "blockrun-gpt-oss" ? "GPT-OSS 20B · BLOCKRUN 128K" :
+                            r.engine === "openrouter-free" ? "OPENROUTER · 128K+" :
+                            r.engine === "pollinations-get" ? "POLLINATIONS · KEYLESS" :
+                            "POLLINATIONS · STREAM";
           r.tokenBudget = FREE_TIER_TOKEN_LIMIT;
           return r;
         } catch (e) {
@@ -356,10 +288,10 @@
           lastErr = e;
         }
       }
-      throw lastErr || new Error("every free engine is unreachable right now");
+      throw lastErr || new Error("every anonymous engine is unreachable right now");
     },
 
-    /* quick one-shot helper for internal summarisation tasks (reviews etc.) */
+    /* quick one-shot helper for internal summarisation tasks */
     async quick(prompt, opts) {
       opts = opts || {};
       return this.ask({ prompt: prompt, history: [], signal: opts.signal, onDelta: opts.onDelta });
@@ -417,7 +349,7 @@
           abstractText: j.AbstractText || "",
           abstractSource: j.AbstractSource || "",
           abstractUrl: j.AbstractURL || "",
-          image: j.Image ? (/\^/.test(j.Image) ? "https://duckduckgo.com" + j.Image : j.Image) : "",
+          image: j.Image ? (/^\//.test(j.Image) ? "https://duckduckgo.com" + j.Image : j.Image) : "",
           imageIsLogo: !!j.ImageIsLogo,
           topics: []
         };
@@ -638,8 +570,8 @@
         s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
         s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
         s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;]|$)/g, "$1<em>$2</em>");
-        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-        s = s.replace(/(^|[\s(])(https?:\/\/[^\s)<>"']+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)<>"'&]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        s = s.replace(/(^|[\s(])(https?:\/\/[^\s)<>"'&]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
         return s;
       }
       function closeList() { if (inList) { html += "</ul>"; inList = false; } }
@@ -685,7 +617,14 @@
   };
 
   global.PIKNexusAI = NexusAI;
-  global.PIKSearch = Search;
+  global.PIKSerpEngine = Search;
+  if (global.PIKSearch && typeof global.PIKSearch.search === "function") {
+    Object.keys(Search).forEach(function (k) {
+      if (!(k in global.PIKSearch)) global.PIKSearch[k] = Search[k];
+    });
+  } else {
+    global.PIKSearch = Search;
+  }
   global.PIKOverview = Overview;
   global.PIKPxUtil = { esc: esc, trimText: trimText, faviconFor: faviconFor, prettyHost: prettyHost };
 })(window);

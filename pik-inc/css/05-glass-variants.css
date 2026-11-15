@@ -1,38 +1,51 @@
 @layer pik.glass.variants {
   .glass--frost {
-    background-color: rgba(255, 255, 255, 0.13);
-    backdrop-filter: blur(var(--pik-blur-xl)) brightness(1.06) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--pik-blur-xl)) brightness(1.06) saturate(180%);
-    border-color: rgba(255, 255, 255, 0.24);
+    background-color: rgba(255, 255, 255, 0.12);
+    backdrop-filter: var(--pik-liquid-filter-lg);
+    -webkit-backdrop-filter: var(--pik-liquid-filter-lg);
+    border-color: var(--pik-glass-line-strong);
   }
 
   .glass--smoke {
-    background-color: rgba(11,11,11,0.72);
-    backdrop-filter: blur(var(--pik-blur-lg)) saturate(120%);
-    -webkit-backdrop-filter: blur(var(--pik-blur-lg)) saturate(120%);
+    background-color: rgba(8, 8, 8, 0.72);
+    backdrop-filter: var(--pik-liquid-filter);
+    -webkit-backdrop-filter: var(--pik-liquid-filter);
     border-color: var(--pik-glass-line-soft);
   }
 
   .glass--tinted {
-    background-color: color-mix(in srgb, var(--pik-accent) 12%, transparent);
-    border-color: color-mix(in srgb, var(--pik-accent) 30%, transparent);
+    background: linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.03) 65%
+    );
+    border-color: var(--pik-glass-line-strong);
+  }
+
+  [data-theme="daylight"] .glass--tinted,
+  [data-theme="light"] .glass--tinted {
+    background: linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(240, 240, 240, 0.72) 65%
+    );
   }
 
   .glass--chrome {
     background-image: linear-gradient(
-      150deg,
-      rgba(255, 255, 255, 0.16),
-      rgba(255, 255, 255, 0.03) 38%,
-      rgba(255, 255, 255, 0.11) 70%,
+      148deg,
+      rgba(255, 255, 255, 0.18),
+      rgba(255, 255, 255, 0.04) 38%,
+      rgba(255, 255, 255, 0.12) 70%,
       rgba(255, 255, 255, 0.02)
     );
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--pik-glass-line-strong);
   }
 
   .glass--etched {
     border-style: solid;
     border-color: var(--pik-glass-line);
-    box-shadow: var(--pik-shadow-inset), inset 0 -14px 30px -22px rgba(0, 0, 0, 0.9);
+    box-shadow: var(--pik-shadow-inset), inset 0 -16px 32px -22px rgba(0, 0, 0, 0.85);
   }
 
   .glass--rim::before {
@@ -42,10 +55,10 @@
     border-radius: inherit;
     padding: 1px;
     background: linear-gradient(
-      120deg,
-      color-mix(in srgb, var(--pik-accent) 70%, transparent),
-      transparent 40%,
-      color-mix(in srgb, var(--pik-accent-alt) 60%, transparent) 78%,
+      125deg,
+      rgba(255, 255, 255, 0.55),
+      transparent 42%,
+      rgba(255, 255, 255, 0.28) 78%,
       transparent
     );
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -91,7 +104,7 @@
   }
 
   .glass-table tr:hover td {
-    background: color-mix(in srgb, var(--pik-accent) 6%, transparent);
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .glass-stack > * + * {

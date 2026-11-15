@@ -17,10 +17,11 @@
   }
 
   add("preconnect-inference", function () {
-    ["https://openrouter.ai", "https://text.pollinations.ai", "https://api.deepinfra.com"]
+    if (!document.head) return;
+    ["https://blockrun.ai", "https://openrouter.ai"]
       .forEach(function (origin) {
         var l = document.createElement("link");
-        l.rel = "preconnect"; l.href = origin; l.crossOrigin = true;
+        l.rel = "preconnect"; l.href = origin; l.crossOrigin = "anonymous";
         document.head.appendChild(l);
       });
   }, 2);

@@ -34,7 +34,10 @@
   var tabs = [];
   var activeId = null;
   var seq = 0;
-  var inflight = null;          /* AbortController for the running search */
+  var reqSeq = 0;
+  var inflightByTab = {};       /* tabId -> AbortController */
+  var reqByTab = {};            /* tabId -> latest request sequence */
+  var wired = false;
 
   var els = {};
 
@@ -202,10 +205,19 @@
     }
   }
 
+  function abortTab(id) {
+    if (inflightByTab[id]) {
+      try { inflightByTab[id].abort(); } catch (e) {}
+      delete inflightByTab[id];
+    }
+  }
+
   function closeTab(id) {
     var idx = -1;
     tabs.forEach(function (x, i) { if (x.id === id) idx = i; });
     if (idx === -1) return;
+    abortTab(id);
+    delete reqByTab[id];
     tabs.splice(idx, 1);
 
     if (!tabs.length) {
@@ -227,6 +239,21 @@
     tabs.push(t);
     switchTo(t.id);
     return t;
+  }
+
+  function resetAll() {
+    Object.keys(inflightByTab).forEach(abortTab);
+    reqByTab = {};
+    tabs = [];
+    seq = 0;
+    if (S && typeof S.clearCache === "function") S.clearCache();
+    var fresh = makeTab("new");
+    tabs.push(fresh);
+    activeId = fresh.id;
+    renderTabs();
+    showView("new");
+    if (els.pxOmniInput) els.pxOmniInput.value = "";
+    return fresh;
   }
 
   /* ---------------------------------------------------------- rendering -- */
@@ -352,7 +379,9 @@
     fav.width = 20; fav.height = 20;
     fav.loading = "lazy";
     fav.decoding = "async";
-    fav.src = S.faviconFor(r.url);
+    var favSrc = S.faviconFor(url || r.url);
+    if (favSrc) fav.src = favSrc;
+    else fav.style.visibility = "hidden";
     /* CSP forbids inline onerror=, so hide broken favicons from here */
     fav.addEventListener("error", function () { fav.style.visibility = "hidden"; });
 
@@ -528,15 +557,19 @@
     setStatus("Fetching results…");
     global.scrollTo(0, 0);
 
-    /* cancel whatever was still in flight — the user moved on */
-    if (inflight) { try { inflight.abort(); } catch (e) {} }
+    /* cancel whatever was still in flight for this tab — the user moved on */
+    abortTab(tab.id);
+    var myReq = ++reqSeq;
+    reqByTab[tab.id] = myReq;
     var ctrl = ("AbortController" in global) ? new AbortController() : null;
-    inflight = ctrl;
+    if (ctrl) inflightByTab[tab.id] = ctrl;
 
     var env;
     try {
       env = await S.search(q, { signal: ctrl ? ctrl.signal : undefined, fresh: !!(opts && opts.fresh) });
     } catch (e) {
+      if (inflightByTab[tab.id] === ctrl) delete inflightByTab[tab.id];
+      if (reqByTab[tab.id] !== myReq) return null;
       var aborted = e && (e.name === "AbortError");
       tab.loading = false;
       renderTabs();
@@ -548,10 +581,10 @@
       };
     }
 
-    if (inflight === ctrl) inflight = null;
+    if (inflightByTab[tab.id] === ctrl) delete inflightByTab[tab.id];
 
     /* a newer search may have replaced this tab's query while we awaited */
-    if (tab.query !== q) return null;
+    if (reqByTab[tab.id] !== myReq || tab.query !== q) return null;
 
     tab.loading = false;
     tab.envelope = env;
@@ -563,6 +596,8 @@
   /* -------------------------------------------------------------- wiring - */
 
   function wire() {
+    if (wired) return;
+    wired = true;
     if (els.pxTabs) {
       els.pxTabs.addEventListener("click", function (ev) {
         var closeEl = ev.target.closest ? ev.target.closest(".px-tabitem__close") : null;
@@ -612,6 +647,7 @@
       if (ev.key === "Escape" && els.pxStage && els.pxStage.getAttribute("data-view") === "results") {
         var input = els.pxOmniInput;
         if (input && doc.activeElement === input) return;  /* let blur close suggest */
+        if (doc.querySelector(".px-panel.is-open, .px-modal.is-open, .px-lightbox.is-open, .px-suggest.is-open")) return;
         var blank = null;
         tabs.forEach(function (t) { if (!blank && t.kind === "new") blank = t; });
         switchTo(blank ? blank.id : newTab().id);
@@ -621,6 +657,7 @@
 
   var PIKResults = {
     init: function () {
+      S = S || global.PIKSearch;
       cacheEls();
       if (!tabs.length) {
         /* adopt the static tab already in the markup so the strip is not empty
@@ -637,6 +674,7 @@
     },
     run: run,
     newTab: newTab,
+    resetAll: resetAll,
     /* exposed so pikx.js can hand off a submitted query */
     isUrl: function (v) { return S ? S.isUrl(v) : false; },
     toUrl: function (v) { return S ? S.toUrl(v) : v; },

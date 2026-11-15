@@ -6,16 +6,18 @@
     display: grid;
     place-items: center;
     padding: var(--pik-sp-4);
-    background: rgba(5,5,5,0.62);
+    background: rgba(0, 0, 0, 0.66);
     backdrop-filter: blur(var(--pik-blur-sm));
     -webkit-backdrop-filter: blur(var(--pik-blur-sm));
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--pik-med) var(--pik-ease-out);
+    transition: opacity var(--pik-med) var(--pik-ease-out), visibility var(--pik-med);
   }
 
   .modal-backdrop.is-open {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
   }
 
@@ -44,7 +46,8 @@
     display: grid;
     place-items: center;
     color: var(--pik-muted);
-    border: 1px solid var(--pik-glass-line-soft);
+    background: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line);
     transition: color var(--pik-fast), transform var(--pik-fast) var(--pik-ease-spring);
   }
 
@@ -63,7 +66,7 @@
 
   .toast-stack {
     position: fixed;
-    inset-block-start: calc(var(--pik-header-h) + var(--pik-sp-3));
+    inset-block-start: calc(var(--pik-header-h) + var(--pik-sp-2));
     inset-inline: 0;
     z-index: var(--pik-z-toast);
     display: grid;
@@ -80,12 +83,12 @@
     gap: 0.85rem;
     inline-size: min(520px, 100%);
     padding: 0.95rem 1.1rem;
-    border-radius: var(--pik-r-md);
+    border-radius: var(--pik-r-lg);
     background: var(--pik-glass-bg-solid);
     border: 1px solid var(--pik-glass-line);
-    backdrop-filter: blur(var(--pik-blur-md));
-    -webkit-backdrop-filter: blur(var(--pik-blur-md));
-    box-shadow: var(--pik-shadow-deep);
+    backdrop-filter: var(--pik-liquid-filter-lg);
+    -webkit-backdrop-filter: var(--pik-liquid-filter-lg);
+    box-shadow: var(--pik-shadow-deep), var(--pik-shadow-inset);
     transform-origin: top center;
     animation: toast-in var(--pik-med) var(--pik-ease-spring) both;
   }
@@ -123,22 +126,18 @@
     border-radius: var(--pik-r-xs);
     display: grid;
     place-items: center;
-    background: color-mix(in srgb, var(--tc, var(--pik-accent)) 18%, transparent);
-    border: 1px solid color-mix(in srgb, var(--tc, var(--pik-accent)) 40%, transparent);
-    color: var(--tc, var(--pik-accent));
+    background: var(--pik-glass-bg-strong);
+    border: 1px solid var(--pik-glass-line-strong);
+    box-shadow: var(--pik-shadow-inset);
+    color: var(--pik-ink);
   }
 
-  .toast--info {
-    --tc: var(--pik-cyan);
-  }
-  .toast--success {
-    --tc: var(--pik-lime);
-  }
-  .toast--warn {
-    --tc: var(--pik-amber);
-  }
+  .toast--info,
+  .toast--success,
+  .toast--ok,
+  .toast--warn,
   .toast--feature {
-    --tc: var(--pik-accent-alt);
+    --tc: var(--pik-ink);
   }
 
   .toast__body {
@@ -160,6 +159,7 @@
 
   .toast__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-block-start: 0.5rem;
   }
@@ -169,7 +169,7 @@
     color: var(--pik-faint);
     font-size: 1.1rem;
     line-height: 1;
-    padding: 0.2rem 0.35rem;
+    padding: 0.2rem 0.4rem;
     border-radius: var(--pik-r-xs);
   }
 
@@ -184,10 +184,10 @@
     inline-size: min(480px, 100%);
     z-index: var(--pik-z-modal);
     background: var(--pik-glass-bg-solid);
-    backdrop-filter: blur(var(--pik-blur-lg));
-    -webkit-backdrop-filter: blur(var(--pik-blur-lg));
+    backdrop-filter: var(--pik-liquid-filter-lg);
+    -webkit-backdrop-filter: var(--pik-liquid-filter-lg);
     border-inline-start: 1px solid var(--pik-glass-line);
-    box-shadow: var(--pik-shadow-deep);
+    box-shadow: var(--pik-shadow-deep), var(--pik-shadow-inset);
     transform: translateX(102%);
     transition: transform var(--pik-slow) var(--pik-ease-out);
     overflow-y: auto;
@@ -208,11 +208,11 @@
     inset-block-end: calc(100% + 8px);
     inset-inline-start: 50%;
     transform: translate(-50%, 6px);
-    padding: 0.35rem 0.6rem;
+    padding: 0.35rem 0.65rem;
     border-radius: var(--pik-r-xs);
-    background: var(--pik-space-600);
-    border: 1px solid var(--pik-glass-line-soft);
-    color: var(--pik-ink-soft);
+    background: var(--pik-glass-bg-solid);
+    border: 1px solid var(--pik-glass-line);
+    color: var(--pik-ink);
     font-family: var(--pik-font-mono);
     font-size: 0.68rem;
     white-space: nowrap;

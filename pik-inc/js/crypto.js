@@ -106,13 +106,24 @@
 
   /* ---- Device master key -------------------------------------------------- */
   var DEV_KEY_NAME = "pik.nexus.device.secret";
+  var _memDeviceSecret = null;
+
+  function randomBytes(len) {
+    var out = new Uint8Array(len);
+    if (global.crypto && typeof crypto.getRandomValues === "function") {
+      return crypto.getRandomValues(out);
+    }
+    for (var i = 0; i < len; i++) out[i] = Math.floor(Math.random() * 256);
+    return out;
+  }
 
   function getDeviceSecret() {
-    var s = localStorage.getItem(DEV_KEY_NAME);
+    var s = null;
+    try { s = localStorage.getItem(DEV_KEY_NAME); } catch (e) { s = _memDeviceSecret; }
     if (!s) {
-      var raw = crypto.getRandomValues(new Uint8Array(32));
-      s = b64(raw);
-      localStorage.setItem(DEV_KEY_NAME, s);
+      s = b64(randomBytes(32));
+      _memDeviceSecret = s;
+      try { localStorage.setItem(DEV_KEY_NAME, s); } catch (e) {}
     }
     return s;
   }
@@ -136,7 +147,7 @@
 
   /* ---- AES-GCM encrypt/decrypt ------------------------------------------- */
   async function encryptJson(obj) {
-    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var iv = randomBytes(12);
     var plain = enc.encode(JSON.stringify(obj));
     var master = await deriveMaster();
     var cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, master, plain);
@@ -165,22 +176,23 @@
       }
     },
     async get(key) {
-      var raw = localStorage.getItem(key);
+      var raw = null;
+      try { raw = localStorage.getItem(key); } catch (e) { return null; }
       if (!raw) return null;
-      try {
-        var parsed = JSON.parse(raw);
-        if (parsed && parsed.alg === "AES-256-GCM") {
-          // integrity check before decrypting
+      var parsed;
+      try { parsed = JSON.parse(raw); } catch (_) { return raw; }
+      if (parsed && parsed.alg === "AES-256-GCM") {
+        try {
           var expect = await sha256(parsed.data);
           if (expect !== parsed.digest) throw new Error("digest mismatch");
           return await decryptJson(parsed);
+        } catch (e) {
+          return null;
         }
-        return parsed;
-      } catch (e) {
-        try { return JSON.parse(raw); } catch (_) { return raw; }
       }
+      return parsed;
     },
-    del(key) { localStorage.removeItem(key); }
+    del(key) { try { localStorage.removeItem(key); } catch (e) {} }
   };
 
   /* ---- Synchronous secrets (used by fetch headers) -------------------------
@@ -196,7 +208,8 @@
   }
   async function saveSecret(name, value) {
     _memSecrets[name] = value || null;
-    if (value) await SecureStore.set(name, value); else localStorage.removeItem(name);
+    if (value) await SecureStore.set(name, value);
+    else { try { localStorage.removeItem(name); } catch (e) {} }
   }
   function peekSecret(name) { return _memSecrets[name] || null; }
   function lockSecrets() { _memSecrets = {}; }

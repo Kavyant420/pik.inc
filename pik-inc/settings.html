@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data: https://fonts.gstatic.com;">
 <meta name="referrer" content="no-referrer">
 <title>Settings · PIK · PIK Inc.</title>
-<meta name="description" content="Customize PIK: themes, density, the NCS-style ambient soundtrack, anonymity routes and local data purging.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%234fe3c1' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%234fe3c1'/%3E%3C/svg%3E">
+<meta name="description" content="Customize PIK: monochrome Liquid Glass finishes, density, the NCS-style ambient soundtrack, anonymity routes and local data purging.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 27V7h11a6 6 0 0 1 0 12H12' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="./css/00-tokens.css">
@@ -47,7 +47,7 @@
     <div class="stack stack--tight">
       <p class="u-eyebrow reveal">CUSTOMIZE PIK</p>
       <h1 class="u-display">Your studio, your rules</h1>
-      <p class="u-lede reveal">Themes, density, the ambient NCS soundtrack and the anonymity layer — every preference is saved locally and applied instantly.</p>
+      <p class="u-lede reveal">Liquid Glass finishes, density, the ambient NCS soundtrack and the anonymity layer — every preference is saved locally and applied instantly.</p>
     </div>
     <span class="saved-flash chip" role="status">Saved ✓</span>
   </div>
@@ -67,10 +67,10 @@
     <section class="setting-group card glass" id="appearance">
       <div class="setting-group__head">
         <h2 class="setting-group__title">Appearance</h2>
-        <p class="setting-group__desc">Six curated themes built on the same glass system. Daylight flips the whole substrate to a light palette.</p>
+        <p class="setting-group__desc">Six monochrome iOS 26 Liquid Glass finishes. Alabaster flips the substrate to a crisp pearl light-glass palette.</p>
       </div>
-      <div class="swatches"><button class="swatch swatch--midnight" type="button" data-theme-set="midnight" aria-label="Midnight theme"><span class="sr-only">Midnight</span></button><button class="swatch swatch--aurora" type="button" data-theme-set="aurora" aria-label="Aurora theme"><span class="sr-only">Aurora</span></button><button class="swatch swatch--nebula" type="button" data-theme-set="nebula" aria-label="Nebula theme"><span class="sr-only">Nebula</span></button><button class="swatch swatch--ember" type="button" data-theme-set="ember" aria-label="Ember theme"><span class="sr-only">Ember</span></button><button class="swatch swatch--tide" type="button" data-theme-set="tide" aria-label="Tide theme"><span class="sr-only">Tide</span></button><button class="swatch swatch--daylight" type="button" data-theme-set="daylight" aria-label="Daylight theme"><span class="sr-only">Daylight</span></button></div>
-<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Density</span><span class="setting-row__hint">Compact packs more per screen; roomy gives the glass space to breathe.</span></span><select class="input" data-density-select><option value="normal">Normal</option><option value="compact">Compact</option><option value="roomy">Roomy</option></select></div>
+      <div class="swatches"><button class="swatch swatch--midnight is-active" type="button" data-theme-set="midnight" aria-pressed="true" aria-label="Obsidian Midnight finish"><span class="sr-only">Obsidian Midnight</span></button><button class="swatch swatch--aurora" type="button" data-theme-set="aurora" aria-pressed="false" aria-label="Liquid Mercury finish"><span class="sr-only">Liquid Mercury</span></button><button class="swatch swatch--nebula" type="button" data-theme-set="nebula" aria-pressed="false" aria-label="Smoked Graphite finish"><span class="sr-only">Smoked Graphite</span></button><button class="swatch swatch--ember" type="button" data-theme-set="ember" aria-pressed="false" aria-label="Brushed Titanium finish"><span class="sr-only">Brushed Titanium</span></button><button class="swatch swatch--tide" type="button" data-theme-set="tide" aria-pressed="false" aria-label="Pure Chrome finish"><span class="sr-only">Pure Chrome</span></button><button class="swatch swatch--daylight" type="button" data-theme-set="daylight" aria-pressed="false" aria-label="Alabaster Pearl light finish"><span class="sr-only">Alabaster Pearl</span></button></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Density</span><span class="setting-row__hint">Compact packs more per screen; roomy gives the glass space to breathe.</span></span><select class="input" data-density-select aria-label="Interface density"><option value="normal">Normal</option><option value="compact">Compact</option><option value="roomy">Roomy</option></select></div>
     </section>
 
     <section class="setting-group card glass" id="audio">
@@ -78,7 +78,7 @@
         <h2 class="setting-group__title">Audio &amp; music</h2>
         <p class="setting-group__desc">The site-wide ambience is synthesised live in your browser with the Web Audio API — no audio files, no streaming requests, nothing that could be logged about you. The playlist leans into NoCopyrightSounds-style electronica so it stays safe for shared screens and streams.</p>
       </div>
-<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Enable music</span><span class="setting-row__hint">Master switch. Off means the synth never starts an oscillator.</span></span><label class="switch"><input type="checkbox" data-setting-input="audioEnabled" role="switch"><span class="switch__track"></span><span class="sr-only">Enable music</span></label></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Enable music</span><span class="setting-row__hint">Master switch. Off means the synth never starts an oscillator.</span></span><label class="switch" aria-checked="true"><input type="checkbox" data-setting-input="audioEnabled" data-audio-enable role="switch" aria-checked="true" checked><span class="switch__track"></span><span class="sr-only">Enable music</span></label></div>
       <div class="setting-row">
         <span class="setting-row__label"><span class="setting-row__name">Volume</span>
         <span class="setting-row__hint">Applies to the whole mix bus.</span></span>
@@ -87,7 +87,7 @@
           <span class="value-readout" data-audio-volume-out>35%</span>
         </span>
       </div>
-<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Mute</span><span class="setting-row__hint">Silences instantly without forgetting your level.</span></span><label class="switch"><input type="checkbox" data-setting-input="audioMute" role="switch"><span class="switch__track"></span><span class="sr-only">Mute</span></label></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Mute</span><span class="setting-row__hint">Silences instantly without forgetting your level.</span></span><label class="switch" aria-checked="false"><input type="checkbox" data-setting-input="audioMute" data-audio-mute role="switch" aria-checked="false"><span class="switch__track"></span><span class="sr-only">Mute</span></label></div>
       <div class="hash-preview">
         <h3 class="u-h3">NCS-style playlist</h3>
         <div class="kv-list" data-audio-tracks></div>
@@ -116,8 +116,8 @@
         <h2 class="setting-group__title">Motion &amp; effects</h2>
         <p class="setting-group__desc">Background canvas, tilt and reveals respect prefers-reduced-motion automatically; these switches are for taste.</p>
       </div>
-<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Background effects</span><span class="setting-row__hint">Gradient mesh, particle canvas and grain overlay.</span></span><label class="switch"><input type="checkbox" data-setting-input="fx" role="switch"><span class="switch__track"></span><span class="sr-only">Background effects</span></label></div>
-<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Lite mode</span><span class="setting-row__hint">Disables blur, glow and canvas entirely for low-power machines.</span></span><label class="switch"><input type="checkbox" data-setting-input="perf-lite" role="switch"><span class="switch__track"></span><span class="sr-only">Lite mode</span></label></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Background effects</span><span class="setting-row__hint">Ambient monochrome mesh, particle canvas and grain overlay.</span></span><label class="switch" aria-checked="true"><input type="checkbox" data-setting-input="fx" data-fx-toggle role="switch" aria-checked="true" checked><span class="switch__track"></span><span class="sr-only">Background effects</span></label></div>
+<div class="setting-row"><span class="setting-row__label"><span class="setting-row__name">Lite mode</span><span class="setting-row__hint">Reduces blur radius and disables particle canvas for low-power machines.</span></span><label class="switch" aria-checked="false"><input type="checkbox" data-setting-input="perf-lite" data-perf-toggle role="switch" aria-checked="false"><span class="switch__track"></span><span class="sr-only">Lite mode</span></label></div>
     </section>
 
     <section class="setting-group card glass danger-zone" id="danger">

@@ -2,45 +2,53 @@
   .product-grid {
     display: grid;
     gap: var(--pik-sp-5);
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   }
 
   .product-card {
     position: relative;
     display: grid;
     gap: var(--pik-sp-3);
-    padding: clamp(1.2rem, 2.6vw, 1.7rem);
+    padding: clamp(1.25rem, 2.6vw, 1.75rem);
     border-radius: var(--pik-r-lg);
     overflow: hidden;
     transform-style: preserve-3d;
   }
 
   .product-card__glyph {
-    inline-size: 58px;
-    block-size: 58px;
+    inline-size: 56px;
+    block-size: 56px;
     border-radius: var(--pik-r-sm);
     display: grid;
     place-items: center;
     background: linear-gradient(
       145deg,
-      color-mix(in srgb, var(--pc, var(--pik-accent)) 30%, transparent),
-      color-mix(in srgb, var(--pc, var(--pik-accent)) 6%, transparent)
+      rgba(255, 255, 255, 0.16),
+      rgba(255, 255, 255, 0.04)
     );
-    border: 1px solid color-mix(in srgb, var(--pc, var(--pik-accent)) 40%, transparent);
-    color: color-mix(in srgb, var(--pc, var(--pik-accent)) 90%, white);
-    transform: translateZ(30px);
+    border: 1px solid var(--pik-glass-line-strong);
+    box-shadow: var(--pik-shadow-inset);
+    color: var(--pik-ink);
+    transform: translateZ(26px);
+  }
+
+  [data-theme="daylight"] .product-card__glyph,
+  [data-theme="light"] .product-card__glyph {
+    background: linear-gradient(145deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.02));
   }
 
   .product-card__glyph svg {
-    inline-size: 26px;
-    block-size: 26px;
+    inline-size: 25px;
+    block-size: 25px;
   }
 
   .product-card__name {
     font-family: var(--pik-font-display);
     font-size: var(--pik-step-2);
+    font-weight: 600;
     letter-spacing: -0.02em;
-    transform: translateZ(20px);
+    color: var(--pik-ink);
+    transform: translateZ(18px);
   }
 
   .product-card__desc {
@@ -57,7 +65,7 @@
     margin-block-start: auto;
     padding-block-start: var(--pik-sp-3);
     border-block-start: 1px solid var(--pik-glass-line-soft);
-    transform: translateZ(16px);
+    transform: translateZ(14px);
   }
 
   .product-card__watermark {
@@ -66,11 +74,11 @@
     inset-block-end: -0.28em;
     font-family: var(--pik-font-display);
     font-weight: 700;
-    font-size: 6.5rem;
+    font-size: 6.2rem;
     line-height: 1;
     letter-spacing: -0.05em;
     color: transparent;
-    -webkit-text-stroke: 1px color-mix(in srgb, var(--pc, var(--pik-accent)) 18%, transparent);
+    -webkit-text-stroke: 1px var(--pik-glass-line-soft);
     pointer-events: none;
     user-select: none;
   }
@@ -80,20 +88,17 @@
     position: absolute;
     inset-block-start: 0;
     inset-inline: 0;
-    block-size: 2px;
-    background: linear-gradient(90deg, transparent, var(--pc, var(--pik-accent)), transparent);
+    block-size: 1.5px;
+    background: linear-gradient(90deg, transparent, var(--pik-ink), transparent);
+    opacity: 0.75;
   }
 
   .product-card.is-soon {
-    opacity: 0.94;
-  }
-
-  .product-card.is-soon .product-card__glyph {
-    filter: saturate(0.6);
+    opacity: 0.92;
   }
 
   .product-card:hover {
-    border-color: color-mix(in srgb, var(--pc, var(--pik-accent)) 40%, var(--pik-glass-line));
+    border-color: var(--pik-glass-line-strong);
   }
 
   .product-spotlight {
@@ -115,13 +120,14 @@
     border-radius: var(--pik-r-md);
     overflow: hidden;
     aspect-ratio: 16 / 10;
-    background: linear-gradient(160deg, #0f0f0f, #0a0a0a 60%, #111111);
+    background: linear-gradient(160deg, #111111, #050505 60%, #0d0d0d);
     border: 1px solid var(--pik-glass-line);
-    box-shadow: var(--pik-shadow-deep);
+    box-shadow: var(--pik-shadow-deep), var(--pik-shadow-inset);
   }
 
-  [data-theme="daylight"] .screen {
-    background: linear-gradient(160deg, #e5e5e5, #d6d6d6);
+  [data-theme="daylight"] .screen,
+  [data-theme="light"] .screen {
+    background: linear-gradient(160deg, #f0f0f0, #dfdfdf);
   }
 
   .screen__chrome {
@@ -131,6 +137,11 @@
     padding: 0.55rem 0.8rem;
     background: rgba(255, 255, 255, 0.05);
     border-block-end: 1px solid var(--pik-glass-line-soft);
+  }
+
+  [data-theme="daylight"] .screen__chrome,
+  [data-theme="light"] .screen__chrome {
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .screen__dot {
@@ -144,42 +155,54 @@
     margin-inline-start: 0.6rem;
     font-family: var(--pik-font-mono);
     font-size: 0.68rem;
-    color: var(--pik-faint);
+    color: var(--pik-muted);
     padding: 0.15rem 0.7rem;
     border-radius: var(--pik-r-pill);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  [data-theme="daylight"] .screen__url,
+  [data-theme="light"] .screen__url {
+    background: rgba(0, 0, 0, 0.06);
   }
 
   .screen__body {
     padding: 1rem;
     display: grid;
     gap: 0.7rem;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .poster {
-    aspect-ratio: 2 / 3;
-    border-radius: 8px;
-    background-image: linear-gradient(
+    aspect-ratio: 16 / 10;
+    border-radius: 10px;
+    background-image:
+      linear-gradient(
         150deg,
-        color-mix(in srgb, var(--pc, var(--pik-aqua)) 55%, transparent),
-        color-mix(in srgb, var(--pik-violet) 30%, transparent)
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.04)
       ),
-      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 6px, transparent 6px 12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 6px, transparent 6px 12px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.3);
     animation: poster-lift 6s var(--pik-ease-in-out) infinite;
   }
 
+  [data-theme="daylight"] .poster,
+  [data-theme="light"] .poster {
+    background-image:
+      linear-gradient(150deg, rgba(255, 255, 255, 0.9), rgba(200, 200, 200, 0.45)),
+      repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.03) 0 6px, transparent 6px 12px);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
   .poster:nth-child(2n) {
-    --pc: var(--pik-rose);
     animation-delay: -1.5s;
   }
   .poster:nth-child(3n) {
-    --pc: var(--pik-cyan);
     animation-delay: -3s;
   }
   .poster:nth-child(4n) {
-    --pc: var(--pik-amber);
     animation-delay: -4.5s;
   }
 
@@ -189,7 +212,7 @@
       transform: translateY(0) scale(1);
     }
     50% {
-      transform: translateY(-6px) scale(1.02);
+      transform: translateY(-5px) scale(1.015);
     }
   }
 
@@ -219,7 +242,13 @@
     inset-block: -10px;
     inset-inline-start: 50%;
     inline-size: 1px;
-    background: linear-gradient(180deg, transparent, var(--pik-glass-line) 18%, var(--pik-glass-line) 82%, transparent);
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--pik-glass-line) 18%,
+      var(--pik-glass-line) 82%,
+      transparent
+    );
     transform: translateX(-50%);
   }
 
@@ -241,14 +270,11 @@
     z-index: 1;
   }
 
-  .roadmap__item.is-done .roadmap__dot {
-    border-color: var(--pik-lime);
-    background: var(--pik-lime);
-  }
-
+  .roadmap__item.is-done .roadmap__dot,
   .roadmap__item.is-now .roadmap__dot {
-    border-color: var(--pik-accent);
-    background: var(--pik-accent);
+    border-color: var(--pik-ink);
+    background: var(--pik-ink);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--pik-ink) 45%, transparent);
   }
 
   .roadmap__title {
@@ -276,7 +302,7 @@
     block-size: 100%;
     inline-size: var(--value, 40%);
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--pik-accent), var(--pik-accent-alt));
+    background: linear-gradient(90deg, var(--pik-ink), var(--pik-accent-alt));
     transition: inline-size var(--pik-slow) var(--pik-ease-out);
   }
 

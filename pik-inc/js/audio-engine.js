@@ -18,22 +18,32 @@ const PIKAudio = (() => {
   let step = 0;
   let nextTime = 0;
   let state = loadState();
-  let listeners = [];
+  const listeners = [];
 
   function loadState() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) return Object.assign({ volume: 0.35, trackId: "spectrum", muted: false, enabled: true }, JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return Object.assign({ volume: 0.35, trackId: "spectrum", muted: false, enabled: true }, parsed);
+      }
     } catch (e) {}
     return { volume: 0.35, trackId: "spectrum", muted: false, enabled: true };
   }
 
   function saveState() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {}
   }
 
   function emit() {
-    listeners.forEach(fn => fn(publicView()));
+    const view = publicView();
+    listeners.forEach(fn => {
+      try {
+        fn(view);
+      } catch (e) {}
+    });
   }
 
   function publicView() {
@@ -55,26 +65,33 @@ const PIKAudio = (() => {
     if (ctx) return ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
-    ctx = new AC();
-    master = ctx.createGain();
-    master.gain.value = 0;
-    comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -18;
-    comp.ratio.value = 6;
-    analyser = ctx.createAnalyser();
-    analyser.fftSize = 128;
-    master.connect(comp);
-    comp.connect(analyser);
-    analyser.connect(ctx.destination);
-    const len = ctx.sampleRate * 1;
-    noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const data = noiseBuf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-    return ctx;
+    try {
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0;
+      comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -18;
+      comp.ratio.value = 6;
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 128;
+      master.connect(comp);
+      comp.connect(analyser);
+      analyser.connect(ctx.destination);
+      const len = ctx.sampleRate * 1;
+      noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      return ctx;
+    } catch (e) {
+      ctx = null;
+      return null;
+    }
   }
 
   function setVolume(v) {
-    state.volume = Math.min(1, Math.max(0, v));
+    const num = Number(v);
+    if (!Number.isFinite(num)) return;
+    state.volume = Math.min(1, Math.max(0, num));
     if (state.volume > 0) state.muted = false;
     applyGain();
     saveState();
@@ -82,16 +99,15 @@ const PIKAudio = (() => {
   }
 
   function toggleMute(force) {
-    state.muted = force !== undefined ? force : !state.muted;
+    state.muted = force !== undefined ? !!force : !state.muted;
     applyGain();
     saveState();
     emit();
   }
 
   function setEnabled(on) {
-    state.enabled = on;
-    if (!on) stopClock();
-    else if (userWantsPlaying()) startClock();
+    state.enabled = !!on;
+    if (!state.enabled) stopClock();
     applyGain();
     saveState();
     emit();
@@ -102,24 +118,27 @@ const PIKAudio = (() => {
     state.trackId = id;
     step = 0;
     saveState();
-    if (timer) { stopClock(); startClock(); }
+    if (timer) {
+      stopClock();
+      startClock();
+    }
     emit();
   }
 
   function applyGain() {
     if (!ctx || !master) return;
-    const target = (state.muted || !state.enabled) ? 0 : state.volume * 0.9;
-    master.gain.setTargetAtTime(target, ctx.currentTime, 0.15);
-  }
-
-  function userWantsPlaying() {
-    return state.enabled && !state.muted;
+    try {
+      const target = state.muted || !state.enabled || !timer ? 0 : state.volume * 0.9;
+      master.gain.setTargetAtTime(target, ctx.currentTime, 0.12);
+    } catch (e) {}
   }
 
   function play() {
     const c = ensureCtx();
     if (!c) return;
-    if (c.state === "suspended") c.resume();
+    if (c.state === "suspended") {
+      c.resume().catch(() => {});
+    }
     state.muted = false;
     state.enabled = true;
     saveState();
@@ -130,6 +149,7 @@ const PIKAudio = (() => {
 
   function pause() {
     stopClock();
+    applyGain();
     saveState();
     emit();
   }
@@ -143,7 +163,9 @@ const PIKAudio = (() => {
     if (timer) return;
     const c = ensureCtx();
     if (!c) return;
-    if (c.state === "suspended") c.resume();
+    if (c.state === "suspended") {
+      c.resume().catch(() => {});
+    }
     nextTime = c.currentTime + 0.06;
     timer = setInterval(scheduler, 60);
     applyGain();
@@ -156,9 +178,14 @@ const PIKAudio = (() => {
 
   function scheduler() {
     const c = ctx;
+    if (!c || c.state === "suspended") return;
     const track = currentTrack();
     const spb = 60 / track.bpm;
     const stepDur = spb / 4;
+    /* Prevent oscillator catch-up burst when returning from a backgrounded tab */
+    if (nextTime < c.currentTime - 0.12) {
+      nextTime = c.currentTime + 0.05;
+    }
     while (nextTime < c.currentTime + 0.22) {
       scheduleStep(track, step, nextTime, stepDur);
       step = (step + 1) % 64;
@@ -173,7 +200,7 @@ const PIKAudio = (() => {
   function scheduleStep(track, s, t, dur) {
     const bar = Math.floor(s / 16);
     const beat = s % 16;
-    const chords = [[0, 3, 7], [ -2, 3, 5], [5, 9, 12], [3, 7, 10]];
+    const chords = [[0, 3, 7], [-2, 3, 5], [5, 9, 12], [3, 7, 10]];
     const chord = chords[bar % chords.length];
 
     if (beat % 4 === 0) kick(t);
@@ -190,7 +217,7 @@ const PIKAudio = (() => {
     }
 
     if (bar >= 1 && beat % 8 === 0) {
-      leadPluck(t, midiToFreq(track.root * 4, chord[(s / 8 | 0) % chord.length] + (beat === 6 ? 12 : 0)));
+      leadPluck(t, midiToFreq(track.root * 4, chord[((s / 8) | 0) % chord.length] + (beat === 6 ? 12 : 0)));
     }
   }
 
@@ -202,8 +229,10 @@ const PIKAudio = (() => {
     o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
     g.gain.setValueAtTime(0.9, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
-    o.connect(g); g.connect(master);
-    o.start(t); o.stop(t + 0.26);
+    o.connect(g);
+    g.connect(master);
+    o.start(t);
+    o.stop(t + 0.26);
   }
 
   function snare(t) {
@@ -215,16 +244,21 @@ const PIKAudio = (() => {
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.4, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-    src.connect(bp); bp.connect(g); g.connect(master);
-    src.start(t); src.stop(t + 0.18);
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(master);
+    src.start(t);
+    src.stop(t + 0.18);
     const o = ctx.createOscillator();
     const og = ctx.createGain();
     o.type = "triangle";
     o.frequency.setValueAtTime(190, t);
     og.gain.setValueAtTime(0.22, t);
     og.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    o.connect(og); og.connect(master);
-    o.start(t); o.stop(t + 0.1);
+    o.connect(og);
+    og.connect(master);
+    o.start(t);
+    o.stop(t + 0.1);
   }
 
   function hat(t, level) {
@@ -237,8 +271,11 @@ const PIKAudio = (() => {
     const g = ctx.createGain();
     g.gain.setValueAtTime(level, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-    src.connect(hp); hp.connect(g); g.connect(master);
-    src.start(t); src.stop(t + 0.06);
+    src.connect(hp);
+    hp.connect(g);
+    g.connect(master);
+    src.start(t);
+    src.stop(t + 0.06);
   }
 
   function bass(t, freq, dur, wave) {
@@ -253,8 +290,11 @@ const PIKAudio = (() => {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(0.34, t + 0.02);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(lp); lp.connect(g); g.connect(master);
-    o.start(t); o.stop(t + dur + 0.05);
+    o.connect(lp);
+    lp.connect(g);
+    g.connect(master);
+    o.start(t);
+    o.stop(t + dur + 0.05);
   }
 
   function padChord(t, track, chord, dur) {
@@ -271,8 +311,11 @@ const PIKAudio = (() => {
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(0.07, t + 0.4);
       g.gain.linearRampToValueAtTime(0.0001, t + len);
-      o.connect(lp); lp.connect(g); g.connect(master);
-      o.start(t); o.stop(t + len + 0.1);
+      o.connect(lp);
+      lp.connect(g);
+      g.connect(master);
+      o.start(t);
+      o.stop(t + len + 0.1);
     });
   }
 
@@ -288,23 +331,47 @@ const PIKAudio = (() => {
     lp.type = "lowpass";
     lp.frequency.setValueAtTime(5200, t);
     lp.frequency.exponentialRampToValueAtTime(900, t + 0.4);
-    o.connect(lp); lp.connect(g); g.connect(master);
-    o.start(t); o.stop(t + 0.5);
+    o.connect(lp);
+    lp.connect(g);
+    g.connect(master);
+    o.start(t);
+    o.stop(t + 0.5);
   }
 
   function getSpectrum(arr) {
-    if (!analyser) return null;
+    if (!analyser || !timer || state.muted || !state.enabled) return null;
     analyser.getByteFrequencyData(arr);
     return arr;
   }
 
   function onChange(fn) {
-    listeners.push(fn);
+    if (typeof fn === "function") listeners.push(fn);
   }
 
-  document.addEventListener("click", function armOnce() {
-    if (ensureCtx() && ctx.state === "suspended") ctx.resume();
-  }, { capture: true });
+  /* Resume an already-created suspended AudioContext on user gesture */
+  function unlockGesture() {
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+  }
+  document.addEventListener("pointerdown", unlockGesture, { passive: true });
+  document.addEventListener("keydown", unlockGesture, { passive: true });
 
-  return { play, pause, toggle, setVolume, toggleMute, setEnabled, selectTrack, getSpectrum, onChange, getSettings: () => publicView(), TRACKS };
+  return {
+    play,
+    pause,
+    toggle,
+    setVolume,
+    toggleMute,
+    setEnabled,
+    selectTrack,
+    getSpectrum,
+    onChange,
+    getSettings: () => publicView(),
+    TRACKS
+  };
 })();
+
+if (typeof window !== "undefined") {
+  window.PIKAudio = PIKAudio;
+}

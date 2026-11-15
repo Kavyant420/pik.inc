@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://pikuflix.vercel.app; connect-src 'self'; font-src 'self' data: https://fonts.gstatic.com;">
+<meta name="referrer" content="no-referrer">
+<title>Singularity · 3D Relativistic Black Hole — PIK Inc.</title>
+<meta name="description" content="Interactive WebGL general-relativistic black hole geodesic ray-marcher with Keplerian Doppler accretion disk, photon rings, and scroll-driven tidal spaghettification.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='7' fill='%23000000' stroke='%23ffffff' stroke-width='2.2'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='4.5' transform='rotate(-14 16 16)' fill='none' stroke='%23ffffff' stroke-width='1.8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./css/00-tokens.css">
+<link rel="stylesheet" href="./css/01-reset.css">
+<link rel="stylesheet" href="./css/02-typography.css">
+<link rel="stylesheet" href="./css/03-layout.css">
+<link rel="stylesheet" href="./css/04-glass-core.css">
+<link rel="stylesheet" href="./css/06-buttons.css">
+<link rel="stylesheet" href="./css/12b-blackhole.css">
+</head>
+
+<body class="bh-body" data-root="./" data-page="blackhole">
+<a class="skip-link" href="#main">Skip to gravitational descent</a>
+
+<canvas id="pik-blackhole-canvas" class="bh-canvas" aria-hidden="true"></canvas>
+
+<div class="bh-scroll-track" aria-hidden="true">
+  <div class="bh-scroll-fill"></div>
+</div>
+
+<div class="bh-topnav-wrap">
+  <header class="bh-topnav" role="banner">
+    <a class="bh-brand" href="./index.html" aria-label="PIK Inc. Studio Home">
+      <span class="bh-brand__ring" aria-hidden="true">
+        <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+          <circle cx="14" cy="14" r="5.6" fill="#000000" stroke="#ffffff" stroke-width="1.8"/>
+          <ellipse cx="14" cy="14" rx="12" ry="3.8" transform="rotate(-14 14 14)" stroke="#ffffff" stroke-width="1.5"/>
+        </svg>
+      </span>
+      <span>PIK <span class="bh-brand__sub">Singularity</span></span>
+    </a>
+
+    <span class="bh-nav-divider" aria-hidden="true"></span>
+
+    <nav class="bh-nav-links" aria-label="Primary navigation">
+      <a class="bh-nav-link" href="./index.html">Studio</a>
+      <a class="bh-nav-link" href="./pikx.html">PIKX App</a>
+      <a class="bh-nav-link" href="./products.html">Suite</a>
+      <a class="bh-nav-link" href="./security.html">Security</a>
+    </nav>
+
+    <div class="bh-nav-actions">
+      <button class="bh-pill-btn" type="button" data-bh-toggle-mode aria-pressed="false" title="Switch between NASA Relativistic Blackbody Spectrum and Pure Monochrome Singularity">
+        <span class="bh-mode-dot" aria-hidden="true"></span>
+        <span data-bh-mode-label>NASA Spectrum</span>
+      </button>
+      <button class="bh-pill-btn bh-pill-btn--solid" type="button" data-bh-plunge>
+        <span data-bh-plunge-label>Plunge to Horizon</span>
+      </button>
+    </div>
+  </header>
+</div>
+
+<aside class="bh-hud" aria-label="Live Relativistic Telemetry">
+  <div class="bh-hud__head">
+    <span class="bh-hud__title">
+      <span class="bh-hud__pulse" aria-hidden="true"></span>
+      Geodesic Telemetry
+    </span>
+    <span class="bh-hud__regime" data-bh-regime>Far-Field Orbit</span>
+  </div>
+
+  <div class="bh-hud__grid">
+    <div class="bh-hud__metric">
+      <span class="bh-hud__label">Distance r / r_s</span>
+      <span class="bh-hud__val" data-bh-dist>26.00 r_s</span>
+    </div>
+    <div class="bh-hud__metric">
+      <span class="bh-hud__label">Time Dilation dτ/dt</span>
+      <span class="bh-hud__val" data-bh-dilation>0.981 c</span>
+    </div>
+    <div class="bh-hud__metric">
+      <span class="bh-hud__label">Redshift z</span>
+      <span class="bh-hud__val" data-bh-redshift>+0.020</span>
+    </div>
+    <div class="bh-hud__metric">
+      <span class="bh-hud__label">Tidal Shear</span>
+      <span class="bh-hud__val" data-bh-shear>0.001 E0</span>
+    </div>
+    <div class="bh-hud__metric bh-hud__metric--wide">
+      <span class="bh-hud__label">Camera Inclination θ</span>
+      <span class="bh-hud__val" data-bh-inclination>12.2°</span>
+    </div>
+  </div>
+
+  <div class="bh-hud__milestones" role="group" aria-label="Orbital radius milestones">
+    <button class="bh-milestone-btn is-active" type="button" data-bh-jump="ms-25">25 r_s</button>
+    <button class="bh-milestone-btn" type="button" data-bh-jump="ms-12">12 r_s</button>
+    <button class="bh-milestone-btn" type="button" data-bh-jump="ms-6">6 r_s</button>
+    <button class="bh-milestone-btn" type="button" data-bh-jump="ms-3">3 r_s</button>
+    <button class="bh-milestone-btn" type="button" data-bh-jump="horizon">1.0 r_s</button>
+  </div>
+</aside>
+
+<main class="bh-main" id="main">
+
+  <!-- Milestone 1: 25 r_s Far-Field Lensing -->
+  <section class="bh-section bh-section--hero bh-section--left" id="ms-25" aria-labelledby="title-25">
+    <article class="bh-card bh-card--hero">
+      <p class="bh-eyebrow" data-gravity-text>
+        <span class="bh-eyebrow__tag">25 r_s</span>
+        Far-Field Gravitational Lensing
+      </p>
+      <h1 class="bh-title" id="title-25" data-gravity-text>
+        Where light bends and <span class="bh-gradient">nothing</span> leaks out.
+      </h1>
+      <p class="bh-lede" data-gravity-text>
+        At twenty-five Schwarzschild radii, curved Kerr-Schwarzschild spacetime already deflects every starlight photon passing the singularity. Scroll downward to plunge through the accretion disk—and watch every word on this page spiral, stretch, and spaghettify across the event horizon.
+      </p>
+      <div class="bh-formula-row">
+        <span class="bh-formula" data-gravity-text>d²u/dφ² + u = 1.5 r_s u²</span>
+        <span class="bh-formula" data-gravity-text>b_crit = 2.598 r_s</span>
+      </div>
+      <div class="bh-cta-row" data-no-gravity>
+        <button class="bh-pill-btn bh-pill-btn--solid" type="button" data-bh-jump="ms-12">Begin Orbital Descent ↓</button>
+        <a class="bh-pill-btn" href="./index.html">Back to PIK Studio</a>
+        <span class="bh-scroll-cue">Scroll to approach · Reversible</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Milestone 2: 12 r_s Einstein Ring Formation -->
+  <section class="bh-section bh-section--right" id="ms-12" aria-labelledby="title-12">
+    <article class="bh-card">
+      <p class="bh-eyebrow" data-gravity-text>
+        <span class="bh-eyebrow__tag">12 r_s</span>
+        Einstein Ring Formation
+      </p>
+      <h2 class="bh-title" id="title-12" data-gravity-text>
+        Starlight shears into luminous relativistic arcs.
+      </h2>
+      <p class="bh-lede" data-gravity-text>
+        Crossing twelve Schwarzschild radii, background galaxies and deep-space starfields align behind the gravitational well. Null geodesics grazing the potential barrier wrap around both hemispheres, duplicating distant stars into tangential Einstein rings and inverted secondary images skimming the shadow edge.
+      </p>
+      <div class="bh-formula-row">
+        <span class="bh-formula" data-gravity-text>Δφ = 4GM / (c² b)</span>
+        <span class="bh-formula" data-gravity-text>Secondary Image Parity: −1</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Milestone 3: 6 r_s ISCO & Relativistic Doppler Disk -->
+  <section class="bh-section bh-section--left" id="ms-6" aria-labelledby="title-6">
+    <article class="bh-card">
+      <p class="bh-eyebrow" data-gravity-text>
+        <span class="bh-eyebrow__tag">6 r_s</span>
+        ISCO &amp; Relativistic Doppler Disk
+      </p>
+      <h2 class="bh-title" id="title-6" data-gravity-text>
+        Keplerian plasma whipping at half the speed of light.
+      </h2>
+      <p class="bh-lede" data-gravity-text>
+        Inside six Schwarzschild radii lies the Innermost Stable Circular Orbit. Magnetohydrodynamic plasma differential shear accelerates as r⁻³ᐟ², while relativistic Doppler beaming amplifies observed intensity by g⁴—blazing incandescent platinum-white on the approaching limb and redshifting the receding flow into deep amber shadow.
+      </p>
+      <div class="bh-formula-row">
+        <span class="bh-formula" data-gravity-text>Ω(r) ∝ r^(−3/2)</span>
+        <span class="bh-formula" data-gravity-text>I_obs = g⁴ I_emit</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Milestone 4: 3 r_s Photon Sphere Capture -->
+  <section class="bh-section bh-section--right" id="ms-3" aria-labelledby="title-3">
+    <article class="bh-card">
+      <p class="bh-eyebrow" data-gravity-text>
+        <span class="bh-eyebrow__tag">3 r_s</span>
+        Photon Sphere Capture
+      </p>
+      <h2 class="bh-title" id="title-3" data-gravity-text>
+        Upper and lower arches crown the dark shadow.
+      </h2>
+      <p class="bh-lede" data-gravity-text>
+        Approaching the unstable photon sphere at 1.5 r_s, light emitted from the hidden far side of the accretion disk bends completely over and under the black hole—painting the towering upper and lower lensed arches. Multi-orbit grazing photons accumulate into razor-sharp primary and secondary photon sub-rings around the critical shadow.
+      </p>
+      <div class="bh-formula-row">
+        <span class="bh-formula" data-gravity-text>r_ph = 1.500 r_s</span>
+        <span class="bh-formula" data-gravity-text>n = 1, 2 Photon Sub-Rings</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Milestone 5: 1.0 r_s Event Horizon & Tidal Spaghettification -->
+  <section class="bh-section bh-section--center" id="ms-1" aria-labelledby="title-1">
+    <article class="bh-card">
+      <p class="bh-eyebrow" data-gravity-text>
+        <span class="bh-eyebrow__tag">1.0 r_s</span>
+        Event Horizon &amp; Tidal Spaghettification
+      </p>
+      <h2 class="bh-title" id="title-1" data-gravity-text>
+        Infinite redshift at the point of no return.
+      </h2>
+      <p class="bh-lede" data-gravity-text>
+        At the Schwarzschild radius r = r_s, light cones tip inward and time dilation approaches infinity. Steep r⁻³ radial tension elongates infalling matter while orthogonal compression squeezes it into a glowing filament—just as PIK hashes plaintext locally before a single byte ever crosses the wire.
+      </p>
+      <div class="bh-formula-row">
+        <span class="bh-formula" data-gravity-text>dτ/dt = √(1 − r_s/r) → 0</span>
+        <span class="bh-formula" data-gravity-text>Tidal Tensor Φ_ij ∝ r^(−3)</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Trailing Horizon Runway so Milestone 5 spaghettifies completely into the shadow -->
+  <div class="bh-horizon-runway">
+    <div class="bh-outro" data-no-gravity>
+      <span class="bh-outro__label">Horizon Reached · Scroll Up to Reverse Geodesics</span>
+      <button class="bh-pill-btn bh-pill-btn--solid" type="button" data-bh-plunge>
+        <span data-bh-plunge-label>Return to Orbit</span>
+      </button>
+      <a class="bh-pill-btn" href="./index.html">PIK Studio</a>
+      <a class="bh-pill-btn" href="./pikx.html">Open PIKX</a>
+    </div>
+  </div>
+
+</main>
+
+<script src="./js/perf.js" defer></script>
+<script src="./js/blackhole-gl.js" defer></script>
+</body>
+</html>

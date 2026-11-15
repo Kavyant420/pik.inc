@@ -5,13 +5,13 @@
   z-index: 60;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  padding: 1.4rem;
-  background-color: rgba(8,8,11,.82);
-  border-inline: 1px solid var(--px-line);
-  backdrop-filter: blur(var(--px-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--px-blur)) saturate(140%);
-  box-shadow: var(--px-shadow-deep);
+  gap: 1.15rem;
+  padding: 1.45rem;
+  background: linear-gradient(180deg, rgba(18,18,22,.82), rgba(4,4,6,.88));
+  border-inline: 1px solid rgba(255,255,255,.16);
+  backdrop-filter: blur(32px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08);
+  box-shadow: var(--px-shadow-deep), var(--px-inset);
   transform: translateX(105%);
   transition: transform var(--px-slow) var(--px-ease-out);
   overflow-y: auto;
@@ -27,14 +27,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  padding-bottom: .55rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
 .px-panel__title {
   font-family: var(--px-font-mono);
-  font-size: .7rem;
-  letter-spacing: .3em;
+  font-size: .72rem;
+  letter-spacing: .28em;
   text-transform: uppercase;
-  color: var(--px-dim);
+  color: #ffffff;
 }
 
 .px-panel__section {
@@ -44,7 +46,7 @@
 }
 
 .px-panel__label {
-  font-size: .72rem;
+  font-size: .7rem;
   font-family: var(--px-font-mono);
   letter-spacing: .18em;
   text-transform: uppercase;
@@ -55,9 +57,9 @@
   position: fixed;
   inset: 0;
   z-index: 55;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: rgba(0,0,0,.64);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--px-med) ease;

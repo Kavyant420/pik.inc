@@ -11,20 +11,16 @@
   border: 0;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
 .high-contrast .glass,
 .high-contrast .card,
 .high-contrast .panel {
-  background: rgb(8 9 14 / 96%);
-  border-color: rgb(255 255 255 / 30%);
+  background: rgba(6, 6, 6, 0.96);
+  border-color: rgba(255, 255, 255, 0.34);
 }
 
-.high-contrast body { color: #fff; }
+.high-contrast body {
+  color: #ffffff;
+}
 
 .skip-link:focus {
   position: fixed;
@@ -37,17 +33,19 @@
   clip: auto;
   clip-path: none;
   padding: var(--sp-3) var(--sp-5);
-  background: var(--surface-2);
+  background: var(--pik-glass-bg-solid);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--pik-r-pill);
   color: var(--text-hi);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .01ms !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
+    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
@@ -62,11 +60,11 @@
 
 kbd-key {
   font-family: var(--font-mono);
-  font-size: .75em;
+  font-size: 0.75em;
   padding: 2px 6px;
   border: 1px solid var(--line-strong);
   border-bottom-width: 2px;
   border-radius: 5px;
-  background: rgb(255 255 255 / 6%);
+  background: var(--pik-glass-bg);
   color: var(--text-mid);
 }

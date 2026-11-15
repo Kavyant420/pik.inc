@@ -6,7 +6,9 @@
 }
 
 @media (max-width: 960px) {
-  .doc-shell { grid-template-columns: 1fr; }
+  .doc-shell {
+    grid-template-columns: 1fr;
+  }
 }
 
 .doc-toc {
@@ -22,7 +24,7 @@
 .doc-toc-title {
   font-size: var(--fs-xs);
   text-transform: uppercase;
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
   color: var(--text-dim);
   margin-bottom: var(--sp-2);
 }
@@ -38,14 +40,14 @@
 }
 
 .doc-toc a:hover {
-  background: rgb(255 255 255 / 5%);
+  background: var(--pik-glass-bg);
   color: var(--text-hi);
 }
 
 .doc-toc a.active {
   border-left-color: var(--accent);
   color: var(--text-hi);
-  background: rgb(255 255 255 / 5%);
+  background: var(--pik-glass-bg-strong);
 }
 
 .doc-body {
@@ -63,7 +65,7 @@
 
 .doc-head h1 {
   font-size: clamp(1.8rem, 3.4vw, 2.6rem);
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .doc-meta {
@@ -108,7 +110,8 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
   border-left: 3px solid var(--accent);
-  background: rgb(255 255 255 / 4%);
+  background: var(--pik-glass-bg);
+  box-shadow: var(--pik-shadow-inset);
   font-size: var(--fs-sm);
   color: var(--text-mid);
 }
@@ -131,4 +134,13 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--sp-3);
+}
+
+.doc-footer-note a {
+  color: var(--text-hi);
+  transition: opacity var(--dur-2);
+}
+
+.doc-footer-note a:hover {
+  opacity: 0.78;
 }

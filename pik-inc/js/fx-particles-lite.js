@@ -44,7 +44,7 @@
         this._nodes.push({
           x: Math.random() * w(), y: Math.random() * h(),
           vx: (Math.random() - 0.5) * 0.18, vy: (Math.random() - 0.5) * 0.18,
-          r: 0.7 + Math.random() * 1.6, hue: Math.random() < 0.22 ? 168 : 265
+          r: 0.7 + Math.random() * 1.5, lum: Math.random() < 0.3 ? 96 : 80
         });
       }
 
@@ -88,8 +88,8 @@
           var dx = n[i].x - n[j].x, dy = n[i].y - n[j].y;
           var d2 = dx * dx + dy * dy;
           if (d2 < LINK_DIST * LINK_DIST) {
-            var a = (1 - Math.sqrt(d2) / LINK_DIST) * 0.16;
-            ctx.strokeStyle = "hsla(168,70%,60%," + a.toFixed(3) + ")";
+            var a = (1 - Math.sqrt(d2) / LINK_DIST) * 0.14;
+            ctx.strokeStyle = "rgba(255,255,255," + a.toFixed(3) + ")";
             ctx.beginPath();
             ctx.moveTo(n[i].x, n[i].y);
             ctx.lineTo(n[j].x, n[j].y);
@@ -100,7 +100,7 @@
       /* nodes */
       for (i = 0; i < n.length; i++) {
         var q = n[i];
-        ctx.fillStyle = "hsla(" + q.hue + ",80%,66%,0.5)";
+        ctx.fillStyle = "hsla(0,0%," + q.lum + "%,0.46)";
         ctx.beginPath();
         ctx.arc(q.x, q.y, q.r, 0, 6.2832);
         ctx.fill();

@@ -1,27 +1,37 @@
 @layer pik.motion {
-  .reveal {
+  .reveal,
+  .reveal--left,
+  .reveal--right,
+  .reveal--scale {
     opacity: 0;
-    transform: translate3d(0, 26px, -40px) rotateX(6deg);
-    transition: opacity var(--pik-slow) var(--pik-ease-out), transform var(--pik-slow) var(--pik-ease-out);
+    transform: translate3d(0, 22px, 0);
+    transition: opacity var(--pik-slow) var(--pik-ease-out),
+      transform var(--pik-slow) var(--pik-ease-out);
     transition-delay: var(--reveal-delay, 0ms);
-    will-change: opacity, transform;
-  }
-
-  .reveal.is-in {
-    opacity: 1;
-    transform: none;
   }
 
   .reveal--left {
-    transform: translate3d(-32px, 0, -30px);
+    transform: translate3d(-28px, 0, 0);
   }
 
   .reveal--right {
-    transform: translate3d(32px, 0, -30px);
+    transform: translate3d(28px, 0, 0);
   }
 
   .reveal--scale {
-    transform: scale(0.94) translateZ(-50px);
+    transform: scale(0.95);
+  }
+
+  .reveal.is-in,
+  .reveal.is-visible,
+  .reveal--left.is-in,
+  .reveal--left.is-visible,
+  .reveal--right.is-in,
+  .reveal--right.is-visible,
+  .reveal--scale.is-in,
+  .reveal--scale.is-visible {
+    opacity: 1;
+    transform: none;
   }
 
   .tilt-scene {
@@ -30,7 +40,14 @@
 
   .tilt {
     transform-style: preserve-3d;
-    transition: transform var(--pik-med) var(--pik-ease-out), box-shadow var(--pik-med);
+    transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform var(--pik-med) var(--pik-ease-out),
+      box-shadow var(--pik-med) var(--pik-ease-out),
+      border-color var(--pik-med) var(--pik-ease-out);
+  }
+
+  .card.tilt:hover {
+    transform: perspective(1000px) translateY(-3px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   }
 
   .tilt__layer {
@@ -46,22 +63,22 @@
     transform: translateZ(14px);
   }
 
-  .tilt::after {
+  .tilt::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     background: radial-gradient(
       420px circle at var(--mx, 50%) var(--my, 50%),
-      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.12),
       transparent 62%
     );
     opacity: 0;
-    transition: opacity var(--pik-med);
+    transition: opacity var(--pik-med) var(--pik-ease-out);
     pointer-events: none;
   }
 
-  .tilt:hover::after {
+  .tilt:hover::before {
     opacity: 1;
   }
 
@@ -164,7 +181,10 @@
     transform: scale(0.97);
   }
 
-  [data-perf="lite"] .reveal {
+  [data-perf="lite"] .reveal,
+  [data-perf="lite"] .reveal--left,
+  [data-perf="lite"] .reveal--right,
+  [data-perf="lite"] .reveal--scale {
     opacity: 1;
     transform: none;
     transition: none;
@@ -179,7 +199,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .reveal {
+    .reveal,
+    .reveal--left,
+    .reveal--right,
+    .reveal--scale {
       opacity: 1;
       transform: none;
       transition: none;

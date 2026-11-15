@@ -79,17 +79,28 @@
     async fetch(url, opts) {
       opts = opts || {};
       var tries = opts.tries || 3, delay = opts.delay || 600;
+      var reqOpts = {};
+      Object.keys(opts).forEach(function (k) {
+        if (k !== "tries" && k !== "delay") reqOpts[k] = opts[k];
+      });
       var lastErr;
       for (var i = 0; i < tries; i++) {
+        if (opts.signal && opts.signal.aborted) {
+          var ab = new Error("The operation was aborted.");
+          ab.name = "AbortError";
+          throw ab;
+        }
         try {
-          var res = await fetch(url, { signal: opts.signal });
+          var res = await fetch(url, reqOpts);
           if (res.ok || res.status < 500) return res;
           lastErr = new Error("HTTP " + res.status);
         } catch (e) {
           if (e && e.name === "AbortError") throw e;
           lastErr = e;
         }
-        await new Promise(function (r) { setTimeout(r, delay * Math.pow(2, i) + Math.random() * 200); });
+        if (i + 1 < tries) {
+          await new Promise(function (r) { setTimeout(r, delay * Math.pow(2, i) + Math.random() * 200); });
+        }
       }
       throw lastErr;
     }

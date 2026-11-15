@@ -1,40 +1,40 @@
 :root {
-  --px-void: #030304;
-  --px-black: #060608;
-  --px-coal: #0b0b0e;
-  --px-onyx: #121217;
-  --px-slate: #1a1a21;
+  --px-void: #000000;
+  --px-black: #040406;
+  --px-coal: #09090d;
+  --px-onyx: #111114;
+  --px-slate: #18181b;
 
-  --px-ink: #f1f2f4;
-  --px-dim: #a9abb2;
-  --px-faint: #6d6f77;
+  --px-ink: rgba(255,255,255,.94);
+  --px-dim: #d4d4d8;
+  --px-faint: #71717a;
 
-  --px-grey: #a3a3a3;
-  --px-dgrey: #515151;
-  --px-hi: #d9dade;
-  --px-lo: #363636;
+  --px-grey: #a1a1aa;
+  --px-dgrey: #52525b;
+  --px-hi: #ffffff;
+  --px-lo: #27272a;
 
-  --px-line: rgba(255,255,255,.08);
-  --px-line-hi: rgba(255,255,255,.18);
+  --px-line: rgba(255,255,255,.10);
+  --px-line-hi: rgba(255,255,255,.24);
 
-  --px-glass: rgba(255,255,255,.05);
-  --px-glass-strong: rgba(255,255,255,.09);
-  --px-glass-solid: rgba(10,10,13,.72);
-  --px-blur: 26px;
+  --px-glass: rgba(255,255,255,.055);
+  --px-glass-strong: rgba(255,255,255,.10);
+  --px-glass-solid: rgba(9,9,13,.76);
+  --px-blur: 30px;
 
-  --px-grad-edge: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.03) 42%, rgba(255,255,255,0));
-  --px-grad-metal: linear-gradient(135deg, #dfe1e4 0%, var(--px-grey) 38%, var(--px-dgrey) 62%, #cfd1d4 100%);
-  --px-grad-text: linear-gradient(100deg, #e6e8ea 0%, var(--px-grey) 42%, var(--px-dgrey) 74%, #e6e8ea 100%);
+  --px-grad-edge: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.06) 38%, rgba(255,255,255,0));
+  --px-grad-metal: linear-gradient(135deg, #ffffff 0%, #e4e4e7 34%, #a1a1aa 68%, #f4f4f5 100%);
+  --px-grad-text: linear-gradient(108deg, #ffffff 0%, #f4f4f5 36%, #a1a1aa 72%, #ffffff 100%);
 
   --px-r-sm: 10px;
-  --px-r-md: 16px;
-  --px-r-lg: 24px;
+  --px-r-md: 18px;
+  --px-r-lg: 26px;
   --px-r-xl: 34px;
   --px-r-pill: 999px;
 
-  --px-shadow-deep: 0 40px 90px -30px rgba(0,0,0,.95);
-  --px-shadow-flat: 0 18px 40px -24px rgba(0,0,0,.85);
-  --px-inset: inset 0 1px 0 rgba(255,255,255,.16);
+  --px-shadow-deep: 0 38px 90px -28px rgba(0,0,0,.96), 0 8px 24px -12px rgba(0,0,0,.82);
+  --px-shadow-flat: 0 18px 42px -22px rgba(0,0,0,.88);
+  --px-inset: inset 0 1px .5px rgba(255,255,255,.44), inset 0 -.5px .5px rgba(255,255,255,.12);
 
   --px-font-display: "Space Grotesk", "Segoe UI Variable Display", sans-serif;
   --px-font-body: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -49,18 +49,40 @@
   color-scheme: dark only !important;
 }
 
+.px-root[data-finish="graphite"] {
+  --px-grad-metal: linear-gradient(135deg, #d4d4d8 0%, #71717a 45%, #3f3f46 76%, #d4d4d8 100%);
+  --px-grad-text: linear-gradient(108deg, #f4f4f5 0%, #a1a1aa 46%, #71717a 78%, #f4f4f5 100%);
+}
+
+.px-root[data-finish="moonstone"] {
+  --px-grad-metal: linear-gradient(135deg, #ffffff 0%, #f4f4f5 48%, #d4d4d8 80%, #ffffff 100%);
+  --px-grad-text: linear-gradient(108deg, #ffffff 0%, #ffffff 42%, #d4d4d8 78%, #ffffff 100%);
+}
+
 .px-root {
   background-color: var(--px-void);
   color: var(--px-ink);
   font-family: var(--px-font-body);
 }
 
-.px-root ::selection { background: rgba(163,163,163,.35); color: #fff; }
+.px-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.px-root ::selection { background: rgba(255,255,255,.24); color: #ffffff; }
 
 .px-root input,
 .px-root textarea,
 .px-root select {
-  accent-color: var(--px-grey);
+  accent-color: #ffffff;
   caret-color: var(--px-hi);
 }
 
@@ -71,12 +93,12 @@
   appearance: none;
 }
 
-.px-root * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+.px-root * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
 
 .px-root *::-webkit-scrollbar { width: 10px; height: 10px; }
 .px-root *::-webkit-scrollbar-track { background: transparent; }
 .px-root *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.07));
+  background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.09));
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;

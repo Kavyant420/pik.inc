@@ -95,6 +95,8 @@
     }, 15000);
   }
 
+  G.isStressed = function () { return !G.smooth; };
+
   function flushNow() { /* exported noop kept for API symmetry */ }
   G._flushIdle = flushNow;
 

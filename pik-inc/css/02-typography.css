@@ -17,8 +17,32 @@
 @layer pik.type {
   .u-display {
     font-family: var(--pik-font-display);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.035em;
     line-height: 1.02;
+  }
+
+  .u-h1 {
+    font-size: clamp(1.9rem, 1.15rem + 2.8vw, var(--pik-step-5));
+    letter-spacing: -0.03em;
+  }
+
+  .u-h2 {
+    font-size: clamp(1.55rem, 1.05rem + 2vw, var(--pik-step-3));
+    letter-spacing: -0.025em;
+  }
+
+  .u-h3 {
+    font-size: var(--pik-step-1);
+    letter-spacing: -0.015em;
+  }
+
+  .u-mid {
+    font-size: var(--pik-step-0);
+    color: var(--pik-ink-soft);
+  }
+
+  .u-tiny {
+    font-size: var(--pik-step--2);
   }
 
   .u-mono {
@@ -29,26 +53,27 @@
   .u-eyebrow {
     font-family: var(--pik-font-mono);
     font-size: var(--pik-step--2);
-    letter-spacing: 0.28em;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
-    color: var(--pik-accent);
+    color: var(--pik-muted);
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
   }
 
   .u-eyebrow::before {
     content: "";
-    inline-size: 22px;
+    inline-size: 20px;
     block-size: 1px;
-    background: currentColor;
-    opacity: 0.7;
+    background: linear-gradient(90deg, transparent, var(--pik-ink));
+    opacity: 0.75;
   }
 
   .u-lede {
     font-size: var(--pik-step-1);
     color: var(--pik-muted);
     max-width: 62ch;
+    line-height: 1.65;
   }
 
   .u-small {
@@ -66,23 +91,34 @@
   }
 
   .u-accent {
-    color: var(--pik-accent);
+    color: var(--pik-ink);
   }
 
   .u-warm {
-    color: var(--pik-accent-warm);
+    color: var(--pik-ink-soft);
   }
 
   .u-gradient {
     background-image: linear-gradient(
-      94deg,
-      var(--pik-ink) 8%,
-      color-mix(in srgb, var(--pik-accent) 88%, white) 48%,
-      color-mix(in srgb, var(--pik-accent-alt) 80%, white) 92%
+      110deg,
+      #ffffff 0%,
+      #f0f0f0 32%,
+      #a8a8a8 68%,
+      #ffffff 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  [data-theme="daylight"] .u-gradient,
+  [data-theme="light"] .u-gradient {
+    background-image: linear-gradient(
+      110deg,
+      #000000 0%,
+      #4a4a4a 52%,
+      #121212 100%
+    );
   }
 
   .u-center {
@@ -112,7 +148,7 @@
   }
 
   .prose a:not(.btn) {
-    color: var(--pik-accent);
+    color: var(--pik-ink);
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;

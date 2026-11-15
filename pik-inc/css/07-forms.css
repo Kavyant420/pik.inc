@@ -19,7 +19,7 @@
 
   .field__error {
     font-size: var(--pik-step--2);
-    color: var(--pik-red);
+    color: var(--pik-ink);
     min-block-size: 1.1em;
   }
 
@@ -32,6 +32,7 @@
     border: 1px solid var(--pik-glass-line);
     background: var(--pik-glass-bg);
     color: var(--pik-ink);
+    box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.12);
     transition: border-color var(--pik-fast), background var(--pik-fast), box-shadow var(--pik-fast);
   }
 
@@ -44,9 +45,11 @@
   .select:focus-visible,
   .textarea:focus-visible {
     outline: none;
-    border-color: color-mix(in srgb, var(--pik-accent) 65%, transparent);
+    border-color: var(--pik-glass-line-strong);
     background: var(--pik-glass-bg-strong);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pik-accent) 18%, transparent);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.24),
+      0 0 0 3px color-mix(in srgb, var(--pik-ink) 14%, transparent);
   }
 
   .textarea {
@@ -88,7 +91,7 @@
     inline-size: 20px;
     block-size: 20px;
     flex: none;
-    border: 1px solid var(--pik-glass-line);
+    border: 1px solid var(--pik-glass-line-strong);
     background: var(--pik-glass-bg);
     cursor: pointer;
     display: grid;
@@ -106,15 +109,15 @@
 
   .checkbox:checked,
   .radio:checked {
-    background: var(--pik-accent);
-    border-color: var(--pik-accent);
+    background: var(--pik-ink);
+    border-color: var(--pik-ink);
   }
 
   .checkbox:checked::after {
     content: "";
     inline-size: 11px;
     block-size: 6px;
-    border: 2px solid #060606;
+    border: 2px solid var(--pik-space-900);
     border-block-end: 0;
     border-inline-start: 0;
     transform: rotate(-45deg) translate(1px, -1px);
@@ -125,7 +128,7 @@
     inline-size: 8px;
     block-size: 8px;
     border-radius: 50%;
-    background: #060606;
+    background: var(--pik-space-900);
   }
 
   .check-row {
@@ -137,16 +140,39 @@
     cursor: pointer;
   }
 
+  /* iOS 26 Liquid Glass Monochrome Switch — supports both button[role=switch]
+     and label.switch > input[type=checkbox] + .switch__track */
   .switch {
     position: relative;
+    display: inline-block;
     inline-size: 52px;
-    block-size: 28px;
+    block-size: 30px;
     flex: none;
     border-radius: var(--pik-r-pill);
     background: var(--pik-glass-bg-strong);
     border: 1px solid var(--pik-glass-line);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), var(--pik-shadow-inset);
     cursor: pointer;
-    transition: background var(--pik-med) var(--pik-ease-out), border-color var(--pik-med);
+    transition: background var(--pik-med) var(--pik-ease-out),
+      border-color var(--pik-med) var(--pik-ease-out);
+  }
+
+  .switch input[type="checkbox"] {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .switch .switch__track {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
   }
 
   .switch::after {
@@ -154,21 +180,34 @@
     position: absolute;
     inset-block-start: 3px;
     inset-inline-start: 3px;
-    inline-size: 20px;
-    block-size: 20px;
+    inline-size: 22px;
+    block-size: 22px;
     border-radius: 50%;
-    background: var(--pik-ink-soft);
-    transition: transform var(--pik-med) var(--pik-ease-spring), background var(--pik-med);
+    background: var(--pik-ink);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), inset 0 1px 0.5px rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    z-index: 1;
+    transition: transform var(--pik-med) var(--pik-ease-spring),
+      background var(--pik-med) var(--pik-ease-out);
   }
 
-  .switch[aria-checked="true"] {
-    background: color-mix(in srgb, var(--pik-accent) 40%, transparent);
-    border-color: var(--pik-accent);
+  .switch[aria-checked="true"],
+  .switch:has(input:checked) {
+    background: var(--pik-ink);
+    border-color: var(--pik-ink);
   }
 
-  .switch[aria-checked="true"]::after {
-    transform: translateX(24px);
-    background: var(--pik-accent);
+  .switch[aria-checked="true"]::after,
+  .switch:has(input:checked)::after {
+    transform: translateX(22px);
+    background: var(--pik-space-900);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+
+  .switch:focus-visible,
+  .switch:has(input:focus-visible) {
+    outline: 1.5px solid var(--pik-ink);
+    outline-offset: 3px;
   }
 
   .range {
@@ -184,7 +223,7 @@
     border-radius: var(--pik-r-pill);
     background: linear-gradient(
       90deg,
-      var(--pik-accent) 0 var(--range-fill, 50%),
+      var(--pik-ink) 0 var(--range-fill, 50%),
       var(--pik-glass-bg-strong) var(--range-fill, 50%) 100%
     );
   }
@@ -198,7 +237,7 @@
   .range::-moz-range-progress {
     block-size: 6px;
     border-radius: var(--pik-r-pill);
-    background: var(--pik-accent);
+    background: var(--pik-ink);
   }
 
   .range::-webkit-slider-thumb {
@@ -207,9 +246,9 @@
     inline-size: 22px;
     block-size: 22px;
     border-radius: 50%;
-    background: var(--pik-space-700);
-    border: 2px solid var(--pik-accent);
-    box-shadow: var(--pik-shadow-flat);
+    background: var(--pik-ink);
+    border: 2px solid var(--pik-space-800);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     transition: transform var(--pik-fast) var(--pik-ease-spring);
   }
 
@@ -217,8 +256,8 @@
     inline-size: 20px;
     block-size: 20px;
     border-radius: 50%;
-    background: var(--pik-space-700);
-    border: 2px solid var(--pik-accent);
+    background: var(--pik-ink);
+    border: 2px solid var(--pik-space-800);
   }
 
   .range:hover::-webkit-slider-thumb {
@@ -231,18 +270,20 @@
     gap: 4px;
     border-radius: var(--pik-r-pill);
     background: var(--pik-glass-bg);
-    border: 1px solid var(--pik-glass-line-soft);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset);
   }
 
   .segmented__item {
-    padding: 0.4rem 1rem;
+    padding: 0.42rem 1rem;
     border-radius: var(--pik-r-pill);
     font-size: var(--pik-step--1);
     color: var(--pik-muted);
     transition: color var(--pik-fast), background var(--pik-med) var(--pik-ease-out);
   }
 
-  .segmented__item[aria-selected="true"] {
+  .segmented__item[aria-selected="true"],
+  .segmented__item.is-active {
     background: var(--pik-glass-bg-strong);
     color: var(--pik-ink);
     box-shadow: var(--pik-shadow-inset);
@@ -253,10 +294,15 @@
     gap: 0.6rem;
     align-items: flex-start;
     font-size: var(--pik-step--1);
-    color: var(--pik-muted);
+    color: var(--pik-ink-soft);
     padding: 0.85rem 1rem;
     border-radius: var(--pik-r-sm);
-    background: color-mix(in srgb, var(--pik-accent) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--pik-accent) 22%, transparent);
+    background: var(--pik-glass-bg);
+    border: 1px solid var(--pik-glass-line);
+    box-shadow: var(--pik-shadow-inset);
+  }
+
+  .form-note:empty {
+    display: none;
   }
 }

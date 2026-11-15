@@ -3,12 +3,26 @@
 const PIKPerf = (() => {
   const KEY = "pik.ui.perf.mode";
 
+  function safeGet(k) {
+    try {
+      return localStorage.getItem(k);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function safeSet(k, v) {
+    try {
+      localStorage.setItem(k, v);
+    } catch (e) {}
+  }
+
   function reducedMotion() {
-    return matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
   function coarsePointer() {
-    return matchMedia("(pointer: coarse)").matches;
+    return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
   }
 
   function lowCores() {
@@ -19,10 +33,8 @@ const PIKPerf = (() => {
     return (navigator.deviceMemory || 8) <= 4;
   }
 
-  /* Heuristic tier: mobile / weak devices get cheaper glass immediately,
-     before any frame has been measured. */
   function initialTier() {
-    const saved = localStorage.getItem(KEY);
+    const saved = safeGet(KEY);
     if (saved === "full" || saved === "lite") return saved;
     if (reducedMotion()) return "lite";
     if (coarsePointer() && (lowCores() || lowMemory())) return "lite";
@@ -33,12 +45,10 @@ const PIKPerf = (() => {
     const root = document.documentElement;
     if (tier === "lite") root.setAttribute("data-perf", "lite");
     else root.removeAttribute("data-perf");
-    if (persist !== false) localStorage.setItem(KEY, tier);
+    if (persist !== false) safeSet(KEY, tier);
     document.dispatchEvent(new CustomEvent("pik:perftier", { detail: { tier } }));
   }
 
-  /* Rolling FPS sampler on rAF. Sustained drops downgrade to lite once;
-     recovery never auto-upgrades (avoids oscillation). */
   let sampling = false;
   let frames = 0;
   let last = 0;
@@ -47,6 +57,12 @@ const PIKPerf = (() => {
 
   function sample(now) {
     if (!sampling) return;
+    if (document.hidden) {
+      frames = 0;
+      last = 0;
+      requestAnimationFrame(sample);
+      return;
+    }
     frames++;
     if (!last) last = now;
     const elapsed = now - last;
@@ -54,11 +70,11 @@ const PIKPerf = (() => {
       const fps = (frames * 1000) / elapsed;
       frames = 0;
       last = now;
-      if (fps < 38) slowWindows++;
+      if (fps < 36) slowWindows++;
       else slowWindows = Math.max(0, slowWindows - 1);
       if (!downgraded && slowWindows >= 2 && initialTierIsFull()) {
         downgraded = true;
-        applyTier("lite");
+        applyTier("lite", false);
         slowWindows = 0;
       }
     }
@@ -75,7 +91,6 @@ const PIKPerf = (() => {
     requestAnimationFrame(sample);
   }
 
-  /* Pause canvas-driven FX while the tab is hidden — instant battery/CPU win. */
   function bindVisibility() {
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
@@ -87,8 +102,9 @@ const PIKPerf = (() => {
   }
 
   function setMode(mode) {
-    downgraded = mode === "full" ? false : downgraded;
-    applyTier(mode);
+    const normalized = mode === "lite" ? "lite" : "full";
+    if (normalized === "full") downgraded = false;
+    applyTier(normalized, true);
   }
 
   function getMode() {
@@ -107,3 +123,7 @@ const PIKPerf = (() => {
     reducedMotion
   };
 })();
+
+if (typeof window !== "undefined") {
+  window.PIKPerf = PIKPerf;
+}

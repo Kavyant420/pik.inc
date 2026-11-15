@@ -22,23 +22,30 @@
 
   --fs-xs: var(--pik-step--2);
   --fs-sm: var(--pik-step--1);
+  --fs-md: var(--pik-step-0);
   --fs-lg: var(--pik-step-1);
   --fs-xl: var(--pik-step-2);
+  --fs-2xl: var(--pik-step-3);
   --fs-3xl: var(--pik-step-4);
   --fs-display: var(--pik-step-6);
   --fs-h1: var(--pik-step-5);
 
+  --sp-1: var(--pik-sp-1);
   --sp-2: var(--pik-sp-2);
   --sp-3: var(--pik-sp-3);
   --sp-4: var(--pik-sp-4);
   --sp-5: var(--pik-sp-5);
   --sp-6: var(--pik-sp-6);
+  --sp-7: var(--pik-sp-7);
   --sp-8: var(--pik-sp-7);
   --sp-10: var(--pik-sp-8);
 
   --radius-sm: var(--pik-r-sm);
+  --radius-md: var(--pik-r-md);
+  --radius-lg: var(--pik-r-lg);
   --header-h: var(--pik-header-h);
 
+  --dur-1: var(--pik-fast);
   --dur-2: var(--pik-med);
   --ease-out: var(--pik-ease-out);
 }
