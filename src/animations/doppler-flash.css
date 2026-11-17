@@ -1,0 +1,8 @@
+@keyframes doppler-flash {
+  0% { filter: brightness(1); opacity: 1; }
+  50% { filter: brightness(2) hue-rotate(-10deg); opacity: 0.9; }
+  100% { filter: brightness(1); opacity: 1; }
+}
+.anim-doppler-flash {
+  animation: doppler-flash 2000ms ease-out infinite;
+}

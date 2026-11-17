@@ -1,0 +1,8 @@
+@keyframes spacetime-ripple {
+  0% { transform: scale(1); filter: contrast(1); }
+  50% { transform: scale(1.08); filter: contrast(1.6); }
+  100% { transform: scale(1); filter: contrast(1); }
+}
+.anim-spacetime-ripple {
+  animation: spacetime-ripple 9000ms ease-in-out infinite;
+}

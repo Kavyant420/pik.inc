@@ -1,0 +1,8 @@
+@keyframes event-horizon-pulse {
+  0% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.15); }
+  100% { opacity: 0.5; transform: scale(1); }
+}
+.anim-event-horizon-pulse {
+  animation: event-horizon-pulse 3500ms ease-in-out infinite;
+}

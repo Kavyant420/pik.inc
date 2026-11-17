@@ -1,0 +1,8 @@
+@keyframes event-horizon-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+.anim-event-horizon-ring {
+  animation: event-horizon-ring 3000ms ease-in-out infinite;
+}

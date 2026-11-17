@@ -1,0 +1,8 @@
+@keyframes infall-accelerate {
+  0% { transform: scale(1); filter: blur(0px); }
+  50% { transform: scale(2); filter: blur(4px); }
+  100% { transform: scale(1); filter: blur(0px); }
+}
+.anim-infall-accelerate {
+  animation: infall-accelerate 18000ms ease-in infinite;
+}

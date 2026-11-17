@@ -1,0 +1,10 @@
+@keyframes spacetime-distortion {
+  0% { filter: contrast(1) brightness(1); transform: scale(1) rotate(0deg); }
+  25% { filter: contrast(1.3) brightness(1.2); transform: scale(1.01) rotate(1deg); }
+  50% { filter: contrast(1) brightness(1); transform: scale(1) rotate(0deg); }
+  75% { filter: contrast(1.3) brightness(1.2); transform: scale(1.01) rotate(-1deg); }
+  100% { filter: contrast(1) brightness(1); transform: scale(1) rotate(0deg); }
+}
+.anim-spacetime-distortion {
+  animation: spacetime-distortion 9000ms ease-in-out infinite;
+}

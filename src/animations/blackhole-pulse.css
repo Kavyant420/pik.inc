@@ -1,0 +1,8 @@
+@keyframes blackhole-pulse {
+  0% { box-shadow: 0 0 20px rgba(255, 100, 50, 0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 60px rgba(255, 150, 80, 0.6); transform: scale(1.02); }
+  100% { box-shadow: 0 0 20px rgba(255, 100, 50, 0.3); transform: scale(1); }
+}
+.anim-blackhole-pulse {
+  animation: blackhole-pulse 4000ms ease-in-out infinite;
+}

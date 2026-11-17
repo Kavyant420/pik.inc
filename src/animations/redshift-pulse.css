@@ -1,0 +1,8 @@
+@keyframes redshift-pulse {
+  0% { filter: hue-rotate(0deg) saturate(1); opacity: 1; }
+  50% { filter: hue-rotate(30deg) saturate(1.5); opacity: 0.85; }
+  100% { filter: hue-rotate(0deg) saturate(1); opacity: 1; }
+}
+.anim-redshift-pulse {
+  animation: redshift-pulse 4000ms ease-in-out infinite;
+}

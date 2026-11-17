@@ -1,0 +1,7 @@
+@keyframes orbit-drift {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-orbit-drift {
+  animation: orbit-drift 8000ms linear infinite;
+}

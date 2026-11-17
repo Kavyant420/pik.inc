@@ -1,0 +1,8 @@
+@keyframes grav-redshift {
+  0% { filter: hue-rotate(0deg) saturate(1) brightness(1); opacity: 1; }
+  50% { filter: hue-rotate(45deg) saturate(0.6) brightness(0.7); opacity: 0.8; }
+  100% { filter: hue-rotate(0deg) saturate(1) brightness(1); opacity: 1; }
+}
+.anim-grav-redshift {
+  animation: grav-redshift 6000ms ease-in-out infinite;
+}

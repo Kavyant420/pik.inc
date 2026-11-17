@@ -1,0 +1,8 @@
+@keyframes shadow-breathe {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.anim-shadow-breathe {
+  animation: shadow-breathe 5500ms ease-in-out infinite;
+}

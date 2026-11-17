@@ -1,0 +1,8 @@
+@keyframes lensing-swell {
+  0% { filter: contrast(1) brightness(1); transform: scale(1); }
+  50% { filter: contrast(1.4) brightness(1.3); transform: scale(1.05); }
+  100% { filter: contrast(1) brightness(1); transform: scale(1); }
+}
+.anim-lensing-swell {
+  animation: lensing-swell 10000ms ease-in-out infinite;
+}

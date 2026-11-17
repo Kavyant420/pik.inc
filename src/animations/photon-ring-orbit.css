@@ -1,0 +1,7 @@
+@keyframes photon-ring-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-photon-ring-orbit {
+  animation: photon-ring-orbit 5000ms linear infinite;
+}

@@ -1,0 +1,8 @@
+@keyframes light-bending {
+  0% { filter: hue-rotate(0deg) saturate(1); transform: scale(1); }
+  50% { filter: hue-rotate(15deg) saturate(1.4); transform: scale(1.03); }
+  100% { filter: hue-rotate(0deg) saturate(1); transform: scale(1); }
+}
+.anim-light-bending {
+  animation: light-bending 11000ms ease-in-out infinite;
+}

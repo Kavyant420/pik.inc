@@ -1,0 +1,8 @@
+@keyframes gravity-wave {
+  0% { filter: blur(0px); transform: scale(1); }
+  50% { filter: blur(2px); transform: scale(1.02); }
+  100% { filter: blur(0px); transform: scale(1); }
+}
+.anim-gravity-wave {
+  animation: gravity-wave 7000ms ease-in-out infinite;
+}

@@ -1,0 +1,8 @@
+@keyframes disk-hotspot-cycle {
+  0% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.6; transform: scale(1); }
+}
+.anim-disk-hotspot-cycle {
+  animation: disk-hotspot-cycle 6000ms ease-in-out infinite;
+}

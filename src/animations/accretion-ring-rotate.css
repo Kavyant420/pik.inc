@@ -1,0 +1,7 @@
+@keyframes accretion-ring-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-accretion-ring-rotate {
+  animation: accretion-ring-rotate 8000ms linear infinite;
+}

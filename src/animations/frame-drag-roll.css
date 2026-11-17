@@ -1,0 +1,9 @@
+@keyframes frame-drag-roll {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  25% { transform: rotateX(5deg) rotateY(10deg) rotateZ(15deg); }
+  50% { transform: rotateX(-5deg) rotateY(-10deg) rotateZ(-15deg); }
+  100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+}
+.anim-frame-drag-roll {
+  animation: frame-drag-roll 12000ms ease-in-out infinite;
+}

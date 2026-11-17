@@ -1,0 +1,8 @@
+@keyframes relativistic-beam {
+  0% { filter: brightness(1) hue-rotate(0deg); opacity: 1; }
+  50% { filter: brightness(1.8) hue-rotate(-20deg); opacity: 0.95; }
+  100% { filter: brightness(1) hue-rotate(0deg); opacity: 1; }
+}
+.anim-relativistic-beam {
+  animation: relativistic-beam 4500ms ease-in-out infinite;
+}
