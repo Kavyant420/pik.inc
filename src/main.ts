@@ -159,14 +159,16 @@ const frame = (now: number) => {
 
   scroll.lenis.raf(now);
 
-  // The camera choreography owns the radius and the inclination.
+  // The camera choreography owns the radius, inclination and roll.
   const sample = camera.sample(store.state.progress);
   store.setCamera(sample.radius, sample.inclination);
+  store.setRoll(sample.roll);
   store.setTime(now / 1000);
 
   renderer.setState({
     radius: store.state.radius,
     inclination: store.state.inclination,
+    roll: store.state.roll,
     spin: store.state.spin,
     time: store.state.time,
   });

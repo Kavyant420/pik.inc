@@ -8,6 +8,8 @@ export interface BlackHoleState {
   radius: number;
   /** Camera polar angle θ in radians (disk plane is θ = π/2). */
   inclination: number;
+  /** Camera roll about the line of sight, in radians (frame-dragging precession). */
+  roll: number;
   /** Dimensionless spin a/M. */
   spin: number;
   /** Seconds since renderer start (drives disk turbulence / drift). */
@@ -32,6 +34,7 @@ export interface PikState {
   progress: number;
   radius: number;
   inclination: number;
+  roll: number;
   spin: number;
   time: number;
   reducedMotion: boolean;
@@ -62,6 +65,7 @@ export class PikStore {
       progress: 0,
       radius: 50,
       inclination: Math.PI / 2 - 0.085,
+      roll: 0,
       spin: 0.999,
       time: 0,
       reducedMotion: false,
@@ -98,6 +102,11 @@ export class PikStore {
     this.state.hud.radiusM = this.state.radius;
     this.state.hud.radiusSchwarzschild = this.state.radius / 2;
     this.state.hud.inclinationDeg = (Math.PI / 2 - inclination) * (180 / Math.PI);
+    this.markDirty();
+  }
+
+  setRoll(roll: number): void {
+    this.state.roll = roll;
     this.markDirty();
   }
 

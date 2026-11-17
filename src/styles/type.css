@@ -94,10 +94,18 @@
   color: var(--pik-fg-faint);
   pointer-events: none;
   transition: opacity 500ms var(--pik-ease);
+  /* NASA-style pulsing "scroll to fall" cue. */
+  animation: pik-cue-pulse 3s ease-in-out infinite;
+}
+
+@keyframes pik-cue-pulse {
+  0%, 100% { opacity: 0.45; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.95; transform: translateX(-50%) translateY(-6px); }
 }
 
 .pik-scroll-cue[data-hidden="true"] {
   opacity: 0;
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

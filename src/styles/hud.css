@@ -4,6 +4,10 @@
    Bottom-left, monospaced digits, no background of any kind. The values are
    the only bright thing in the corner; the labels fade back so the numbers
    read first.
+
+   NASA-grade additions:
+     · Horizon warning pulse — amber → red as r → 2 M.
+     · Scanline texture — fine photographic grain over the readout.
    ========================================================================== */
 
 .pik-hud {
@@ -23,6 +27,25 @@
   text-shadow: 0 0 12px rgba(245, 237, 228, 0.22);
   pointer-events: none;
   user-select: none;
+}
+
+/* Fine scanline texture over the HUD — like a phosphor display. */
+.pik-hud::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(245, 237, 228, 0.03) 50%,
+    transparent 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pik-hud > * {
+  position: relative;
+  z-index: 1;
 }
 
 .pik-hud__row {
@@ -56,11 +79,18 @@
   font-weight: 400;
 }
 
+/* Mission clock: monospace, slightly brighter. */
+.pik-hud__row--met .pik-hud__value {
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
 /* Very small viewports: keep the HUD to the two rows that matter. */
 @media (max-width: 520px) {
   .pik-hud__row--schwarzschild,
   .pik-hud__row--inclination,
-  .pik-hud__row--spin {
+  .pik-hud__row--spin,
+  .pik-hud__row--roll {
     display: none;
   }
 }
@@ -68,5 +98,9 @@
 @media (prefers-reduced-motion: reduce) {
   .pik-hud {
     text-shadow: none;
+  }
+
+  .pik-hud::before {
+    display: none;
   }
 }

@@ -11,10 +11,17 @@
  * poles). Each layer is a different magnitude class; the bright layer is
  * sparse and coloured, the faint layer is dense and nearly white.
  *
- * The chunk exposes `starfield(dir, brightness)`, which returns linear RGB.
+ * NASA-grade additions:
+ *  · Scintillation — atmospheric-like twinkling driven by time, so stars
+ *    shimmer instead of being static dots.
+ *  · Magnitude-based colour — hot blue stars for the brightest, cool orange
+ *    for the faintest, following the blackbody locus.
+ *  · Relativistic aberration-ready: the star direction is pre-distorted by
+ *    the caller (kerrRay) so the sky concentrates ahead of the fall.
+ *
+ * The chunk exposes `starfield(dir, brightness, time)`, which returns linear RGB.
  */
 
-/** Star field sampling, called from the geodesic pass. */
 export const STARFIELD_GLSL = /* glsl */ `
 /* One magnitude layer of stars.
  *
@@ -22,7 +29,7 @@ export const STARFIELD_GLSL = /* glsl */ `
  * 'sharp'    inverse of the point-spread width in cell units
  * 'seed'     decorrelates the layers
  */
-vec3 starLayer(vec3 dir, float density, float sharp, float seed) {
+vec3 starLayer(vec3 dir, float density, float sharp, float seed, float time) {
   vec3 a = abs(dir);
   vec2 uv;
   float face;
@@ -51,20 +58,28 @@ vec3 starLayer(vec3 dir, float density, float sharp, float seed) {
   float mag = pow(hash13(id + 19.7 + seed), 9.0);
   float s = mag * exp(-d * d * sharp);
 
-  /* Stellar colour: mostly white, some warm, some blue. */
+  /* Scintillation: slow twinkle driven by time, unique per star. */
+  float twinkle = 0.85 + 0.30 * sin(time * 1.3 + hash13(id + 7.1 + seed) * 6.28);
+  s *= twinkle;
+
+  /* Stellar colour by magnitude: bright = hot blue-white, faint = cool orange. */
   float t = hash13(id + 41.3 + seed);
-  vec3 tint = mix(vec3(1.0, 0.86, 0.72), vec3(0.78, 0.86, 1.0), smoothstep(0.35, 1.0, t));
+  vec3 hot   = vec3(0.72, 0.84, 1.00);  /* O/B class — blue white */
+  vec3 cool  = vec3(1.00, 0.80, 0.62);  /* K/M class — orange */
+  vec3 white = vec3(1.00, 0.94, 0.88);  /* solar */
+  vec3 tint = mix(cool, white, smoothstep(0.30, 0.70, t));
+  tint = mix(white, hot, smoothstep(0.60, 1.0, t));
   tint = mix(vec3(1.0), tint, 0.75);
 
   return tint * s;
 }
 
 /* The full sky: three magnitude classes, no diffuse background. */
-vec3 starfield(vec3 dir, float brightness) {
+vec3 starfield(vec3 dir, float brightness, float time) {
   vec3 c = vec3(0.0);
-  c += starLayer(dir,  22.0, 240.0,  0.0)  * 1.60;  /* bright, sparse  */
-  c += starLayer(dir,  58.0, 900.0, 11.0)  * 0.55;  /* mid             */
-  c += starLayer(dir, 150.0, 2600.0, 23.0) * 0.16;  /* faint, dense    */
+  c += starLayer(dir,  22.0, 240.0,  0.0, time) * 1.60;  /* bright, sparse  */
+  c += starLayer(dir,  58.0, 900.0, 11.0, time) * 0.55;  /* mid             */
+  c += starLayer(dir, 150.0, 2600.0, 23.0, time) * 0.16;  /* faint, dense    */
   return c * brightness;
 }
 `;

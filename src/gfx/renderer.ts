@@ -81,6 +81,7 @@ export function createRenderer(opts: RendererOptions = {}): BlackHoleRenderer {
   let state: BlackHoleState = {
     radius: 50,
     inclination: Math.PI / 2 - 0.085,
+    roll: 0,
     spin: 0.999,
     time: 0,
   };
@@ -145,6 +146,7 @@ export function createRenderer(opts: RendererOptions = {}): BlackHoleRenderer {
       uSpin: state.spin,
       uRadius: state.radius,
       uTheta: state.inclination,
+      uRoll: state.roll,
       uFov: fov,
       uMaxSteps: maxSteps,
       uStepScale: stepScale,
@@ -175,6 +177,7 @@ export function createRenderer(opts: RendererOptions = {}): BlackHoleRenderer {
         width: 1,
         height: 1,
         exposure,
+        time: state.time,
       });
       pipeline.exposure = exposure;
 
@@ -200,6 +203,7 @@ export function createRenderer(opts: RendererOptions = {}): BlackHoleRenderer {
       if (disposed || !pipeline || !context) return;
       const started = performance.now();
 
+      pipeline.time = state.time;
       resize();
       drawGeodesicPass();
       pipeline.present();

@@ -5,6 +5,12 @@
  * a full-resolution geodesic pass), so the site shows a text-only veil until
  * the renderer reports that it is warm. Like everything else in the UI it is
  * plain text on black — no spinner, no panel, no progress bar box.
+ *
+ * NASA-grade additions:
+ *  · Boot telemetry sequence — multiple status lines cycle through like a
+ *    real spacecraft boot: "INITIALIZING SUBSYSTEMS", "METRIC RESOLVED",
+ *    "GEODESIC INTEGRATOR ONLINE", etc.
+ *  · A mission clock that starts at liftoff (veil appearance).
  */
 
 export interface PreloadOptions {
@@ -29,10 +35,22 @@ export interface Preload {
   dispose(): void;
 }
 
+const BOOT_LINES = [
+  'INITIALIZING SUBSYSTEMS',
+  'KERR METRIC LOADED',
+  'DOUBLE-SINGLE ARITHMETIC ONLINE',
+  'GEODESIC INTEGRATOR ARMED',
+  'ACCRETION DISK MODEL RESOLVED',
+  'STAR FIELD CATALOG LOADED',
+  'METRIC RESOLVED',
+];
+
 export function createPreload(opts: PreloadOptions = {}): Preload {
   const root = opts.root ?? document.body;
-  const minimumMs = opts.minimumMs ?? 600;
+  const minimumMs = opts.minimumMs ?? 1500;
   const reduced = opts.reducedMotion ?? false;
+
+  const started = performance.now();
 
   const element = document.createElement('div');
   element.className = 'pik-preload';
@@ -42,7 +60,7 @@ export function createPreload(opts: PreloadOptions = {}): Preload {
 
   const label = document.createElement('span');
   label.className = 'pik-preload__label';
-  label.textContent = opts.label ?? 'INTEGRATING THE METRIC';
+  label.textContent = opts.label ?? BOOT_LINES[0];
 
   const value = document.createElement('span');
   value.className = 'pik-preload__value';
@@ -50,6 +68,19 @@ export function createPreload(opts: PreloadOptions = {}): Preload {
 
   element.append(label, value);
   root.append(element);
+
+  /* Cycle through the boot telemetry lines while the veil is up. */
+  let bootRaf = 0;
+  const bootTick = (now: number) => {
+    const elapsed = now - started;
+    const index = Math.min(Math.floor(elapsed / 220), BOOT_LINES.length - 1);
+    if (!element.isConnected || element.dataset.state !== 'loading') return;
+    if (label.textContent !== BOOT_LINES[index]) {
+      label.textContent = BOOT_LINES[index];
+    }
+    bootRaf = requestAnimationFrame(bootTick);
+  };
+  if (!reduced) bootRaf = requestAnimationFrame(bootTick);
 
   let disposed = false;
   let finished = false;
@@ -64,6 +95,7 @@ export function createPreload(opts: PreloadOptions = {}): Preload {
   const finish = (): Promise<void> => {
     if (finished) return Promise.resolve();
     finished = true;
+    cancelAnimationFrame(bootRaf);
 
     const wait = reduced ? 0 : Math.max(0, minimumMs);
     return new Promise<void>((resolve) => {
@@ -78,8 +110,8 @@ export function createPreload(opts: PreloadOptions = {}): Preload {
           resolve();
           return;
         }
-        // Wait for the CSS transition, with a timeout fallback so the veil
-        // can never get stuck on screen.
+        /* Wait for the CSS transition, with a timeout fallback so the veil
+         * can never get stuck on screen. */
         let settled = false;
         const done = () => {
           if (settled) return;
@@ -102,6 +134,7 @@ export function createPreload(opts: PreloadOptions = {}): Preload {
     finish,
     dispose: () => {
       disposed = true;
+      cancelAnimationFrame(bootRaf);
       element.remove();
     },
   };

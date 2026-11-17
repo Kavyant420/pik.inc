@@ -50,6 +50,8 @@ export interface PipelineOptions {
   streakLength?: number;
   /** Linear exposure. */
   exposure?: number;
+  /** Seconds since start — drives film grain and star scintillation. */
+  time?: number;
 }
 
 /** Create a colour render target. */
@@ -108,6 +110,8 @@ export class Pipeline {
   private readonly glareStrength: number;
   private readonly streakLength: number;
   exposure: number;
+  /** Seconds since start — drives film grain and star scintillation. */
+  time: number;
 
   /** The HDR target the geodesic pass writes into. */
   scene!: RenderTarget;
@@ -124,13 +128,14 @@ export class Pipeline {
   constructor(opts: PipelineOptions) {
     this.gl = opts.gl;
     this.format = opts.caps.colorBufferFloat ? 'rgba16f' : 'rgba8';
-    this.bloomMips = Math.max(1, opts.bloomMips ?? 3);
+    this.bloomMips = Math.max(1, opts.bloomMips ?? 5);
     this.bloomThreshold = opts.bloomThreshold ?? 1.0;
     this.bloomKnee = opts.bloomKnee ?? 0.6;
     this.bloomStrength = opts.bloomStrength ?? 0.7;
     this.glareStrength = opts.glareStrength ?? 0.18;
     this.streakLength = opts.streakLength ?? 26;
     this.exposure = opts.exposure ?? 1;
+    this.time = opts.time ?? 0;
 
     this.vao = this.gl.createVertexArray();
 
@@ -230,6 +235,7 @@ export class Pipeline {
       uBloomStrength: this.bloomStrength,
       uGlareStrength: this.glareStrength,
       uStreakLength: this.streakLength,
+      uTime: this.time,
     });
     this.drawTriangle();
 

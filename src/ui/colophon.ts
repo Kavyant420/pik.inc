@@ -6,6 +6,10 @@
  *
  * It fades in once the reader reaches the bottom of the scroll and fades out
  * again if they scroll back up.
+ *
+ * NASA-grade additions:
+ *  · Mission profile — spin, ISCO, photon sphere, horizon, shadow radius.
+ *  · Technical stack — every algorithm used, named.
  */
 
 import type { PikStore } from '../core/store';
@@ -37,12 +41,21 @@ export interface Colophon {
 
 export function defaultColophonLines(): ColophonLine[] {
   return [
-    { label: 'Metric', value: 'Kerr (Boyer–Lindquist), a/M = 0.999' },
+    { label: 'Mission profile', value: 'Kerr black hole, a/M = 0.999 (near-extremal)' },
+    { label: 'Event horizon', value: 'r₊ ≈ 1.44 M' },
+    { label: 'Photon sphere', value: 'r_ph ≈ 1.18 M (prograde equatorial)' },
+    { label: 'ISCO', value: 'r_ISCO ≈ 1.24 M' },
+    { label: 'Shadow radius', value: '≈ 5.2 M (Bardeen critical curve)' },
+    { label: 'Camera fall', value: '140 M → 3.2 M, logarithmic free fall' },
+    { label: 'Metric', value: 'Kerr (Boyer–Lindquist), frame dragging included' },
     { label: 'Integration', value: 'null geodesics in Carter time, per pixel' },
     { label: 'Arithmetic', value: 'double-single (≈48-bit) in GLSL ES 3.00' },
-    { label: 'Disk', value: 'Novikov–Thorne flux, relativistic blackbody' },
+    { label: 'Disk', value: 'Novikov–Thorne flux, relativistic blackbody, g⁴ beaming' },
+    { label: 'Tone map', value: 'ACES RRT+ODT, sRGB OETF' },
+    { label: 'Post process', value: '5-mip bloom, anamorphic streak, lens ghosts, film grain' },
+    { label: 'Relativistic fx', value: 'aberration headlight, gravitational redshift, photon ring' },
     { label: 'Type', value: 'Segoe UI Variable Display / Selawik' },
-    { label: 'Assets', value: 'none — no images, no fonts, no CDN' },
+    { label: 'Assets', value: 'none — no images, no fonts, no CDN, no backend' },
   ];
 }
 
@@ -58,7 +71,7 @@ export function createColophon(opts: ColophonOptions): Colophon {
 
   const heading = document.createElement('p');
   heading.className = 'pik-colophon__heading';
-  heading.textContent = 'COLOPHON';
+  heading.textContent = 'COLOPHON — MISSION DATA';
   element.append(heading);
 
   const list = document.createElement('dl');

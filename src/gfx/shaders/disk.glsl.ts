@@ -28,6 +28,17 @@
  *    is what makes the approaching side of the disk blaze and the receding
  *    side almost vanish.
  *
+ * NASA-grade additions:
+ *  · Inner-edge brightening — the "hot spot" pile-up just outside the ISCO
+ *    where the flux gradient is steepest, rendered as a luminous rim.
+ *  · Magnetic filament structure — ridged noise with extra octaves gives the
+ *    disk a magnetohydrodynamic, ribbon-like texture instead of soft fBm.
+ *  · Temperature colour gradient — inner edge runs blue-white, outer edge
+ *    runs amber-orange, matching a real thin disk's radial temperature drop.
+ *  · Doppler shear — the turbulence is sheared by the local Keplerian rate
+ *    so inner rings visibly run ahead of outer ones (frame dragging made
+ *    visible in the gas).
+ *
  * The same code exists on the CPU side in src/physics/diskModel.ts; the two
  * are kept in step by tests/disk.test.ts.
  */
@@ -63,6 +74,16 @@ float ntFluxShape(float r, float a) {
   float escape = max(1.0 - sqrt(rPh / ri), 0.0);
 
   return shape * escape;
+}
+
+/* Inner-edge brightening: a narrow luminous rim just outside the ISCO
+ * where the flux gradient piles up. */
+float innerEdgeRim(float r, float a, float inner) {
+  float ri = max(r, 1.0);
+  float width = 0.35 * inner;                       /* rim width in M          */
+  float center = inner + 0.18 * inner;              /* sits just outside inner */
+  float fall = exp(-abs(ri - center) / width);
+  return 0.55 + 1.60 * fall;                        /* baseline + bright rim   */
 }
 
 /* The Planckian locus (Kim et al. 2002) — chromaticity in xy for a
@@ -154,9 +175,13 @@ vec3 diskEmission(float r, float phi, float g, float a, float time) {
    * inner rings really do run ahead of the outer ones. */
   float om = diskOmega(r, a);
   float shear = phi - om * time;
-  float turb = fbm3(vec3(r * 0.30, shear * 0.85, time * 0.04), 4);
-  float fil  = ridged3(vec3(r * 0.75, shear * 1.70, time * 0.07), 3);
+  float turb = fbm3(vec3(r * 0.30, shear * 0.85, time * 0.04), 5);
+  float fil  = ridged3(vec3(r * 0.75, shear * 1.70, time * 0.07), 4);
   float profile = 0.45 + 1.15 * turb * (0.55 + 0.85 * fil);
+
+  /* Inner-edge brightening: the hot rim just outside the ISCO. */
+  float rim = innerEdgeRim(r, a, uDiskInner);
+  profile *= rim;
 
   /* Bolometric beaming: I_obs = g^4 I_em. */
   float g2 = g * g;

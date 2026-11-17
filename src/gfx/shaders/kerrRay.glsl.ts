@@ -73,6 +73,7 @@ uniform float uTime;         /* seconds since the renderer started      */
 uniform float uSpin;          /* a/M                                  */
 uniform float uRadius;        /* camera radius r, in M                */
 uniform float uTheta;         /* camera polar angle, in radians       */
+uniform float uRoll;          /* camera roll about the line of sight  */
 uniform float uFov;           /* vertical field of view, in radians    */
 uniform int   uMaxSteps;      /* integration budget per ray            */
 uniform float uStepScale;     /* step controller constant k            */
@@ -221,10 +222,20 @@ float phiDot(float r, float ct) {
  * 'ndc' is the screen position with x in [−aspect/2, aspect/2] and
  * y ∈ [−0.5, 0.5].
  */
-vec3 cameraDirection(vec2 ndc, float tanHalfFov) {
+vec3 cameraDirection(vec2 ndc, float tanHalfFov, float roll) {
   float x = ndc.x * 2.0 * tanHalfFov;
   float y = ndc.y * 2.0 * tanHalfFov;
-  return normalize(vec3(-1.0, -y, x));
+  /* Forward = -x (toward the hole), up = -y, right = +x (screen). Apply roll
+   * about the forward axis so the frame-dragging precession twists the view. */
+  float cr = cos(roll);
+  float sr = sin(roll);
+  vec3 d = normalize(vec3(-1.0, -y, x));
+  vec3 up = vec3(0.0, -1.0, 0.0);
+  vec3 right = vec3(0.0, 0.0, 1.0);
+  /* Rotate up/right about forward by roll. */
+  vec3 rUp = up * cr + right * sr;
+  vec3 rRight = up * (-sr) + right * cr;
+  return normalize(d.x * vec3(-1.0, 0.0, 0.0) + d.y * rUp + d.z * rRight);
 }
 
 /* The ray's direction in the local triad at an arbitrary point. */
@@ -277,7 +288,7 @@ vec3 traceRay(vec2 ndc) {
   float ct = cos(uTheta);
   float tanHalf = tan(uFov * 0.5);
 
-  vec3 d = cameraDirection(ndc, tanHalf);
+  vec3 d = cameraDirection(ndc, tanHalf, uRoll);
 
   float E, L, Q;
   conservedFromDirection(r, ct, d, E, L, Q);
@@ -406,7 +417,24 @@ vec3 traceRay(vec2 ndc) {
   float vuEnd = sU * sqrt(max(polarPotential(u), 0.0));
   vec3 local = localDirection(r, u, vrEnd, vuEnd);
   vec3 sky = localToWorld(local, u, phi);
-  return starfield(sky, uStarBrightness);
+
+  /* Relativistic aberration (the "headlight" effect). The camera is falling
+   * inward at a significant fraction of c, so the incoming starlight is
+   * aberrated toward the direction of motion (-e_r, toward the hole). The
+   * closer to the hole, the stronger the concentration - the sky seems to
+   * swirl into the shadow as the camera dives. */
+  float infall = sqrt(2.0 / max(r, 2.0));           /* radial plunge speed, 0..1 */
+  infall = clamp(infall, 0.0, 0.95);
+  vec3 forward = normalize(vec3(-1.0, 0.0, 0.0));   /* toward the hole in the triad */
+  /* Relativistic aberration: cos(theta') = (cos(theta) - v) / (1 - v*cos(theta)) */
+  float mu = dot(sky, forward);
+  float muAber = (mu - infall) / max(1.0 - infall * mu, 1e-6);
+  /* Rebuild the direction with the aberrated polar angle, keeping azimuth. */
+  float st = sqrt(max(1.0 - muAber * muAber, 0.0));
+  vec3 perp = normalize(sky - forward * mu);
+  sky = forward * muAber + perp * st;
+
+  return starfield(sky, uStarBrightness, uTime);
 }
 
 /* ------------------------------------------------------------------ */

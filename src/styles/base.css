@@ -19,6 +19,9 @@
   --pik-fg-dim: rgba(245, 237, 228, 0.58);
   --pik-fg-faint: rgba(245, 237, 228, 0.3);
   --pik-glow: rgba(245, 237, 228, 0.34);
+  --pik-glow-strong: rgba(245, 237, 228, 0.6);
+  --pik-warn: rgba(255, 140, 60, 0.7);
+  --pik-warn-strong: rgba(255, 60, 40, 0.85);
 
   /* Type ------------------------------------------------------------------ */
   --pik-font-sans: "Segoe UI Variable Display", "Segoe UI", Selawik, system-ui,
