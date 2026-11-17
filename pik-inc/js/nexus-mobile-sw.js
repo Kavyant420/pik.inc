@@ -5,9 +5,14 @@
    sw-nexus.js registered by idle-tasks.js.
 
    Registration ladder (each step is optional, failures fall through):
-     1. /sw-nexus-mobile.html  -> root-scoped worker (full offline shell)
+     1. ./sw-nexus-mobile.js   -> root-scoped worker (full offline shell)
      2. ./js/sw-nexus-mobile.js -> ./js/-scoped worker (warm cache fallback)
      3. give up silently — the app still works online, exactly like before.
+
+     Step 1 used to be "./sw-nexus-mobile.html". That file is an HTML redirect
+     to nexus-mobile.html, never a worker script: registering it logged
+     "The script has an unsupported MIME type ('text/html')" on every mobile
+     load and the root-scoped offline shell was never actually installed.
    ========================================================================= */
 (function (global) {
   "use strict";
@@ -26,7 +31,7 @@
     if (!/nexus-mobile\.html$/i.test(location.pathname)) return;
 
     var attempts = [
-      ["./sw-nexus-mobile.html", null],       // root scope when hosting allows .html workers
+      ["./sw-nexus-mobile.js", null],         // real root-scoped worker script
       ["./js/sw-nexus-mobile.js", "./js/"]    // safe nested scope fallback
     ];
 

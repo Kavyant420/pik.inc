@@ -151,7 +151,10 @@
                      stars: r.stargazers_count, raw: r };
           });
         } else {
-          var owners = ["minimax-io", "google-deepmind", "NVIDIA", "poolsideai", "mistralai", "cohere-ai"];
+          /* GitHub org slugs are exact: "minimax-io" is not an organisation,
+             so the first request of every panel load answered HTTP 404.
+             The real MiniMax org is "MiniMax-AI". */
+          var owners = ["MiniMax-AI", "google-deepmind", "NVIDIA", "poolsideai", "mistralai", "cohere-ai"];
           var rateLimited = false;
           for (var i = 0; i < owners.length; i++) {
             if (rateLimited) break; // stop hammering once GitHub signals the quota is gone

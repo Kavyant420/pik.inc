@@ -68,6 +68,41 @@
     else if (e && e.message) handle(e.message, e.filename, e.lineno);
   });
 
+  /* ---------- dead remote logos -> inline monogram ----------------------
+     Provider marks come from two CDNs that both 404 for some brands: a
+     simple-icons slug that is not in the package, or a Google favicon whose
+     domain redirects to a site with no icon (minimax.io -> inclusionai.com).
+     A failed <img> paints a torn placeholder in the middle of the glass UI,
+     and the inline onerror chains in nexus-picker.js can end on an empty
+     src. Resource errors do not bubble, so this listens in the capture
+     phase. Pages that declare their own fallback keep priority: the first
+     failure is left to their chain, and this steps in only when that chain
+     fails too, which also guarantees the swap terminates.
+     --------------------------------------------------------------------- */
+  var MONO_CACHE = {};
+  function monogram(label) {
+    var word = String(label || "").trim().split(/\s+/)[0] || "PIK";
+    var key = word.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() || "PIK";
+    if (MONO_CACHE[key]) return MONO_CACHE[key];
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+      '<rect width="64" height="64" rx="14" fill="#1b1d21"/>' +
+      '<text x="32" y="41" text-anchor="middle" font-family="Inter,system-ui,sans-serif"' +
+      ' font-size="24" font-weight="700" letter-spacing="1" fill="#e6e6e6">' + key + '</text></svg>';
+    MONO_CACHE[key] = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    return MONO_CACHE[key];
+  }
+
+  global.addEventListener("error", function (e) {
+    var el = e && e.target;
+    if (!el || el.tagName !== "IMG" || el.dataset.pikMono) return;
+    var chained = el.getAttribute("onerror") || typeof el.onerror === "function";
+    if (chained && !el.dataset.pikTried) { el.dataset.pikTried = "1"; return; }
+    el.dataset.pikMono = "1";                 // never swap twice
+    el.removeAttribute("onerror");
+    if (typeof el.onerror === "function") el.onerror = null;
+    el.src = monogram(el.alt || el.title || el.getAttribute("data-provider"));
+  }, true);
+
   global.addEventListener("unhandledrejection", function (e) {
     var r = e && e.reason;
     if (r && r.name === "AbortError") return; // deliberate cancels are not errors

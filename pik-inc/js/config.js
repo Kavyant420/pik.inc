@@ -83,15 +83,22 @@
     /* ---- Editor theme presets (IDE customization) -------------------------- */
     EDITOR_THEMES: ["graphite", "midnight", "amber", "forest"],
 
-    /* Provider -> simple-icons slug (verified against the CDN) */
+    /* Provider -> simple-icons slug.
+       Every value here was checked against the published file list of
+       simple-icons@14 (3,307 icons). The previous map listed 14 slugs that do
+       not exist in that package — minimax, deepseek, qwen, mistralai, xai,
+       moonshotai, cohere, poolside, liquid, thinkingmachines, dotsstudio,
+       xingchen, pollinations, openrouter — so the model picker and the GitHub
+       rail requested them anyway and jsDelivr answered 404. A 404 body is
+       opaque text, which Chrome reports as net::ERR_BLOCKED_BY_ORB and paints
+       as a torn image inside the glass cards.
+       Providers with no brand mark in the set are absent on purpose:
+       Models.logoUrl() returns null, the caller falls through to the favicon,
+       and error-net.js replaces any still-dead logo with an inline monogram. */
     PROVIDER_ICONS: {
-      minimax: "minimax", google: "google", nvidia: "nvidia",
+      google: "google", nvidia: "nvidia",
       openai: "openai", anthropic: "anthropic", meta: "meta",
-      deepseek: "deepseek", qwen: "qwen", mistral: "mistralai",
-      xai: "xai", moonshotai: "moonshotai", perplexity: "perplexity",
-      cohere: "cohere", poolside: "poolside", liquid: "liquid",
-      thinkingmachines: "thinkingmachines", "dots-studio": "dotsstudio",
-      "xingchen-agi": "xingchen", pollinations: "pollinations"
+      perplexity: "perplexity"
     },
 
     /* Provider -> brand site (used for favicon fallbacks) */

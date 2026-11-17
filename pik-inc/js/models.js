@@ -147,7 +147,9 @@
       if (p === "blockrun") return CFG.LOGO_FAVICON + "blockrun.ai&sz=64";
       if (p === "polli-alt" || p === "polli-get") p = "pollinations";
       if (p === "deepinfra-free") p = "deepseek";
-      if (p === "openrouter") return CFG.LOGO_SI + "openrouter.svg";
+      /* openrouter has no icon in simple-icons@14 — asking for openrouter.svg
+         was a guaranteed 404, so use its favicon instead. */
+      if (p === "openrouter") return CFG.LOGO_FAVICON + "openrouter.ai&sz=64";
       var slug = CFG.PROVIDER_ICONS[p];
       if (slug) return CFG.LOGO_SI + slug + ".svg";
       return null;
