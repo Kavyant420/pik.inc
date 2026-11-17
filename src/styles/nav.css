@@ -1,0 +1,103 @@
+/* ==========================================================================
+   pik — chapter navigation
+   --------------------------------------------------------------------------
+   A column of chapter names down the right edge, with a one-pixel progress
+   rule beside them. No panel, no pill, no background: the rule is the only
+   graphic and it is one pixel wide.
+   ========================================================================== */
+
+.pik-nav {
+  position: fixed;
+  top: 50%;
+  right: var(--pik-edge);
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: stretch;
+  gap: 0.9em;
+  font-size: var(--pik-size-xs);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  color: var(--pik-fg-dim);
+  pointer-events: none;
+}
+
+.pik-nav__rule {
+  position: relative;
+  width: 1px;
+  flex: 0 0 1px;
+  background: rgba(245, 237, 228, 0.16);
+}
+
+.pik-nav__rule-fill {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100%;
+  transform: scaleY(var(--pik-progress, 0));
+  transform-origin: top center;
+  background: rgba(245, 237, 228, 0.55);
+  transition: transform 120ms linear;
+}
+
+.pik-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9em;
+  text-align: right;
+  pointer-events: auto;
+}
+
+.pik-nav__link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6em;
+  justify-content: flex-end;
+  color: var(--pik-fg-dim);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 100% 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--pik-duration) var(--pik-ease),
+    color var(--pik-duration) var(--pik-ease),
+    text-shadow var(--pik-duration) var(--pik-ease);
+  padding-bottom: 0.12em;
+}
+
+.pik-nav__link:hover,
+.pik-nav__link:focus-visible {
+  color: var(--pik-fg);
+  background-size: 100% 1px;
+  text-shadow: 0 0 14px var(--pik-glow);
+  outline: none;
+}
+
+.pik-nav__ordinal {
+  color: var(--pik-fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pik-nav__link[data-active] {
+  color: var(--pik-fg);
+  background-size: 100% 1px;
+  text-shadow: 0 0 14px var(--pik-glow);
+}
+
+.pik-nav__link[data-active] .pik-nav__ordinal {
+  color: var(--pik-fg-dim);
+}
+
+/* Narrow viewports: the chapter list would collide with the prose. */
+@media (max-width: 720px) {
+  .pik-nav {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pik-nav__rule-fill {
+    transition: none;
+  }
+}

@@ -1,0 +1,160 @@
+/* ==========================================================================
+   pik — overlays: preload veil and colophon
+   --------------------------------------------------------------------------
+   Both are text on black. The veil fades the page in; the colophon fades in
+   at the very bottom of the fall.
+   ========================================================================== */
+
+/* --- preload veil ------------------------------------------------------- */
+
+.pik-preload {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9em;
+  background: var(--pik-bg);
+  color: var(--pik-fg);
+  font-size: var(--pik-size-xs);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  opacity: 1;
+  transition: opacity 700ms var(--pik-ease);
+}
+
+.pik-preload[data-state="done"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pik-preload__label {
+  color: var(--pik-fg-dim);
+}
+
+.pik-preload__value {
+  color: var(--pik-fg);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 16px var(--pik-glow);
+}
+
+/* --- colophon ----------------------------------------------------------- */
+
+.pik-colophon {
+  position: fixed;
+  left: var(--pik-gutter);
+  right: var(--pik-gutter);
+  bottom: var(--pik-edge);
+  z-index: 3;
+  max-width: 46rem;
+  margin: 0 auto;
+  font-size: var(--pik-size-xs);
+  line-height: 1.7;
+  color: var(--pik-fg-dim);
+  opacity: 0;
+  transform: translateY(0.6rem);
+  transition: opacity 600ms var(--pik-ease), transform 600ms var(--pik-ease);
+  pointer-events: none;
+}
+
+.pik-colophon[data-state="visible"] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.pik-colophon__heading {
+  margin: 0 0 0.8em;
+  color: var(--pik-fg);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+.pik-colophon__list {
+  margin: 0;
+  display: grid;
+  gap: 0.15em;
+}
+
+.pik-colophon__row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) 1fr;
+  gap: 1em;
+}
+
+.pik-colophon__label {
+  margin: 0;
+  color: var(--pik-fg-faint);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+}
+
+.pik-colophon__value {
+  margin: 0;
+  color: var(--pik-fg-dim);
+}
+
+.pik-colophon__link {
+  color: var(--pik-fg);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--pik-duration) var(--pik-ease),
+    text-shadow var(--pik-duration) var(--pik-ease);
+}
+
+.pik-colophon__link:hover,
+.pik-colophon__link:focus-visible {
+  background-size: 100% 1px;
+  text-shadow: 0 0 14px var(--pik-glow);
+  outline: none;
+}
+
+/* --- audio toggle ------------------------------------------------------ */
+
+.pik-audio-toggle {
+  position: fixed;
+  left: var(--pik-edge);
+  top: var(--pik-edge);
+  z-index: 4;
+  font-size: var(--pik-size-xs);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  color: var(--pik-fg-dim);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--pik-duration) var(--pik-ease),
+    text-shadow var(--pik-duration) var(--pik-ease);
+}
+
+.pik-audio-toggle:hover,
+.pik-audio-toggle:focus-visible {
+  color: var(--pik-fg);
+  text-shadow: 0 0 14px var(--pik-glow);
+  outline: none;
+}
+
+/* --- no javascript ----------------------------------------------------- */
+
+.pik-noscript {
+  position: relative;
+  z-index: 2;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 2rem var(--pik-gutter);
+  color: var(--pik-fg-dim);
+  font-size: var(--pik-size-sm);
+}
+
+@media (max-width: 520px) {
+  .pik-colophon__row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

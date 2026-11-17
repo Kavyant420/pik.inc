@@ -1,0 +1,38 @@
+{
+  "name": "pik",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "pik — a scroll-driven, physically exact Kerr black hole on the web.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "build:fast": "vite build",
+    "preview": "vite preview --port 4173",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "shots": "node tools/shoot.mjs",
+    "render:offline": "node tools/render-offline.mjs",
+    "render:offline:frames": "node tools/render-offline.mjs --frames",
+    "deepai": "node tools/deepai-bridge.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "lenis": "^1.1.20",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.170.0",
+    "@types/node": "^22.10.2",
+    "lil-gui": "^0.20.0",
+    "playwright": "^1.49.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

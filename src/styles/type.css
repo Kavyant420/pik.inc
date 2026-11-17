@@ -1,0 +1,107 @@
+/* ==========================================================================
+   pik — narrative type
+   --------------------------------------------------------------------------
+   The prose that the black hole pulls into its shadow. Display type is
+   light, fluid and tightly tracked; body copy stays readable at a
+   comfortable measure.
+   ========================================================================== */
+
+.pik-chapter {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12vh var(--pik-gutter);
+}
+
+.pik-chapter__eyebrow {
+  margin: 0 0 1.2em;
+  font-size: var(--pik-size-xs);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  color: var(--pik-fg-faint);
+}
+
+.pik-chapter__title {
+  font-size: var(--pik-size-xl);
+  margin-bottom: 0.45em;
+}
+
+.pik-chapter__title--display {
+  font-size: var(--pik-size-display);
+  font-weight: 100;
+  letter-spacing: -0.035em;
+}
+
+.pik-chapter__lede {
+  max-width: 34rem;
+  font-size: var(--pik-size-lg);
+  font-weight: 200;
+  line-height: 1.28;
+  color: var(--pik-fg);
+  text-wrap: pretty;
+}
+
+.pik-chapter__body {
+  max-width: 38rem;
+  color: var(--pik-fg-dim);
+  text-wrap: pretty;
+}
+
+.pik-chapter__body strong {
+  color: var(--pik-fg);
+  font-weight: 400;
+}
+
+.pik-chapter__body em {
+  font-style: italic;
+  color: var(--pik-fg);
+}
+
+.pik-chapter__figure {
+  margin: 1.6em 0 0;
+  font-size: var(--pik-size-xs);
+  letter-spacing: 0.04em;
+  color: var(--pik-fg-faint);
+}
+
+.pik-chapter__figure::before {
+  content: "— ";
+}
+
+/* The pull-to-shadow system writes these styles from JavaScript; the
+   defaults here keep the text readable before the first frame. */
+.pik-pull {
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+}
+
+.pik-pull__char {
+  display: inline-block;
+  will-change: transform, opacity;
+  transform-origin: 0% 50%;
+}
+
+.pik-scroll-cue {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--pik-edge) + 0.4rem);
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: var(--pik-size-xs);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  color: var(--pik-fg-faint);
+  pointer-events: none;
+  transition: opacity 500ms var(--pik-ease);
+}
+
+.pik-scroll-cue[data-hidden="true"] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pik-pull {
+    transform: none !important;
+  }
+}

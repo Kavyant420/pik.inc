@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#000000" />
+    <title>pik — a Kerr black hole you can fall into</title>
+    <meta
+      name="description"
+      content="A scroll-driven, physically exact Kerr black hole rendered in WebGL2 with per-pixel null-geodesic integration."
+    />
+    <link rel="preload" href="/fonts/selawik-regular.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+
+  <body>
+    <!-- The black hole. Fixed behind everything, never interactive. -->
+    <canvas class="pik-canvas" data-canvas aria-hidden="true"></canvas>
+
+    <main class="pik-track" id="track">
+      <section class="pik-chapter" id="chapter-1" data-chapter-label="The well" data-chapter-at="0.02">
+        <p class="pik-chapter__eyebrow" data-pull>One hundred and forty Schwarzschild radii out</p>
+        <h1 class="pik-chapter__title pik-chapter__title--display" data-pull>pik</h1>
+        <p class="pik-chapter__lede" data-pull>
+          There is a hole in this page. It is not a picture of one. Every pixel behind this
+          sentence is a photon traced backwards through the curved spacetime around a
+          rotating black hole, until it either hits the accretion disk, crosses the event
+          horizon, or comes from a star.
+        </p>
+        <p class="pik-chapter__body" data-pull>
+          The hole has a mass, and it is spinning. Almost all the way up: the angular momentum
+          parameter is <strong>a* = 0.999</strong>, a few parts in a thousand short of the
+          maximum a Kerr hole can carry. That last sliver of spin is the difference between a
+          tidy sphere of darkness and something with a flattened, off-centre shadow and a
+          photon ring that refuses to sit still.
+        </p>
+        <p class="pik-chapter__figure">Scroll to fall</p>
+      </section>
+
+      <section class="pik-chapter" id="chapter-2" data-chapter-label="The disk" data-chapter-at="0.3">
+        <p class="pik-chapter__eyebrow" data-pull>Sixty-two M, and four and a half degrees above the plane</p>
+        <h2 class="pik-chapter__title" data-pull>The disk is not round</h2>
+        <p class="pik-chapter__body" data-pull>
+          The accretion disk lies in the equatorial plane, and the hole's rotation drags the
+          space around it — frame dragging — so the material does not orbit on Keplerian
+          ellipses. Its inner edge is the <strong>innermost stable circular orbit</strong>, at
+          1.24 solar masses for a hole this fast, which is comfortably inside the photon
+          orbit. You cannot see any of it.
+        </p>
+        <p class="pik-chapter__body" data-pull>
+          What you can see is the light. The near edge of the disk is moving towards you at a
+          relativistic fraction of the speed of light and is Doppler-boosted by the fourth
+          power of the shift factor; the far edge is receding and is dimmed by the same factor
+          in reverse. The same disk, the same physics, two completely different objects.
+        </p>
+      </section>
+
+      <section class="pik-chapter" id="chapter-3" data-chapter-label="The photon ring" data-chapter-at="0.55">
+        <p class="pik-chapter__eyebrow" data-pull>Twenty-six M</p>
+        <h2 class="pik-chapter__title" data-pull>A ring made of light going round</h2>
+        <p class="pik-chapter__body" data-pull>
+          Look closely at the edge of the shadow and you will find a thin, hard line. That is
+          the photon ring: light that orbited the hole one or more times before it found a
+          way out. It is not an artefact of the renderer — it is in the metric, and it is
+          brighter than anything else in the frame.
+        </p>
+        <p class="pik-chapter__body" data-pull>
+          Behind it, the sky itself is bent into the shadow. Stars that are behind the hole
+          are dragged around it and stacked into arcs. The mathematics of that is Bardeen's
+          critical curve: the boundary of the region where a ray's radial potential has a
+          double root, the rays that orbit forever just outside the horizon.
+        </p>
+      </section>
+
+      <section class="pik-chapter" id="chapter-4" data-chapter-label="The horizon" data-chapter-at="0.78">
+        <p class="pik-chapter__eyebrow" data-pull>Eleven M</p>
+        <h2 class="pik-chapter__title" data-pull>The edge is not a place</h2>
+        <p class="pik-chapter__body" data-pull>
+          There is no surface. The event horizon at 1.99 M is a null surface in a metric, and
+          from the outside you cannot point at it. What you see is the <strong>shadow</strong>
+          — the silhouette of a region from which nothing escapes, which is larger than the
+          horizon and quite differently shaped, because light bends on the way to your eye.
+        </p>
+        <p class="pik-chapter__body" data-pull>
+          A static clock at this radius ticks slow. The readout in the corner is that clock:
+          <strong>dτ/dt</strong>, the proper time of an observer who is holding still against
+          the rotation, against the coordinate time of somebody watching from far away.
+        </p>
+      </section>
+
+      <section class="pik-chapter" id="chapter-5" data-chapter-label="3.2" data-chapter-at="0.97">
+        <p class="pik-chapter__eyebrow" data-pull>Three point two M, and closing</p>
+        <h2 class="pik-chapter__title" data-pull>Last bit of sky</h2>
+        <p class="pik-chapter__body" data-pull>
+          The camera is inside the ergosphere now, where no observer can stand still, and the
+          shadow has swollen to fill the frame. The disk is a band of light across it. There
+          is not much left to read, which is rather the point.
+        </p>
+        <p class="pik-chapter__body" data-pull>
+          Nothing about this page was faked. The geodesics are integrated in Carter time, the
+          radial potential is carried in double-single arithmetic so that the turning points
+          do not quantise, and the disk is a Novikov–Thorne flux with relativistic beaming.
+          The only thing that is a choice is how much of it you can still read.
+        </p>
+      </section>
+    </main>
+
+    <p class="pik-scroll-cue" data-scroll-cue data-hidden="false">Scroll</p>
+
+    <button class="pik-audio-toggle" type="button" data-audio-toggle aria-pressed="false">
+      Sound on
+    </button>
+
+    <noscript>
+      <p class="pik-noscript">
+        This page is a real-time rendering of a Kerr black hole. It needs JavaScript and
+        WebGL2. The text above still reads without them.
+      </p>
+    </noscript>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

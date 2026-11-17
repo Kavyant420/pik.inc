@@ -1,0 +1,86 @@
+/* ==========================================================================
+   pik — the type that the hole pulls in
+   --------------------------------------------------------------------------
+   The narrative type is broken into words so that each word can be dragged
+   towards the shadow, twisted along the spiral it is falling down, and
+   tinted towards the red of the inner disk.
+
+   No boxes: a word is a word, transformed and tinted, never framed.
+   ========================================================================== */
+
+.pik-pull {
+  display: inline-block;
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+  color: var(--pik-fg);
+  transition: none;
+}
+
+/* The reading experience comes first: without JavaScript the words are
+   simply words, in a row, in warm white. */
+.pik-pull--static {
+  display: inline;
+}
+
+/* The scroll cue ---------------------------------------------------------- */
+
+.pik-scroll-cue {
+  opacity: 1;
+}
+
+.pik-scroll-cue[data-hidden="true"] {
+  opacity: 0;
+}
+
+/* The sound toggle -------------------------------------------------------- */
+
+.pik-audio {
+  position: fixed;
+  left: var(--pik-edge);
+  bottom: var(--pik-edge);
+  z-index: 4;
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--pik-size-xs);
+  letter-spacing: var(--pik-tracking-wide);
+  text-transform: uppercase;
+  color: var(--pik-fg-faint);
+  text-shadow: 0 0 14px var(--pik-glow);
+  transition: color 300ms var(--pik-ease);
+}
+
+.pik-audio:hover,
+.pik-audio:focus-visible {
+  color: var(--pik-fg);
+  outline: none;
+}
+
+.pik-audio::after {
+  content: "";
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  opacity: 0.5;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 320ms var(--pik-ease);
+}
+
+.pik-audio:hover::after,
+.pik-audio:focus-visible::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pik-pull {
+    transform: none !important;
+    opacity: 1 !important;
+    color: var(--pik-fg) !important;
+  }
+}

@@ -1,0 +1,72 @@
+/* ==========================================================================
+   pik — telemetry HUD
+   --------------------------------------------------------------------------
+   Bottom-left, monospaced digits, no background of any kind. The values are
+   the only bright thing in the corner; the labels fade back so the numbers
+   read first.
+   ========================================================================== */
+
+.pik-hud {
+  position: fixed;
+  left: var(--pik-edge);
+  bottom: var(--pik-edge);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28em;
+  font-family: var(--pik-font-mono);
+  font-size: var(--pik-size-xs);
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  color: var(--pik-fg);
+  text-shadow: 0 0 12px rgba(245, 237, 228, 0.22);
+  pointer-events: none;
+  user-select: none;
+}
+
+.pik-hud__row {
+  display: grid;
+  grid-template-columns: 4.6em 5.2em auto;
+  align-items: baseline;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+
+.pik-hud__label {
+  color: var(--pik-fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pik-hud__value {
+  color: var(--pik-fg);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pik-hud__unit {
+  color: var(--pik-fg-faint);
+  font-size: 0.92em;
+}
+
+/* The camera radius is the headline number — give it a little more weight
+   without turning it into a box. */
+.pik-hud__row--radius .pik-hud__value,
+.pik-hud__row--dilation .pik-hud__value {
+  font-weight: 400;
+}
+
+/* Very small viewports: keep the HUD to the two rows that matter. */
+@media (max-width: 520px) {
+  .pik-hud__row--schwarzschild,
+  .pik-hud__row--inclination,
+  .pik-hud__row--spin {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pik-hud {
+    text-shadow: none;
+  }
+}
